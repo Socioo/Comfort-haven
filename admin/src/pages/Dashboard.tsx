@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
 import styles from "../styles/Dashboard.module.css";
-import { Users, Home, Calendar, DollarSign } from "lucide-react";
+import { Users, Home, Calendar, Banknote } from "lucide-react";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -88,10 +88,10 @@ const Dashboard = () => {
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <span className={styles.cardTitle}>Total Revenue</span>
-            <DollarSign className={styles.icon} size={24} />
+            <Banknote className={styles.icon} size={24} />
           </div>
           <h3 className={styles.cardValue}>
-            ${stats.totalRevenue.toLocaleString()}
+            ₦{stats.totalRevenue.toLocaleString()}
           </h3>
           <span className={styles.cardTrend}>
             <span className={styles.trendUp}>+18%</span> from last month

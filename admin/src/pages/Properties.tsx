@@ -133,7 +133,7 @@ const Properties = () => {
                 <td>{property.title}</td>
                 <td>{property.location}</td>
                 <td>{property.host}</td>
-                <td>${property.price}</td>
+                <td>₦{property.price}</td>
                 <td>
                   <span
                     className={classNames(
