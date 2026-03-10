@@ -100,7 +100,7 @@ export default function ProfileScreen() {
             </View>
           )}
         </View>
-        <Text style={styles.name}>{user.name}</Text>
+        <Text style={styles.name}>{user.name || `${user.firstName} ${user.lastName}`.trim()}</Text>
         <View
           style={[
             styles.roleBadge,

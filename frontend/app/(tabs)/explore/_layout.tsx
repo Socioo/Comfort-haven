@@ -54,7 +54,7 @@ export default function ExploreScreen() {
 
   const loadProperties = async () => {
     try {
-      const response = await propertiesAPI.getAll();
+      const response = await propertiesAPI.getAll({ status: "active" });
       setProperties(response.data);
     } catch (error) {
       console.error("Error loading properties:", error);

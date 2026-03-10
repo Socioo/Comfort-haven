@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  Linking,
+  Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -110,6 +112,16 @@ export default function PropertyDetailsScreen() {
     router.push(`/booking/${property.id}?price=${property.price}` as any);
   };
 
+  const handleDirectionsPress = () => {
+    const query = encodeURIComponent(property.address || property.location);
+    const url = Platform.select({
+      ios: `maps:0,0?q=${query}`,
+      android: `geo:0,0?q=${query}`,
+      default: `https://www.google.com/maps/search/?api=1&query=${query}`,
+    });
+    Linking.openURL(url);
+  };
+
   const amenityIcons: Record<string, any> = {
     WiFi: Wifi,
     AC: Wind,
@@ -163,6 +175,12 @@ export default function PropertyDetailsScreen() {
                   {property.location}, {property.lga}
                 </Text>
               </View>
+              {property.address && (
+                <TouchableOpacity style={styles.addressRow} onPress={handleDirectionsPress}>
+                  <Text style={styles.addressText}>{property.address}</Text>
+                  <Text style={styles.directionsLink}>Get Directions</Text>
+                </TouchableOpacity>
+              )}
             </View>
             <TouchableOpacity
               style={styles.favoriteButton}
@@ -385,6 +403,22 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 16,
     color: Colors.textLight,
+  },
+  addressRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addressText: {
+    fontSize: 14,
+    color: Colors.text,
+  },
+  directionsLink: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   favoriteButton: {
     padding: 8,

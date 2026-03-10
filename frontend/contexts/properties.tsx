@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Property } from '../types';
+import { propertiesAPI } from '@/services/api';
 import { mockProperties } from '@/mocks/properties';
 
 interface PropertiesContextType {
@@ -14,33 +15,53 @@ interface PropertiesContextType {
 const PropertiesContext = createContext<PropertiesContextType | undefined>(undefined);
 
 export const PropertiesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [properties, setProperties] = useState<Property[]>(mockProperties);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
 
-  const addProperty = async (propertyData: Omit<Property, 'id' | 'rating' | 'reviewCount'>) => {
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      const response = await propertiesAPI.getAll();
+      setProperties(response.data);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      setProperties(mockProperties); // Fallback
+    }
+  };
+
+  const addProperty = async (propertyData: any) => {
     setIsAddingProperty(true);
     try {
-      const newProperty: Property = {
+      // Handle the hostId/ownerId mapping if needed
+      const apiData = {
         ...propertyData,
-        id: Date.now().toString(),
-        rating: 5,
-        reviewCount: 0,
+        ownerId: propertyData.hostId // Backend expects ownerId
       };
-      
-      setProperties(prev => [...prev, newProperty]);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      const response = await propertiesAPI.create(apiData);
+      setProperties((prev: Property[]) => [response.data, ...prev]);
+    } catch (error) {
+      console.error('Error adding property to API:', error);
+      throw error;
     } finally {
       setIsAddingProperty(false);
     }
   };
 
   const deleteProperty = async (id: string) => {
-    setProperties(prev => prev.filter(prop => prop.id !== id));
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      await propertiesAPI.delete(id);
+      setProperties((prev: Property[]) => prev.filter((prop: Property) => prop.id !== id));
+    } catch (error) {
+      console.error('Error deleting property from API:', error);
+      throw error;
+    }
   };
 
   const getHostProperties = (hostId: string) => {
-    return properties.filter(property => property.hostId === hostId);
+    return properties.filter((property: Property) => property.hostId === hostId);
   };
 
   return (

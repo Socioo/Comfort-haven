@@ -3,8 +3,8 @@ import React, {
   useContext,
   useState,
   useEffect,
-  ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 import { jwtDecode } from "jwt-decode";
 import api from "../services/api"; // Import your configured axios instance
 
@@ -20,6 +20,8 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, refreshToken: string) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -106,16 +108,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await api.get(`/users/${user.id}`);
+      const userData = response.data;
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        name: userData.name || "Admin",
+        role: userData.role,
+      });
+    } catch (error) {
+      console.error("Failed to refresh user data", error);
+    }
+  };
+
+  const updateUser = (userData: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...userData } : null));
+  };
+
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        token,
-        login,
-        logout,
-        isAuthenticated: !!token,
-        isLoading,
-      }}
+        value={{
+          user,
+          token,
+          login,
+          logout,
+          refreshUser,
+          updateUser,
+          isAuthenticated: !!token,
+          isLoading,
+        }}
     >
       {children}
     </AuthContext.Provider>

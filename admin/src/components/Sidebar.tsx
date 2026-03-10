@@ -65,6 +65,15 @@ const Sidebar = () => {
           <Calendar size={20} />
           <span>Bookings</span>
         </NavLink>
+        <NavLink
+          to="/team"
+          className={({ isActive }: any) =>
+            isActive ? `${styles.link} ${styles.active}` : styles.link
+          }
+        >
+          <Users size={20} />
+          <span>Team</span>
+        </NavLink>
         <div className={styles.divider} />
         <NavLink
           to="/settings"

@@ -24,6 +24,11 @@ export class CreatePropertyDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
+    @IsString()
+    address?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
     @IsEnum(['active', 'pending', 'suspended', 'rejected'])
     status?: string;
 

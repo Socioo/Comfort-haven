@@ -1,6 +1,6 @@
 .sidebar {
     width: 250px;
-    background-color: var(--white);
+    background-color: var(--card-bg);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -46,7 +46,7 @@
 
 .active {
     background-color: var(--primary-color);
-    color: var(--white);
+    color: #FFFFFF;
 }
 
 .active:hover {

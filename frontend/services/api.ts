@@ -131,6 +131,13 @@ export const propertiesAPI = {
   
   // Search properties
   search: (query: any) => api.post('/properties/search', query),
+  
+  // Upload media
+  uploadMedia: (formData: FormData) => api.post('/properties/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
 };
 
 // Bookings API

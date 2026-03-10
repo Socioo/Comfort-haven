@@ -40,41 +40,57 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <FavoritesProvider>
-          <PropertiesProvider>
-            <BookingsProvider>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="auth/login"
-                  options={{ presentation: 'modal', headerShown: false }}
-                />
-                <Stack.Screen
-                  name="auth/signup"
-                  options={{ presentation: 'modal', headerShown: false }}
-                />
-                <Stack.Screen
-                  name="property/[id]"
-                  options={{ presentation: 'modal', title: 'Property Details' }}
-                />
-                <Stack.Screen
-                  name="booking/[id]"
-                  options={{ presentation: 'modal', title: 'Booking' }}
-                />
-                <Stack.Screen
-                  name="host/[id]"
-                  options={{ presentation: 'modal', title: 'Host Details' }}
-                />
-                <Stack.Screen
-                  name="favorites/index"
-                  options={{ presentation: 'modal', title: 'Favorites' }}
-                />
-              </Stack>
-            </BookingsProvider>
-          </PropertiesProvider>
-        </FavoritesProvider>
-      </AuthProvider>
+      <ThemeProvider value={DefaultTheme}>
+        <AuthProvider>
+          <FavoritesProvider>
+            <PropertiesProvider>
+              <BookingsProvider>
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="auth/login"
+                    options={{ presentation: 'modal', headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="auth/signup"
+                    options={{ presentation: 'modal', headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="property/[id]"
+                    options={{ presentation: 'modal', title: 'Property Details' }}
+                  />
+                  <Stack.Screen
+                    name="booking/[id]"
+                    options={{ presentation: 'modal', title: 'Booking' }}
+                  />
+                  <Stack.Screen
+                    name="host/[id]"
+                    options={{ presentation: 'modal', title: 'Host Details' }}
+                  />
+                  <Stack.Screen
+                    name="favorites/index"
+                    options={{ presentation: 'modal', title: 'Favorites' }}
+                  />
+                  <Stack.Screen
+                    name="messages/index"
+                    options={{ 
+                      title: 'Messages',
+                      headerBackTitle: "",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="messages/[userId]"
+                    options={{ 
+                      title: 'Chat',
+                      headerBackTitle: "",
+                    }}
+                  />
+                </Stack>
+              </BookingsProvider>
+            </PropertiesProvider>
+          </FavoritesProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

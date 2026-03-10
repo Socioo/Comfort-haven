@@ -6,7 +6,7 @@
 }
 
 .card {
-    background: var(--white);
+    background: var(--card-bg);
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
@@ -51,7 +51,6 @@
 .icon {
     color: var(--primary-color);
     padding: 8px;
-    background-color: aliceblue;
-    /* var(--primary-light) */
+    background-color: var(--bg-color);
     border-radius: 8px;
 }

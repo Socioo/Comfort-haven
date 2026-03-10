@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { 
   Home, 
   Calendar, 
-  DollarSign, 
+  Banknote, 
   TrendingUp,
   Plus,
   ArrowRight,
@@ -141,7 +141,7 @@ export default function HostDashboardScreen() {
 
         <View style={styles.statCard}>
           <View style={styles.statIcon}>
-            <DollarSign color={Colors.warning} size={24} />
+            <Banknote color={Colors.warning} size={24} />
           </View>
           <Text style={styles.statValue}>
             ₦{(dashboardData?.statistics.totalRevenue || 0).toLocaleString()}
@@ -166,7 +166,7 @@ export default function HostDashboardScreen() {
         <View style={styles.actionsGrid}>
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => router.push('./host-properties')}
+            onPress={() => router.push({ pathname: '/(tabs)/(properties)', params: { action: 'add' } } as any)}
           >
             <Plus size={24} color={Colors.primary} />
             <Text style={styles.actionText}>Add Property</Text>
@@ -182,7 +182,7 @@ export default function HostDashboardScreen() {
 
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => router.push('./host-properties')}
+            onPress={() => router.push('/(tabs)/(properties)' as any)}
           >
             <Home size={24} color={Colors.primary} />
             <Text style={styles.actionText}>My Properties</Text>

@@ -15,6 +15,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!payload.sub || !uuidRegex.test(payload.sub)) {
+      throw new UnauthorizedException('Invalid token format');
+    }
     const user = await this.authService.validateUserById(payload.sub);
     if (!user) {
       throw new UnauthorizedException();

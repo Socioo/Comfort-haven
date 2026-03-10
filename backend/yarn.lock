@@ -1032,6 +1032,13 @@
     jsonc-parser "3.3.1"
     pluralize "8.0.0"
 
+"@nestjs/serve-static@^5.0.4":
+  version "5.0.4"
+  resolved "https://registry.yarnpkg.com/@nestjs/serve-static/-/serve-static-5.0.4.tgz#cfad2607972de8af16286975714d3f1dc6c9bb3d"
+  integrity sha512-3kO1M9D3vsPyWPFardxIjUYeuolS58PnhCoBTkS7t3BrdZFZCKHnBZ15js+UOzOR2Q6HmD7ssGjLd0DVYVdvOw==
+  dependencies:
+    path-to-regexp "8.3.0"
+
 "@nestjs/swagger@^11.2.5":
   version "11.2.6"
   resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-11.2.6.tgz#c9f2689a932bd431f5e7f8c29e6a57309f4c92bc"
@@ -1325,6 +1332,13 @@
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-2.1.0.tgz#052aa67a48eccc4309d7f0191b7e41434b90bb78"
   integrity sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==
+
+"@types/multer@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@types/multer/-/multer-2.1.0.tgz#c6ae866b9a3d9310b477d021a78b33feda092358"
+  integrity sha512-zYZb0+nJhOHtPpGDb3vqPjwpdeGlGC157VpkqNQL+UU2qwoacoQ7MpsAmUptI/0Oa127X32JzWDqQVEXp2RcIA==
+  dependencies:
+    "@types/express" "*"
 
 "@types/node@*":
   version "25.3.5"

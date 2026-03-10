@@ -1,8 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import styles from "../styles/Pages.module.css";
-import { Check, X, Eye, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import {
+  Check,
+  X,
+  Eye,
+  AlertTriangle,
+  Image as ImageIcon,
+  Upload,
+  Plus,
+  Trash2,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import classNames from "classnames";
 
 interface Property {
@@ -16,31 +27,38 @@ interface Property {
   images?: string[];
 }
 
-// Mock Data Removed
-
 const Properties = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [hosts, setHosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState(1); // 1: Basic Info, 2: Media
+  const [media, setMedia] = useState<{ url: string; type: string }[]>([]);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    location: "",
+    price: "",
+    ownerId: "",
+    status: "pending" as Property["status"],
+    amenities: "",
+  });
 
-  // Fetch properties on mount
   useEffect(() => {
     fetchProperties();
+    fetchHosts();
   }, []);
 
   const fetchProperties = async () => {
     try {
       const response = await api.get("/properties");
-      // Map backend response if needed. Assuming backend returns array of Property with owner object.
-      // We map owner.name to host for table display if interface requires it, or update interface.
-      // Let's update the state directly assuming backend matches or we adjust below.
-      // Backend Property: { ..., owner: { name: '...' } }
-      // Frontend Property Interface: { ..., host: string }
-      // So we need to map.
       const mappedProperties = response.data.map((p: any) => ({
         ...p,
         host: p.owner?.name || "Unknown",
-        price: Number(p.price), // Ensure number
+        price: Number(p.price),
       }));
       setProperties(mappedProperties);
     } catch (error) {
@@ -50,11 +68,19 @@ const Properties = () => {
     }
   };
 
+  const fetchHosts = async () => {
+    try {
+      const response = await api.get("/users?role=host");
+      setHosts(response.data);
+    } catch (error) {
+      console.error("Failed to fetch hosts", error);
+    }
+  };
+
   const handleStatusChange = async (
     id: string,
     newStatus: Property["status"],
   ) => {
-    // Optimistic update
     const previousProperties = [...properties];
     setProperties((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
@@ -64,9 +90,87 @@ const Properties = () => {
       await api.patch(`/properties/${id}`, { status: newStatus });
     } catch (error) {
       console.error("Failed to update status", error);
-      // Revert on failure
       setProperties(previousProperties);
     }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i]);
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await api.post("/properties/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setMedia((prev) => [...prev, ...response.data]);
+    } catch (error) {
+      console.error("Upload failed", error);
+      alert("Failed to upload media.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const removeMedia = (index: number) => {
+    setMedia((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step === 1) {
+      setStep(2);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        ...formData,
+        price: Number(formData.price),
+        images: media.filter((m) => m.type === "image").map((m) => m.url),
+        videos: media.filter((m) => m.type === "video").map((m) => m.url),
+        amenities: formData.amenities.split(",").map((s) => s.trim()),
+      };
+
+      await api.post("/properties", payload);
+      resetForm();
+      fetchProperties();
+    } catch (error) {
+      console.error("Failed to add property", error);
+      alert("Failed to add property. Please check all fields.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setIsModalOpen(false);
+    setStep(1);
+    setMedia([]);
+    setFormData({
+      title: "",
+      description: "",
+      location: "",
+      price: "",
+      ownerId: "",
+      status: "pending",
+      amenities: "",
+    });
   };
 
   if (loading) return <div>Loading...</div>;
@@ -76,7 +180,11 @@ const Properties = () => {
       <div className={styles.header}>
         <h1>Properties Management</h1>
         <div className={styles.controls}>
-          <button className={classNames(styles.btn, styles.primary)}>
+          <button
+            className={classNames(styles.btn, styles.primary)}
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Plus size={18} style={{ marginRight: "8px" }} />
             Add Property (Admin)
           </button>
         </div>
@@ -104,7 +212,7 @@ const Properties = () => {
                     style={{
                       width: 60,
                       height: 40,
-                      background: "#eee",
+                      background: "var(--bg-color)",
                       borderRadius: "4px",
                       overflow: "hidden",
                       display: "flex",
@@ -168,7 +276,7 @@ const Properties = () => {
                         className={classNames(styles.btn, styles.danger)}
                         onClick={() =>
                           handleStatusChange(property.id, "suspended")
-                        } // Or rejected
+                        }
                         title="Reject"
                       >
                         <X size={16} />
@@ -201,6 +309,178 @@ const Properties = () => {
           </tbody>
         </table>
       </div>
+
+      {isModalOpen && (
+        <div className={styles.modalOverlay} onClick={resetForm}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2>{step === 1 ? "Add New Property" : "Upload Media"}</h2>
+                <p style={{ margin: "4px 0 0 0", color: "var(--text-light)", fontSize: "0.9rem" }}>
+                  Step {step} of 2: {step === 1 ? "Property Details" : "Images & Videos"}
+                </p>
+              </div>
+              <button className={styles.closeBtn} onClick={resetForm}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              {step === 1 ? (
+                <div className={styles.formGrid}>
+                  <div className={classNames(styles.formGroup, styles.fullWidth)}>
+                    <label>Property Title</label>
+                    <input
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="e.g. Luxury Apartment in Lekki"
+                    />
+                  </div>
+                  <div className={classNames(styles.formGroup, styles.fullWidth)}>
+                    <label>Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Describe the property, its features, and why guests should stay here..."
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Location (City, State)</label>
+                    <input
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="e.g. Lagos, Nigeria"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Price per Night (₦)</label>
+                    <input
+                      name="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="50000"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Owner/Host</label>
+                    <select
+                      name="ownerId"
+                      value={formData.ownerId}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select a host</option>
+                      {hosts.map((host) => (
+                        <option key={host.id} value={host.id}>
+                          {host.name} ({host.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Status</label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="active">Active</option>
+                    </select>
+                  </div>
+                  <div className={classNames(styles.formGroup, styles.fullWidth)}>
+                    <label>Amenities (Comma separated)</label>
+                    <input
+                      name="amenities"
+                      value={formData.amenities}
+                      onChange={handleInputChange}
+                      placeholder="Wifi, Pool, Gym, Kitchen..."
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.mediaSection}>
+                  <p style={{ marginBottom: "16px", color: "var(--text-light)" }}>
+                    Add high-quality photos and at least one video to attract more guests.
+                  </p>
+                  <div className={styles.mediaGrid}>
+                    {media.map((item, index) => (
+                      <div key={index} className={styles.mediaItem}>
+                        {item.type === "image" ? (
+                          <img src={item.url} alt="Uploaded" />
+                        ) : (
+                          <video src={item.url} />
+                        )}
+                        <button
+                          type="button"
+                          className={styles.removeMedia}
+                          onClick={() => removeMedia(index)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <div
+                      className={styles.uploadPlaceholder}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={24} />
+                      <span style={{ fontSize: "0.8rem", marginTop: "8px" }}>
+                        Upload
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    hidden
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/*,video/*"
+                  />
+                </div>
+              )}
+
+              <div className={styles.formActions}>
+                {step === 2 && (
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    onClick={() => setStep(1)}
+                  >
+                    <ChevronLeft size={18} style={{ marginRight: "8px" }} />
+                    Back
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className={classNames(styles.btn, styles.primary)}
+                  disabled={submitting}
+                >
+                  {step === 1 ? (
+                    <>
+                      Next
+                      <ChevronRight size={18} style={{ marginLeft: "8px" }} />
+                    </>
+                  ) : submitting ? (
+                    "Adding Property..."
+                  ) : (
+                    "Complete & Add Property"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

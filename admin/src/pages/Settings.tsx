@@ -3,8 +3,12 @@ import { User, Bell, Shield, Palette, Save } from "lucide-react";
 import styles from "./Settings.module.css";
 import { jwtDecode } from "jwt-decode";
 import api, { adminAPI } from "../services/api";
+import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
 
 const Settings = () => {
+  const { theme, setTheme } = useTheme();
+  const { refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,7 +34,7 @@ const Settings = () => {
 
   // Appearance State
   const [appearance, setAppearance] = useState({
-    theme: "light",
+    theme: theme,
     language: "en",
   });
 
@@ -79,6 +83,9 @@ const Settings = () => {
 
       if (user.appearance) {
         setAppearance(user.appearance);
+        if (user.appearance.theme) {
+          setTheme(user.appearance.theme);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch user settings:", error);
@@ -103,13 +110,16 @@ const Settings = () => {
           name: profile.name,
           email: profile.email,
         });
+        await refreshUser();
         alert("Profile updated successfully!");
       } else if (activeTab === "notifications") {
         await adminAPI.updateNotifications(userId, notifications);
         alert("Notifications updated successfully!");
       } else if (activeTab === "appearance") {
         await adminAPI.updateAppearance(userId, appearance);
-        alert("Appearance updated successfully!");
+        // Theme is already set reactively in the UI
+        await refreshUser();
+        alert("Appearance saved successfully!");
       } else if (activeTab === "security") {
         if (!security.currentPassword || !security.newPassword) {
           alert("Please enter both current and new passwords.");
@@ -376,9 +386,11 @@ const Settings = () => {
                   <label>Dashboard Theme</label>
                   <select
                     value={appearance.theme}
-                    onChange={(e) =>
-                      setAppearance({ ...appearance, theme: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newTheme = e.target.value as any;
+                      setAppearance({ ...appearance, theme: newTheme });
+                      setTheme(newTheme);
+                    }}
                   >
                     <option value="light">Light Theme (Default)</option>
                     <option value="dark">Dark Theme</option>

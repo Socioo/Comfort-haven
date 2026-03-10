@@ -1,7 +1,8 @@
 export enum UserRole {
   USER = 'user',
   HOST = 'host',
-  ADMIN = 'admin'
+  ADMIN = 'admin',
+  SUB_ADMIN = 'sub-admin'
 }
 
 export const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key';

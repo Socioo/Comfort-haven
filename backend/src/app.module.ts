@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
@@ -12,6 +13,7 @@ import { StatsModule } from './stats/stats.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { MessagesModule } from './messages/messages.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import typeormConfig from './config/typeorm.config';
@@ -26,6 +28,10 @@ import typeormConfig from './config/typeorm.config';
       ttl: 60000,
       limit: 10,
     }]),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
