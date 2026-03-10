@@ -1,9 +1,11 @@
 import Colors from "@/constants/Colors";
 import { useAuth } from "@/contexts/auth";
 import { useProperties } from "@/contexts/properties";
-import { router } from "expo-router";
-import { Bath, Bed, MapPin, Plus, Trash2, Users, X } from "lucide-react-native";
-import React, { useState } from "react";
+import { Bath, Bed, MapPin, Plus, Trash2, Users, X, Image as ImageIcon, Video, Upload } from "lucide-react-native";
+import React, { useState, useEffect } from "react";
+import * as ImagePicker from 'expo-image-picker';
+import { propertiesAPI } from "@/services/api";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   Alert,
   Image,
@@ -22,24 +24,45 @@ export default function HostPropertiesScreen() {
   const { user } = useAuth();
   const { getHostProperties, addProperty, deleteProperty, isAddingProperty } =
     useProperties();
+  const { action } = useLocalSearchParams();
   const [showAddModal, setShowAddModal] = useState(false);
+
+  useEffect(() => {
+    if (action === 'add') {
+      setShowAddModal(true);
+      // We don't necessarily need to clear it here, as navigating 
+      // back and forth will re-trigger only if explicitly passed.
+    }
+  }, [action]);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     location: "",
+    address: "",
     lga: "",
     price: "",
     bedrooms: "",
     bathrooms: "",
     guests: "",
-    imageUrl: "",
     amenities: "",
-    latitude: "",
-    longitude: "",
   });
+  const [selectedMedia, setSelectedMedia] = useState<ImagePicker.ImagePickerAsset[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const hostProperties = user ? getHostProperties(user.id) : [];
+
+  const pickMedia = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setSelectedMedia([...selectedMedia, ...result.assets]);
+    }
+  };
 
   const handleAddProperty = async () => {
     if (!user) return;
@@ -54,31 +77,48 @@ export default function HostPropertiesScreen() {
       .map((a) => a.trim())
       .filter((a) => a.length > 0);
 
-    const images = formData.imageUrl
-      ? formData.imageUrl
-          .split(",")
-          .map((url) => url.trim())
-          .filter((url) => url.length > 0)
-      : ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"];
 
     try {
+      setIsUploading(true);
+      let imageUrls: string[] = [];
+
+      if (selectedMedia.length > 0) {
+        const uploadFormData = new FormData();
+        selectedMedia.forEach((asset, index) => {
+          const uriParts = asset.uri.split('.');
+          const fileType = uriParts[uriParts.length - 1];
+
+          // @ts-ignore
+          uploadFormData.append('media', {
+            uri: asset.uri,
+            name: `media-${index}.${fileType}`,
+            type: asset.type === 'video' ? `video/${fileType}` : `image/${fileType}`,
+          });
+        });
+
+        const uploadResponse = await propertiesAPI.uploadMedia(uploadFormData);
+        imageUrls = uploadResponse.data.map((f: any) => f.url);
+      } else {
+        imageUrls = ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"];
+      }
+
       await addProperty({
         title: formData.title,
-        description:
-          formData.description || "Beautiful property available for rent",
+        description: formData.description || "Beautiful property available for rent",
         location: formData.location,
+        address: formData.address,
         lga: formData.lga || formData.location,
         price: parseFloat(formData.price),
         bedrooms: parseInt(formData.bedrooms) || 1,
         bathrooms: parseInt(formData.bathrooms) || 1,
         guests: parseInt(formData.guests) || 2,
-        images,
+        images: imageUrls,
         amenities: amenitiesList.length > 0 ? amenitiesList : ["WiFi", "AC"],
         hostId: user.id,
         hostName: user.name,
         hostPhoto: user.photoUrl,
-        latitude: parseFloat(formData.latitude) || 12.0022,
-        longitude: parseFloat(formData.longitude) || 8.5919,
+        latitude: 12.0022, // Defaulting to Kano since addr is used
+        longitude: 8.5919,
         availableDates: [],
       });
 
@@ -86,21 +126,22 @@ export default function HostPropertiesScreen() {
         title: "",
         description: "",
         location: "",
+        address: "",
         lga: "",
         price: "",
         bedrooms: "",
         bathrooms: "",
         guests: "",
-        imageUrl: "",
         amenities: "",
-        latitude: "",
-        longitude: "",
       });
+      setSelectedMedia([]);
       setShowAddModal(false);
       Alert.alert("Success", "Property added successfully!");
     } catch (error) {
       console.error("Error adding property:", error);
       Alert.alert("Error", "Failed to add property");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -303,6 +344,19 @@ export default function HostPropertiesScreen() {
             </View>
 
             <View style={styles.formGroup}>
+              <Text style={styles.label}>Address *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.address}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, address: text })
+                }
+                placeholder="e.g., No. 42 Boundary Road"
+                placeholderTextColor={Colors.textLight}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Price per Night (₦) *</Text>
               <TextInput
                 style={styles.input}
@@ -361,18 +415,31 @@ export default function HostPropertiesScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Image URLs (comma separated)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.imageUrl}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, imageUrl: text })
-                }
-                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                placeholderTextColor={Colors.textLight}
-                multiline
-                numberOfLines={3}
-              />
+              <Text style={styles.label}>Media (Images/Videos) *</Text>
+              <TouchableOpacity style={styles.mediaPicker} onPress={pickMedia}>
+                <Upload color={Colors.primary} size={24} />
+                <Text style={styles.mediaPickerText}>Select Images or Videos</Text>
+              </TouchableOpacity>
+              {selectedMedia.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaPreviewList}>
+                  {selectedMedia.map((asset, index) => (
+                    <View key={index} style={styles.mediaPreviewContainer}>
+                      <Image source={{ uri: asset.uri }} style={styles.mediaPreview} />
+                      <TouchableOpacity 
+                        style={styles.removeMedia} 
+                        onPress={() => setSelectedMedia(selectedMedia.filter((_, i) => i !== index))}
+                      >
+                        <X color="white" size={12} />
+                      </TouchableOpacity>
+                      {asset.type === 'video' && (
+                        <View style={styles.videoBadge}>
+                          <Video color="white" size={12} />
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
             </View>
 
             <View style={styles.formGroup}>
@@ -388,46 +455,18 @@ export default function HostPropertiesScreen() {
               />
             </View>
 
-            <View style={styles.formRow}>
-              <View style={styles.formGroupHalf}>
-                <Text style={styles.label}>Latitude</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.latitude}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, latitude: text })
-                  }
-                  placeholder="12.0022"
-                  placeholderTextColor={Colors.textLight}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-
-              <View style={styles.formGroupHalf}>
-                <Text style={styles.label}>Longitude</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.longitude}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, longitude: text })
-                  }
-                  placeholder="8.5919"
-                  placeholderTextColor={Colors.textLight}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-            </View>
+            {/* Removed internal debug inputs for coordinates */}
 
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                isAddingProperty && styles.submitButtonDisabled,
+                (isAddingProperty || isUploading) && styles.submitButtonDisabled,
               ]}
               onPress={handleAddProperty}
-              disabled={isAddingProperty}
+              disabled={isAddingProperty || isUploading}
             >
               <Text style={styles.submitButtonText}>
-                {isAddingProperty ? "Adding..." : "Add Property"}
+                {isAddingProperty || isUploading ? "Processing..." : "Add Property"}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -605,6 +644,59 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     textAlignVertical: "top" as const,
+  },
+  mediaPicker: {
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  mediaPickerText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  mediaPreviewList: {
+    marginTop: 12,
+  },
+  mediaPreviewContainer: {
+    position: 'relative',
+    marginRight: 10,
+  },
+  mediaPreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: Colors.border,
+  },
+  removeMedia: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: Colors.error,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+  videoBadge: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   submitButton: {
     backgroundColor: Colors.primary,

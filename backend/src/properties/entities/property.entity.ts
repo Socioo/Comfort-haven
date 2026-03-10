@@ -20,6 +20,9 @@ export class Property {
     @Column()
     location: string;
 
+    @Column({ nullable: true })
+    address: string;
+
     @Column({ default: 'pending' })
     status: string; // 'active', 'pending', 'suspended', 'rejected'
 

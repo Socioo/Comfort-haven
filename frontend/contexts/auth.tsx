@@ -39,6 +39,8 @@ interface AuthContextType {
   ) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -161,6 +163,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await authAPI.getProfile();
+      const userData = response.data;
+      await AsyncStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+    } catch (error) {
+      console.error("Refresh user error:", error);
+    }
+  };
+
+  const updateUser = (userData: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...userData };
+      AsyncStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -173,6 +195,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         signUp,
         signInWithGoogle,
         signOut,
+        refreshUser,
+        updateUser,
       }}
     >
       {children}

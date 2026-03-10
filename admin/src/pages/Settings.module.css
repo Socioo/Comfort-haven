@@ -14,12 +14,12 @@
 .title {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1f36;
+  color: var(--text-main);
   margin: 0 0 8px 0;
 }
 
 .subtitle {
-  color: #697386;
+  color: var(--text-light);
   font-size: 15px;
   margin: 0;
 }
@@ -28,7 +28,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #3f51b5;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -40,11 +40,12 @@
 }
 
 .saveBtn:hover {
-  background-color: #303f9f;
+  background-color: var(--primary-color);
+  filter: brightness(0.9);
 }
 
 .btnPrimary {
-  background-color: #3f51b5;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -82,19 +83,19 @@
   text-align: left;
   font-size: 15px;
   font-weight: 500;
-  color: #4f566b;
+  color: var(--text-light);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .navItem:hover {
-  background-color: #f7fafc;
-  color: #1a1f36;
+  background-color: var(--nav-hover-bg);
+  color: var(--text-main);
 }
 
 .navItem.active {
-  background-color: #e8eaf6;
-  color: #3f51b5;
+  background-color: var(--sidebar-active-bg);
+  color: var(--primary-color);
 }
 
 .content {
@@ -104,16 +105,16 @@
 .section h2 {
   font-size: 20px;
   font-weight: 600;
-  color: #1a1f36;
+  color: var(--text-main);
   margin: 0 0 20px 0;
 }
 
 .card {
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e3e8ee;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .formGroup {
@@ -126,34 +127,44 @@
 
 .formGroup label {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #4f566b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
   margin-bottom: 8px;
+  letter-spacing: 0.01em;
 }
 
 .formGroup input,
 .formGroup select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e3e8ee;
+  padding: 11px 16px;
+  border: 1.5px solid var(--border-color);
   border-radius: 8px;
   font-size: 15px;
-  color: #1a1f36;
+  color: var(--text-main);
   outline: none;
-  transition: border-color 0.2s;
-  background-color: white;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--card-bg);
+  box-sizing: border-box;
+}
+
+.formGroup input:hover,
+.formGroup select:hover {
+  border-color: var(--text-light);
 }
 
 .formGroup input:focus,
 .formGroup select:focus {
-  border-color: #3f51b5;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.15);
 }
 
 .formGroup input:disabled {
-  background-color: #f7fafc;
-  color: #697386;
+  background-color: var(--bg-color);
+  border-color: var(--border-color);
+  color: var(--text-light);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .toggleRow {
@@ -170,18 +181,18 @@
 .toggleInfo h4 {
   margin: 0 0 4px 0;
   font-size: 16px;
-  color: #1a1f36;
+  color: var(--text-main);
 }
 
 .toggleInfo p {
   margin: 0;
   font-size: 14px;
-  color: #697386;
+  color: var(--text-light);
 }
 
 .divider {
   height: 1px;
-  background-color: #e3e8ee;
+  background-color: var(--border-color);
   margin: 20px 0;
 }
 
@@ -206,7 +217,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cbd5e1;
+  background-color: var(--border-color);
   transition: 0.4s;
   border-radius: 24px;
 }
@@ -224,11 +235,11 @@
 }
 
 input:checked + .slider {
-  background-color: #3f51b5;
+  background-color: var(--primary-color);
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px #3f51b5;
+  box-shadow: 0 0 1px var(--primary-color);
 }
 
 input:checked + .slider:before {

@@ -33,7 +33,7 @@ export default function TabOneScreen() {
 
   const fetchProperties = async () => {
     try {
-      const response = await propertiesAPI.getAll();
+      const response = await propertiesAPI.getAll({ status: "active" });
       setProperties(response.data.slice(0, 6)); // Get first 6 for featured
     } catch (error) {
       console.error("Failed to fetch properties:", error);

@@ -10,7 +10,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { messagesAPI, usersAPI } from "@/services/api";
 import { useAuth } from "@/contexts/auth";
 import Colors from "@/constants/Colors";
@@ -131,6 +131,12 @@ export default function ChatScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
+      <Stack.Screen 
+        options={{ 
+          title: otherUser?.name || "Chat",
+          headerBackTitle: "",
+        }} 
+      />
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -139,7 +145,7 @@ export default function ChatScreen() {
           <ArrowLeft color={Colors.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{otherUser?.name || "Chat"}</Text>
-        <View style={{ width: 24 }} /> {/* Spacer */}
+        <View style={{ width: 24 }} />
       </View>
 
       <FlatList

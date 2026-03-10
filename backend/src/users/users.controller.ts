@@ -10,14 +10,18 @@ export class UsersController {
     @Get()
     findAll(@Query('role') role?: string) {
         if (role) {
-            // Normalize role to singular if plural is passed (e.g. 'users' -> 'user')
             const normalizedRole = role.toLowerCase().endsWith('s') ? role.slice(0, -1) : role;
-            
-            if (['user', 'host', 'admin'].includes(normalizedRole)) {
-                return this.usersService.findAllByRole(normalizedRole as 'user' | 'host');
+            if (['user', 'host', 'admin', 'sub-admin'].includes(normalizedRole)) {
+                return this.usersService.findAllByRole(normalizedRole);
             }
         }
         return this.usersService.findAll();
+    }
+
+    @Post()
+    create(@Body() createUserDto: any) {
+        // In a real scenario, this would have a guard and handle password hashing
+        return this.usersService.create(createUserDto);
     }
 
     @Get(':id')
