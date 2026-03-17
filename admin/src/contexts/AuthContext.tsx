@@ -13,6 +13,8 @@ interface User {
   email: string;
   name: string;
   role: string;
+  profileImage?: string;
+  mustChangePassword?: boolean;
 }
 
 interface AuthContextType {
@@ -48,8 +50,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           setUser({
             id: decoded.sub,
             email: decoded.email,
-            name: decoded.name || "Admin",
+             name: decoded.name || "Admin",
             role: decoded.role,
+            profileImage: decoded.profileImage,
+            mustChangePassword: decoded.mustChangePassword,
           });
         } else {
           // Token is expired, clear it
@@ -93,8 +97,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setUser({
         id: decoded.sub,
         email: decoded.email,
-        name: decoded.name || "Admin",
+         name: decoded.name || "Admin",
         role: decoded.role,
+        profileImage: decoded.profileImage,
+        mustChangePassword: decoded.mustChangePassword,
       });
     } catch (error) {
       console.error("Failed to decode token on login", error);
@@ -116,8 +122,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setUser({
         id: userData.id,
         email: userData.email,
-        name: userData.name || "Admin",
+         name: userData.name || "Admin",
         role: userData.role,
+        profileImage: userData.profileImage,
+        mustChangePassword: userData.mustChangePassword,
       });
     } catch (error) {
       console.error("Failed to refresh user data", error);

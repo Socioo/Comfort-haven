@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: "bold",
     color: Colors.text,
     marginBottom: 4,
@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.card,
     marginHorizontal: 20,
+    marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 12,
@@ -233,6 +234,7 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 24,
     paddingHorizontal: 20,
+    padding: 20,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -241,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: "bold",
     color: Colors.text,
     marginBottom: 16,
@@ -261,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -274,7 +276,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 12,
     right: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: Colors.overlay,
     borderRadius: 20,
     padding: 8,
   },

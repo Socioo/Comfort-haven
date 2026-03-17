@@ -1,6 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../common/constants';
 
 @ApiTags('users')
 @Controller('users')
@@ -59,5 +63,19 @@ export class UsersController {
     @Patch(':id/password')
     async updatePassword(@Param('id') id: string, @Body() updateData: any) {
         return this.usersService.updatePassword(id, updateData);
+    }
+
+    @Patch(':id/admin-reset-password')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    async adminResetPassword(@Param('id') id: string, @Body('newPassword') newPassword: string) {
+        return this.usersService.adminResetPassword(id, newPassword);
+    }
+
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    async remove(@Param('id') id: string) {
+        return this.usersService.remove(id);
     }
 }

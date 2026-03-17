@@ -1,0 +1,57 @@
+.settingsList {
+  width: 100%;
+}
+
+.settingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+
+.settingItem:hover {
+  background-color: var(--nav-hover-bg);
+}
+
+.settingItem:last-child {
+  border-bottom: none;
+}
+
+.settingLabel {
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.customToggle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--primary-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.innerDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.customToggle.active .innerDot {
+  background-color: var(--primary-color);
+}
+
+.customToggle:hover {
+  transform: scale(1.05);
+  background-color: var(--sidebar-active-bg);
+}

@@ -6,7 +6,7 @@ import { Property } from '../properties/entities/property.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 import { Favorite } from '../favorites/entities/favorite.entity';
 import { UserRole } from '../common/constants';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class SeedingService implements OnApplicationBootstrap {
@@ -24,285 +24,211 @@ export class SeedingService implements OnApplicationBootstrap {
     ) { }
 
     async onApplicationBootstrap() {
-        await this.seed();
-        await this.fixImages();
+        // We can call seed here or wait for manual call
+        // await this.seed();
     }
 
     async seed() {
-        this.logger.log('Starting seeding...');
+        this.logger.log('Starting full database reset and seeding...');
 
-        await this.seedUsers();
-        await this.seedProperties();
-        await this.seedBookings();
-        await this.seedFavorites();
+        await this.clearDatabase();
+        
+        const password = await bcrypt.hash('password123', 10);
+        
+        const users = await this.seedUsers(password);
+        const properties = await this.seedProperties(users);
+        await this.seedBookings(users, properties);
+        await this.seedFavorites(users, properties);
 
-        this.logger.log('Seeding completed!');
+        this.logger.log('Seeding completed successfully!');
     }
 
-    private async seedUsers() {
-        const existingUsers = await this.usersRepository.count();
-        if (existingUsers > 0) return;
+    private async clearDatabase() {
+        this.logger.log('Clearing existing data using raw SQL...');
+        const tables = ['favorites', 'bookings', 'reviews', 'messages', 'properties', 'users'];
+        for (const table of tables) {
+            try {
+                await this.usersRepository.query(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`);
+                this.logger.log(`Truncated ${table}`);
+            } catch (error) {
+                this.logger.warn(`Could not truncate ${table}, trying DELETE: ${error.message}`);
+                try {
+                    await this.usersRepository.query(`DELETE FROM "${table}"`);
+                } catch (delError) {
+                    this.logger.error(`Failed to clear ${table}: ${delError.message}`);
+                }
+            }
+        }
+        this.logger.log('Data cleared.');
+    }
 
-        this.logger.log('Seeding users...');
+    private async seedUsers(password: string): Promise<User[]> {
+        this.logger.log('Seeding users (2 Admins, 20 Guests, 20 Hosts)...');
         const usersData: Partial<User>[] = [];
-        const hashedPassword = await bcrypt.hash('password123', 10);
 
-        // 1. Admin
+        // 1. Super Admin
         usersData.push({
-            email: 'admin@test.com',
-            password: hashedPassword,
-            name: 'Admin User',
+            email: 'superadmin@comfort-haven.com',
+            password,
+            name: 'Super Admin',
             role: UserRole.ADMIN,
             isVerified: true,
             status: 'active',
-            profileImage: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80',
+            profileImage: 'https://images.unsplash.com/photo-1519085185750-74071747e99c?auto=format&fit=crop&w=256&q=80',
         });
 
-        // 2. Host
+        // 2. Sub Admin
         usersData.push({
-            email: 'host@test.com',
-            password: hashedPassword,
-            name: 'John Host',
-            role: UserRole.HOST,
+            email: 'subadmin@comfort-haven.com',
+            password,
+            name: 'Sub Admin',
+            role: UserRole.SUB_ADMIN,
             isVerified: true,
             status: 'active',
-            profileImage: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80',
+            profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80',
         });
 
-        // 3. Regular User
-        usersData.push({
-            email: 'user@test.com',
-            password: hashedPassword,
-            name: 'Jane User',
-            role: UserRole.USER,
-            isVerified: true,
-            status: 'active',
-            profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80',
-        });
-
-        // Create additional Hosts
-        for (let i = 1; i <= 5; i++) {
-            usersData.push({
-                email: `host${i}@example.com`,
-                password: hashedPassword,
-                name: `Host ${i}`,
-                role: UserRole.HOST,
-                isVerified: Math.random() > 0.3,
-                status: Math.random() > 0.1 ? 'active' : 'suspended',
-            });
-        }
-
-        // Create additional Guests
-        for (let i = 1; i <= 5; i++) {
+        // 3. 20 Guests
+        for (let i = 1; i <= 20; i++) {
             usersData.push({
                 email: `guest${i}@example.com`,
-                password: hashedPassword,
+                password,
                 name: `Guest ${i}`,
                 role: UserRole.USER,
                 isVerified: true,
-                status: Math.random() > 0.1 ? 'active' : 'banned',
+                status: 'active',
+                profileImage: `https://i.pravatar.cc/150?u=guest${i}`,
             });
         }
 
-        const users = this.usersRepository.create(usersData as any);
-        await this.usersRepository.save(users);
-    }
-
-    private async seedProperties() {
-        const existingProperties = await this.propertiesRepository.count();
-        if (existingProperties > 0) return;
-
-        this.logger.log('Seeding properties...');
-        // Ensure we get the specific host we created
-        const specificHost = await this.usersRepository.findOne({ where: { email: 'host@test.com' } });
-        const otherHosts = await this.usersRepository.find({ where: { role: UserRole.HOST } });
-        
-        // Filter out specific host from other hosts to avoid duplication if needed, though random selection is fine
-        const allHosts = specificHost ? [specificHost, ...otherHosts] : otherHosts;
-
-        const propertiesData: Partial<Property>[] = [];
-
-        const locations = ['Malibu, CA', 'Aspen, CO', 'New York, NY', 'Miami, FL', 'Austin, TX', 'Seattle, WA', 'Kano, Nigeria', 'Lagos, Nigeria', 'Abuja, Nigeria'];
-        const lgas = ['Municipal', 'Ikeja', 'Lekki', 'Victoria Island', 'Yaba', 'Surulere', 'Ajah', 'Ikoyi', 'Maryland'];
-        const titles = ['Sunset Villa', 'Cozy Cabin', 'Urban Loft', 'Beach House', 'Mountain Retreat', 'City Apartment', 'Luxury Duplex', 'Modern Studio'];
-        const imagesList = [
-             'https://images.unsplash.com/photo-1600596542815-22b4899975d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1580587771525-78b9dba3b91d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-        ];
-
-        // Create properties for the specific host first
-        if (specificHost) {
-            for (let i = 0; i < 5; i++) {
-                 propertiesData.push({
-                    title: `My Host Property ${i + 1}`,
-                    description: 'This is a property owned by the test host account.',
-                    price: Math.floor(Math.random() * 400) + 50,
-                    location: locations[Math.floor(Math.random() * locations.length)],
-                    lga: lgas[Math.floor(Math.random() * lgas.length)],
-                    owner: specificHost,
-                    status: 'active',
-                    images: [imagesList[i % imagesList.length], imagesList[(i + 1) % imagesList.length]],
-                    amenities: ['Wifi', 'Pool', 'Kitchen', 'AC'],
-                    rating: 4 + Math.random(),
-                    reviewCount: Math.floor(Math.random() * 50),
-                    bedrooms: Math.floor(Math.random() * 4) + 1,
-                    bathrooms: Math.floor(Math.random() * 3) + 1,
-                    guests: Math.floor(Math.random() * 6) + 2,
-                    latitude: 6.5244 + (Math.random() - 0.5) * 0.1,
-                    longitude: 3.3792 + (Math.random() - 0.5) * 0.1,
-                });
-            }
+        // 4. 20 Hosts
+        for (let i = 1; i <= 20; i++) {
+            usersData.push({
+                email: `host${i}@example.com`,
+                password,
+                name: `Host ${i}`,
+                role: UserRole.HOST,
+                isVerified: true,
+                status: 'active',
+                profileImage: `https://i.pravatar.cc/150?u=host${i}`,
+            });
         }
 
-        for (let i = 0; i < 20; i++) {
-            const host = allHosts[Math.floor(Math.random() * allHosts.length)];
+        const usersEntities = this.usersRepository.create(usersData as any);
+        this.logger.log(`Prepared ${usersData.length} users for seeding`);
+        return await this.usersRepository.save(usersEntities);
+    }
+
+    private async seedProperties(users: User[]): Promise<Property[]> {
+        this.logger.log('Seeding properties (at least 1 per host)...');
+        const hosts = users.filter(u => u.role === UserRole.HOST);
+        this.logger.log(`Found ${hosts.length} hosts in seeded users`);
+        const propertiesData: Partial<Property>[] = [];
+
+        const locations = ['Kano', 'Lagos', 'Abuja', 'Kaduna', 'Port Harcourt'];
+        const lgas = ['Nassarawa', 'Municipal', 'Fagge', 'Gwale', 'Tarauni'];
+        const categories = ['Apartment', 'Villa', 'Duplex', 'Studio', 'Penthouse'];
+        const imagesList = [
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1600596542815-22b4899975d6?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1580587771525-78b9dba3b91d?auto=format&fit=crop&w=800&q=80',
+        ];
+
+        // Ensure every host has at least one property
+        for (const host of hosts) {
             propertiesData.push({
-                title: `${titles[Math.floor(Math.random() * titles.length)]} ${i + 1}`,
-                description: 'A beautiful place to stay with amazing amenities.',
-                price: Math.floor(Math.random() * 400) + 50,
+                title: `${categories[Math.floor(Math.random() * categories.length)]} by ${host.name}`,
+                description: 'A beautiful and comfortable space managed by our top hosts.',
+                price: Math.floor(Math.random() * 50000) + 10000,
                 location: locations[Math.floor(Math.random() * locations.length)],
                 lga: lgas[Math.floor(Math.random() * lgas.length)],
                 owner: host,
-                status: ['active', 'pending', 'suspended'][Math.floor(Math.random() * 3)],
-                images: [imagesList[i % imagesList.length], imagesList[(i + 1) % imagesList.length]],
-                amenities: ['Wifi', 'Pool', 'Kitchen'],
-                rating: 3 + Math.random() * 2,
-                reviewCount: Math.floor(Math.random() * 100),
-                bedrooms: Math.floor(Math.random() * 4) + 1,
-                bathrooms: Math.floor(Math.random() * 3) + 1,
-                guests: Math.floor(Math.random() * 6) + 2,
-                latitude: 6.5244 + (Math.random() - 0.5) * 0.1,
-                longitude: 3.3792 + (Math.random() - 0.5) * 0.1,
+                status: 'active',
+                images: [imagesList[Math.floor(Math.random() * imagesList.length)], imagesList[Math.floor(Math.random() * imagesList.length)]],
+                amenities: ['Wifi', 'AC', 'Kitchen', 'Parking'],
+                rating: 4 + Math.random(),
+                reviewCount: Math.floor(Math.random() * 20),
+                bedrooms: Math.floor(Math.random() * 3) + 1,
+                bathrooms: Math.floor(Math.random() * 2) + 1,
+                guests: Math.floor(Math.random() * 4) + 1,
+                latitude: 12.0022,
+                longitude: 8.5920,
             });
         }
 
-        const properties = this.propertiesRepository.create(propertiesData as any);
-        await this.propertiesRepository.save(properties);
-    }
-
-    private async seedBookings() {
-        const existingBookings = await this.bookingsRepository.count();
-        if (existingBookings > 0) return;
-
-        this.logger.log('Seeding bookings...');
-        const specificUser = await this.usersRepository.findOne({ where: { email: 'user@test.com' } });
-        const guests = await this.usersRepository.find({ where: { role: UserRole.USER } });
-        const properties = await this.propertiesRepository.find();
-        const bookingsData: Partial<Booking>[] = [];
-
-        // Seed bookings for specific user
-         if (specificUser) {
-            for (let i = 0; i < 3; i++) {
-                const property = properties[Math.floor(Math.random() * properties.length)];
-                const startDate = new Date();
-                startDate.setDate(startDate.getDate() + Math.floor(Math.random() * 30));
-                const endDate = new Date(startDate);
-                endDate.setDate(endDate.getDate() + Math.floor(Math.random() * 7) + 1);
-
-                 bookingsData.push({
-                    guest: specificUser,
-                    property,
-                    startDate,
-                    endDate,
-                    totalPrice: property.price * 5,
-                    status: 'confirmed',
-                });
-            }
+        // Add some extra random properties
+        for (let i = 0; i < 10; i++) {
+            const host = hosts[Math.floor(Math.random() * hosts.length)];
+            propertiesData.push({
+                title: `Extra Premium ${categories[i % categories.length]}`,
+                description: 'A specially curated space for premium stay experiences.',
+                price: Math.floor(Math.random() * 100000) + 50000,
+                location: locations[i % locations.length],
+                lga: lgas[i % lgas.length],
+                owner: host,
+                status: 'active',
+                images: [imagesList[i % imagesList.length]],
+                amenities: ['Wifi', 'Pool', 'AC', 'Security'],
+                rating: 4.5 + Math.random() * 0.5,
+                reviewCount: Math.floor(Math.random() * 40),
+                bedrooms: 3,
+                bathrooms: 3,
+                guests: 6,
+            });
         }
 
-        for (let i = 0; i < 20; i++) {
+        const propertiesEntities = this.propertiesRepository.create(propertiesData as any);
+        return await this.propertiesRepository.save(propertiesEntities);
+    }
+
+    private async seedBookings(users: User[], properties: Property[]) {
+        this.logger.log('Seeding initial bookings...');
+        const guests = users.filter(u => u.role === UserRole.USER);
+        const bookingsData: Partial<Booking>[] = [];
+
+        for (let i = 0; i < 15; i++) {
             const guest = guests[Math.floor(Math.random() * guests.length)];
             const property = properties[Math.floor(Math.random() * properties.length)];
-
+            
             const startDate = new Date();
-            startDate.setDate(startDate.getDate() + Math.floor(Math.random() * 30));
+            startDate.setDate(startDate.getDate() + Math.floor(Math.random() * 15));
             const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + Math.floor(Math.random() * 7) + 1);
+            endDate.setDate(endDate.getDate() + 3);
 
             bookingsData.push({
                 guest,
                 property,
                 startDate,
                 endDate,
-                totalPrice: property.price * 5, 
-                status: ['pending', 'confirmed', 'cancelled', 'completed'][Math.floor(Math.random() * 4)],
+                totalPrice: property.price * 3,
+                status: 'confirmed',
             });
         }
 
-        const bookings = this.bookingsRepository.create(bookingsData as any);
-        await this.bookingsRepository.save(bookings);
+        const bookingsEntities = this.bookingsRepository.create(bookingsData as any);
+        await this.bookingsRepository.save(bookingsEntities);
     }
 
-    private async seedFavorites() {
-        const existingFavorites = await this.favoritesRepository.count();
-        if (existingFavorites > 0) return;
+    private async seedFavorites(users: User[], properties: Property[]) {
+        this.logger.log('Seeding initial favorites...');
+        const guests = users.filter(u => u.role === UserRole.USER);
+        const favoritesData: Partial<Favorite>[] = [];
 
-        this.logger.log('Seeding favorites...');
-        const user = await this.usersRepository.findOne({ where: { email: 'user@test.com' } });
-        const properties = await this.propertiesRepository.find();
-
-        if (user && properties.length > 0) {
-            const favoritesData: Partial<Favorite>[] = [];
-
-            // Add 5 random favorites for the test user
-            for (let i = 0; i < 5; i++) {
-                const property = properties[Math.floor(Math.random() * properties.length)];
-                favoritesData.push({
-                    user,
-                    property
-                });
+        for (const guest of guests.slice(0, 10)) {
+            const randomProps = properties.sort(() => 0.5 - Math.random()).slice(0, 3);
+            for (const prop of randomProps) {
+                favoritesData.push({ user: guest, property: prop });
             }
-
-            const favorites = this.favoritesRepository.create(favoritesData as any);
-            await this.favoritesRepository.save(favorites);
         }
-    }
 
+        const favoritesEntities = this.favoritesRepository.create(favoritesData as any);
+        await this.favoritesRepository.save(favoritesEntities);
+    }
 
     async fixImages() {
-        this.logger.log('Checking and fixing missing images...');
-
-        // Fix Users
-        const users = await this.usersRepository.find();
-        const userImages = [
-            'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80',
-            'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80',
-            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80',
-            'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80',
-            'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80',
-            'https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80'
-        ];
-
-        for (const user of users) {
-            if (!user.profileImage) {
-                user.profileImage = userImages[Math.floor(Math.random() * userImages.length)];
-                await this.usersRepository.save(user);
-            }
-        }
-
-        // Fix Properties
-        const properties = await this.propertiesRepository.find();
-        const propertyImages = [
-             'https://images.unsplash.com/photo-1600596542815-22b4899975d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-             'https://images.unsplash.com/photo-1580587771525-78b9dba3b91d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-        ];
-
-        for (const prop of properties) {
-            if (!prop.images || prop.images.length === 0) {
-                prop.images = [
-                    propertyImages[Math.floor(Math.random() * propertyImages.length)],
-                    propertyImages[Math.floor(Math.random() * propertyImages.length)]
-                ];
-                await this.propertiesRepository.save(prop);
-            }
-        }
-
-        this.logger.log('Fixed missing images.');
+        // Implementation similar to previous but ensure it works with current entities
+        this.logger.log('Fixing images (skipping as seeding provides them)...');
     }
 }

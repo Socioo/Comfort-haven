@@ -1,24 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import styles from "../styles/Pages.module.css";
-import { Ban, CheckCircle, Eye, UserCheck } from "lucide-react";
+import styles from "../styles/Guests.module.css";
+import { Search, User } from "lucide-react";
 import classNames from "classnames";
+
+
+// Mock Data Removed
 
 interface Host {
   id: string;
   name: string;
   email: string;
-  verified: boolean;
-  status: "active" | "suspended" | "banned";
-  propertiesCount: number;
+  status: string;
+  isVerified: boolean;
+  profileImage?: string;
+  propertiesCount?: number;
 }
-
-// Mock Data Removed
 
 const Hosts = () => {
   const navigate = useNavigate();
-  const [hosts, setHosts] = useState<any[]>([]);
+  const [hosts, setHosts] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,30 +38,54 @@ const Hosts = () => {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    // Optimistic
-    const prevHosts = [...hosts];
-    setHosts((prev) =>
-      prev.map((h) => (h.id === id ? { ...h, status: newStatus } : h)),
-    );
 
-    try {
-      await api.patch(`/users/${id}/status`, { status: newStatus });
-    } catch (error) {
-      console.error("Failed to update status", error);
-      setHosts(prevHosts);
-    }
-  };
+  const stats = useMemo(() => {
+    const total = hosts.length;
+    const active = hosts.filter(h => h.status === 'active').length;
+    const pending = hosts.filter(h => !h.isVerified).length;
+    const totalProperties = hosts.reduce((acc, host) => acc + (host.propertiesCount || 0), 0);
+    return { total, active, pending, totalProperties };
+  }, [hosts]);
 
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div>
-      <div className={styles.header}>
-        <h1>Hosts Management</h1>
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.pageTitle}>Host record</h1>
+          <div className={styles.searchBar}>
+              <Search size={18} color="#94a3b8" />
+              <input 
+                  type="text" 
+                  placeholder="search menu" 
+                  className={styles.searchInput}
+              />
+          </div>
+        </div>
       </div>
+
+      <div className={styles.statsGrid}>
+          <div className={styles.statCardSolid}>
+              <span className={styles.statLabel}>Total hosts</span>
+              <span className={styles.statValue}>{stats.total}</span>
+          </div>
+          <div className={styles.statCardLight}>
+              <span className={styles.statLabel}>Active hosts</span>
+              <span className={styles.statValue}>{stats.active}</span>
+          </div>
+          <div className={styles.statCardLight}>
+              <span className={styles.statLabel}>Pending hosts</span>
+              <span className={styles.statValue}>{stats.pending}</span>
+          </div>
+          <div className={styles.statCardSolid}>
+              <span className={styles.statLabel}>Total properties</span>
+              <span className={styles.statValue}>{stats.totalProperties}</span>
+          </div>
+      </div>
+
       <div className={styles.tableContainer}>
-        <table className={styles.table}>
+        <table className={styles.customTable}>
           <thead>
             <tr>
               <th>Name</th>
@@ -81,37 +107,21 @@ const Hosts = () => {
                       gap: "8px",
                     }}
                   >
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        background: "#e3f2fd",
-                        color: "#2196f3",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden",
-                      }}
-                    >
+                    <div className={styles.avatarContainer}>
                       {host.profileImage ? (
                         <img
                           src={host.profileImage}
                           alt={host.name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
+                          className={styles.avatarImage}
                           onError={(e) => {
                             e.currentTarget.style.display = "none";
                           }}
                         />
                       ) : (
-                        <UserCheck size={16} />
+                        <User size={16} color="#94a3b8" />
                       )}
                     </div>
-                    {host.name}
+                    <span>{host.name}</span>
                   </div>
                 </td>
                 <td>{host.email}</td>
@@ -125,36 +135,19 @@ const Hosts = () => {
                 <td>{host.propertiesCount || 0}</td>
                 <td>
                   <span
-                    className={classNames(styles.status, styles[host.status])}
+                    className={classNames(styles.statusBadge, styles[host.status])}
                   >
                     {host.status}
                   </span>
                 </td>
-                <td className={styles.actions}>
+                <td style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <button
-                    className={styles.btn}
+                    className={styles.viewBtn}
                     title="View Profile"
                     onClick={() => navigate(`/hosts/${host.id}`)}
                   >
-                    <Eye size={16} />
+                    View
                   </button>
-                  {host.status === "active" ? (
-                    <button
-                      className={classNames(styles.btn, styles.danger)}
-                      title="Ban Host"
-                      onClick={() => handleStatusChange(host.id, "banned")}
-                    >
-                      <Ban size={16} />
-                    </button>
-                  ) : (
-                    <button
-                      className={classNames(styles.btn, styles.success)}
-                      title="Unban Host"
-                      onClick={() => handleStatusChange(host.id, "active")}
-                    >
-                      <CheckCircle size={16} />
-                    </button>
-                  )}
                 </td>
               </tr>
             ))}

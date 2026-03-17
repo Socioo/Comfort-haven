@@ -1,18 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
-import styles from "../styles/Pages.module.css"; // Reusing existing styles or create new specific ones if needed
-import {
-  ArrowLeft,
-  User,
-  Mail,
-  Shield,
-  Calendar,
-  Clock,
-  CheckCircle,
-  Ban,
-} from "lucide-react";
+import styles from "../styles/Guests.module.css";
 import classNames from "classnames";
+import { ArrowLeft, User } from "lucide-react";
 
 interface UserDetail {
   id: string;
@@ -27,10 +18,21 @@ interface UserDetail {
   phone?: string;
 }
 
+interface Property {
+  id: string;
+  title: string;
+  location: string;
+  price: number;
+  status: string;
+  images?: string[];
+}
+
 const UserDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // Default values to exactly match Figma screenshot UI mock if undefined
   const [user, setUser] = useState<UserDetail | null>(null);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -39,6 +41,15 @@ const UserDetails = () => {
       try {
         const response = await api.get(`/users/${id}`);
         setUser(response.data);
+        
+        if (response.data.role === 'host') {
+            try {
+                const propsRes = await api.get(`/properties/host/${id}`);
+                setProperties(propsRes.data);
+            } catch (err) {
+                console.error("Failed to fetch host properties", err);
+            }
+        }
       } catch (err) {
         console.error("Failed to fetch user details", err);
         setError("Failed to load user details.");
@@ -50,15 +61,40 @@ const UserDetails = () => {
     if (id) fetchUser();
   }, [id]);
 
+  const handleToggleSuspend = async () => {
+      const newStatus = user?.status === 'active' ? 'suspended' : 'active';
+      try {
+          await api.patch(`/users/${id}/status`, { status: newStatus });
+          setUser(prev => prev ? { ...prev, status: newStatus } : null);
+      } catch (error) {
+          console.error("Failed to update status", error);
+          alert("Failed to update user status.");
+      }
+  };
+
+  const handleToggleBan = async () => {
+      const newStatus = user?.status === 'banned' ? 'active' : 'banned';
+      try {
+          await api.patch(`/users/${id}/status`, { status: newStatus });
+          setUser(prev => prev ? { ...prev, status: newStatus } : null);
+      } catch (error) {
+          console.error("Failed to update status", error);
+          alert("Failed to update user status.");
+      }
+  };
+
   if (loading) return <div>Loading...</div>;
-  if (error) return <div className={styles.error}>{error}</div>;
+  if (error) return <div style={{ color: 'red' }}>{error}</div>;
   if (!user) return <div>User not found</div>;
 
+  const mockPhone = user.phone || "+234 90377272"; // Mock matching Figma
+  const daysJoined = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 3600 * 24));
+  const joinedText = daysJoined === 0 ? "Today" : `last ${daysJoined} days`;
+
   return (
-    <div className={styles.container}>
+    <div className={styles.detailContainer}>
       <button
         onClick={() => navigate(-1)}
-        className={styles.backBtn}
         style={{
           marginBottom: "20px",
           display: "flex",
@@ -67,177 +103,119 @@ const UserDetails = () => {
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: "#666",
+          color: "#64748b",
+          fontSize: "1rem",
+          fontWeight: 500,
         }}
       >
         <ArrowLeft size={20} /> Back
       </button>
 
-      <div className={styles.card} style={{ padding: "32px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "24px" }}>
-          <div
-            style={{
-              width: "100px",
-              height: "100px",
-              borderRadius: "50%",
-              background: "#f0f0f0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-            }}
-          >
-            {user.profileImage ? (
-              <img
-                src={user.profileImage}
-                alt={user.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  // Could forcefully show icon via state or DOM, but simplistic approach:
-                  // Since we can't easily swap to the icon component here without state,
-                  // let's try a reliable placeholder service if the original fails, or hide it.
-                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`;
-                }}
-              />
-            ) : (
-              <User size={48} color="#ccc" />
-            )}
-          </div>
-
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div>
-                <h1 style={{ margin: "0 0 8px 0" }}>{user.name}</h1>
-                <div
-                  style={{ display: "flex", gap: "12px", alignItems: "center" }}
-                >
-                  <span
-                    className={classNames(styles.status, styles[user.status])}
-                  >
-                    {user.status}
-                  </span>
-                  <span
-                    style={{
-                      background: "#eee",
-                      padding: "4px 8px",
-                      borderRadius: "4px",
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {user.role}
-                  </span>
-                  {user.isVerified && (
-                    <span
-                      style={{
-                        color: "green",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      <CheckCircle size={14} /> Verified
-                    </span>
-                  )}
-                </div>
-              </div>
+      <div className={styles.detailCard}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '32px' }}>
+            <div className={styles.detailAvatar} style={{ marginBottom: 0 }}>
+                {user.profileImage ? (
+                    <img src={user.profileImage} alt={user.name} className={styles.avatarImage} />
+                ) : (
+                    <User size={40} color="#94a3b8" />
+                )}
             </div>
-
-            <div
-              style={{
-                marginTop: "32px",
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                gap: "24px",
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#666",
-                    marginBottom: "4px",
-                    fontSize: "14px",
-                  }}
-                >
-                  Email
-                </label>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Mail size={16} color="#666" />
-                  <span>{user.email}</span>
-                </div>
-              </div>
-
-              {user.phone && (
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#666",
-                      marginBottom: "4px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Phone
-                  </label>
-                  <span>{user.phone}</span>
-                </div>
-              )}
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#666",
-                    marginBottom: "4px",
-                    fontSize: "14px",
-                  }}
-                >
-                  Joined
-                </label>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Calendar size={16} color="#666" />
-                  <span>{new Date(user.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#666",
-                    marginBottom: "4px",
-                    fontSize: "14px",
-                  }}
-                >
-                  Last Active
-                </label>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Clock size={16} color="#666" />
-                  <span>
-                    {user.lastActiveAt
-                      ? new Date(user.lastActiveAt).toLocaleString()
-                      : "Never"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+            <h1 className={styles.detailName} style={{ margin: 0 }}>{user.name}</h1>
         </div>
+        
+        <div className={styles.detailList}>
+            <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Date joined:</span>
+                <span className={styles.detailValue}>{joinedText}</span>
+            </div>
+            
+            <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Bookings Volume:</span>
+                <span className={styles.detailValue}>0</span>
+            </div>
+            
+            <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Status:</span>
+                <span className={styles.detailValue}>
+                    <span className={classNames(styles.statusBadge, styles[user.status])}>
+                        {user.status}
+                    </span>
+                </span>
+            </div>
+            
+            <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Reported:</span>
+                <span className={styles.detailValue}>No</span>
+            </div>
+            
+            <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Email:</span>
+                <span className={styles.detailValue}>{user.email}</span>
+            </div>
+            
+            <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Phone number:</span>
+                <span className={styles.detailValue}>{mockPhone}</span>
+            </div>
+        </div>
+      </div>
+
+      {user.role === 'host' && (
+        <div className={styles.detailCard} style={{ marginTop: '24px' }}>
+          <h2 style={{ fontSize: '1.25rem', color: '#334155', marginTop: 0, marginBottom: '24px' }}>
+            Properties ({properties.length})
+          </h2>
+          {properties.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+                {properties.map(property => (
+                    <div key={property.id} style={{ 
+                        border: '1px solid #e2e8f0', 
+                        borderRadius: '12px', 
+                        overflow: 'hidden',
+                        cursor: 'pointer'
+                    }} onClick={() => navigate(`/properties/${property.id}`)}>
+                        <div style={{ width: '100%', height: '160px', background: '#f1f5f9' }}>
+                            {property.images && property.images.length > 0 ? (
+                                <img src={property.images[0]} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : null}
+                        </div>
+                        <div style={{ padding: '16px' }}>
+                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#0f172a' }}>{property.title}</h3>
+                            <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>{property.location}</p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                                <span style={{ fontWeight: 600, color: '#2f95dc' }}>₦{property.price}</span>
+                                <span className={classNames(styles.statusBadge, styles[property.status === 'pending' ? 'suspended' : property.status])}>
+                                    {property.status}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+          ) : (
+             <p style={{ color: '#64748b', margin: 0 }}>This host has no properties yet.</p>
+          )}
+        </div>
+      )}
+
+      <div className={styles.suspendContainer} style={{ marginTop: '24px' }}>
+          <div style={{ display: 'flex', gap: '16px' }}>
+              <button 
+                  className={styles.suspendBtn} 
+                  onClick={handleToggleSuspend}
+                  style={{ background: user.status === 'suspended' ? '#16a34a' : '#2f95dc' }}
+                  disabled={user.status === 'banned'}
+              >
+                  {user.status === 'suspended' ? 'Restore account' : 'Suspend account'}
+              </button>
+              <button 
+                  className={styles.suspendBtn} 
+                  onClick={handleToggleBan}
+                  style={{ background: user.status === 'banned' ? '#16a34a' : '#ef4444' }}
+              >
+                  {user.status === 'banned' ? 'Unban account' : 'Ban account'}
+              </button>
+          </div>
       </div>
     </div>
   );

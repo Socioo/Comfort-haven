@@ -21,6 +21,10 @@ export const adminAPI = {
     api.patch(`/users/${id}/appearance`, data),
   updatePassword: (id: string, data: any) =>
     api.patch(`/users/${id}/password`, data),
+  getUnreadNotifications: () => api.get('/notifications/unread-count'),
+  getNotifications: () => api.get('/notifications'),
+  markNotificationAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  getInboxSummary: () => api.get('/messages/inbox'),
 };
 
 export default api;

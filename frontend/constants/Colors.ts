@@ -32,4 +32,6 @@ export default {
   black: '#000000',
   lightGray: '#F0F0F0',
   darkGray: '#999999',
+  overlay: 'rgba(255, 255, 255, 0.9)',
+  shadow: '#000000',
 };

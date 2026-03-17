@@ -4,17 +4,33 @@ import { Repository } from 'typeorm';
 import { Property } from './entities/property.entity';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PropertiesService {
     constructor(
         @InjectRepository(Property)
         private propertiesRepository: Repository<Property>,
+        private notificationsService: NotificationsService,
     ) { }
 
-    create(createPropertyDto: CreatePropertyDto) {
+    async create(createPropertyDto: CreatePropertyDto) {
         const property = this.propertiesRepository.create(createPropertyDto);
-        return this.propertiesRepository.save(property);
+        const savedProperty = await this.propertiesRepository.save(property);
+        
+        // Notify admins about new property submission
+        try {
+            await this.notificationsService.notifyAdmins({
+                type: 'info',
+                title: 'New Property Submission',
+                message: `A new property "${savedProperty.title}" has been submitted for approval.`,
+                metadata: { propertyId: savedProperty.id }
+            });
+        } catch (e) {
+            console.error('Failed to send notification', e);
+        }
+
+        return savedProperty;
     }
 
     findAll(status?: string) {

@@ -12,6 +12,7 @@ import { AuthProvider } from '@/contexts/auth';
 import { FavoritesProvider } from '@/contexts/favorites';
 import { PropertiesProvider } from '@/contexts/properties';
 import { BookingsProvider } from '@/contexts/bookings';
+import Colors from '@/constants/Colors';
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -38,9 +39,24 @@ export default function RootLayout() {
     return null;
   }
 
+  const colorScheme = useColorScheme();
+
+  const ComfortHavenTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: Colors.primary,
+      background: Colors.background,
+      card: Colors.card,
+      text: Colors.text,
+      border: Colors.border,
+      notification: Colors.accent,
+    },
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={DefaultTheme}>
+      <ThemeProvider value={ComfortHavenTheme}>
         <AuthProvider>
           <FavoritesProvider>
             <PropertiesProvider>

@@ -1,61 +1,124 @@
 .sidebar {
     width: 250px;
-    background-color: var(--card-bg);
-    border-right: 1px solid var(--border-color);
+    background-color: var(--card-bg); /* Changed from #FFFFFF */
     display: flex;
     flex-direction: column;
     height: 100vh;
     position: fixed;
     left: 0;
     top: 0;
+    z-index: 1000;
+    border-right: 1px solid var(--border-color); /* Changed from rgba(0, 0, 0, 0.05) */
 }
 
 .brand {
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--border-color);
+    padding: 32px 24px;
 }
 
 .brand h2 {
     margin: 0;
+    color: var(--text-main);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.brand h2 span {
     color: var(--primary-color);
-    font-size: 1.25rem;
 }
 
 .nav {
     display: flex;
     flex-direction: column;
-    padding: var(--spacing-md);
-    gap: var(--spacing-xs);
+    padding: 0 16px;
+    gap: 4px;
+    flex: 1;
+    overflow-y: auto;
 }
 
-.link {
+.link, .menuHeader {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
+    gap: 12px;
+    padding: 12px 16px;
     text-decoration: none;
     color: var(--text-light);
-    border-radius: var(--radius-md);
+    border-radius: 8px;
     transition: all 0.2s;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
 }
 
-.link:hover {
-    background-color: var(--bg-color);
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.link:hover, .menuHeader:hover {
+    background-color: var(--nav-hover-bg); /* Changed from rgba(47, 149, 220, 0.05) */
     color: var(--primary-color);
 }
 
-.active {
-    background-color: var(--primary-color);
-    color: #FFFFFF;
+.active, .menuHeader.active {
+    background-color: var(--sidebar-active-bg) !important; /* Changed from rgba(47, 149, 220, 0.1) */
+    color: var(--primary-color) !important;
 }
 
-.active:hover {
-    background-color: var(--primary-color);
-    color: var(--white);
+.active svg, .menuHeader.active svg {
+    color: var(--primary-color) !important;
 }
 
-.divider {
-    height: 1px;
-    background-color: var(--border-color);
-    margin: var(--spacing-md) 0;
+.subMenu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0 12px 52px;
+}
+
+.subLink {
+    padding: 10px 12px;
+    text-decoration: none;
+    color: var(--text-light); /* Changed from #888888 */
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.subLink:hover {
+    color: var(--primary-color);
+}
+
+.subLink.active {
+    color: var(--primary-color) !important;
+    font-weight: 700;
+}
+
+.bottomSection {
+    padding: 24px 16px;
+    border-top: 1px solid var(--border-color); /* Changed from rgba(0, 0, 0, 0.03) */
+}
+
+.logoutBtn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+    background-color: var(--nav-hover-bg); /* Changed from rgba(0, 0, 0, 0.02) */
+    color: var(--error-color);
 }

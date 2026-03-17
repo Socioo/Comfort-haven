@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: "#000",
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#fff",
+    color: Colors.white,
   },
   messageContent: {
     flex: 1,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   badgeText: {
-    color: "white",
+    color: Colors.white,
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   btnText: {
-    color: "white",
+    color: Colors.white,
     fontWeight: "bold",
     fontSize: 16,
   },
