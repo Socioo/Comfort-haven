@@ -144,7 +144,7 @@
   color: var(--text-main);
   outline: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: var(--card-bg);
+  background-color: var(--input-bg);
   box-sizing: border-box;
 }
 
@@ -244,4 +244,81 @@ input:focus + .slider {
 
 input:checked + .slider:before {
   transform: translateX(20px);
+}
+
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.avatarContainer {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 16px;
+  background-color: var(--bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid var(--card-bg); /* Adjusted from --white to match card/background */
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.avatarPreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarInitials {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.uploadOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatarContainer:hover .uploadOverlay {
+  opacity: 1;
+}
+
+.uploadText {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.fileInput {
+  display: none;
+}
+
+.avatarActions {
+  text-align: center;
+}
+
+.avatarActions p {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-top: 8px;
 }

@@ -56,18 +56,18 @@
 }
 
 .status.active {
-    background-color: rgba(76, 175, 80, 0.1);
+    background-color: rgba(76, 175, 80, 0.15);
     color: var(--success-color);
 }
 
 .status.pending {
-    background-color: rgba(255, 152, 0, 0.1);
+    background-color: rgba(255, 152, 0, 0.15);
     color: var(--warning-color);
 }
 
 .status.suspended,
 .status.banned {
-    background-color: rgba(244, 67, 54, 0.1);
+    background-color: rgba(211, 47, 47, 0.15);
     color: var(--error-color);
 }
 
@@ -105,6 +105,12 @@
 
 .btn.danger {
     background-color: var(--error-color);
+    color: white;
+    border: none;
+}
+
+.btn.warning {
+    background-color: var(--warning-color);
     color: white;
     border: none;
 }

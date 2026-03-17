@@ -1,56 +1,409 @@
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: var(--spacing-lg);
-    margin-top: var(--spacing-lg);
+.dashboard {
+    padding: var(--spacing-xl);
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-.card {
+.header {
+    margin-bottom: 32px;
+}
+
+.header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.header p {
+    color: var(--text-light);
+    margin-top: 8px;
+    font-size: 1.1rem;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.statCard {
     background: var(--card-bg);
-    padding: var(--spacing-lg);
-    border-radius: var(--radius-md);
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.statCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.statHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.statIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.statValue {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.statLabel {
+    color: var(--text-light);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.mainGrid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 32px;
+}
+
+@media (max-width: 1100px) {
+    .mainGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chartContainer {
+    background: var(--card-bg);
+    padding: 32px;
+    border-radius: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    margin-bottom: 32px;
+}
+
+.chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.chartTitle {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.revenueCard {
+    background: linear-gradient(135deg, var(--primary-color), #2077b6);
+    color: white;
+    padding: 32px;
+    border-radius: 20px;
+    margin-bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.revenueLabel {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.revenueValue {
+    font-size: 3rem;
+    font-weight: 800;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.activityCard {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    margin-bottom: 32px;
+}
+
+.sectionTitle {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.viewAllLink {
+    text-decoration: none;
+    color: var(--text-light);
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-top: 12px;
+    display: inline-block;
+}
+
+.viewAllLink:hover {
+    color: var(--primary-color);
+}
+
+.hostCardContainer {
+    background: var(--card-bg);
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.hostAvatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    background: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-light);
+    flex-shrink: 0;
+}
+
+.hostCardInfo {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.hostCardName {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.hostCardMeta {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 12px;
+}
+
+.hostCardActions {
+    display: flex;
+    gap: 8px;
+}
+
+.btnLight {
+    padding: 6px 16px;
+    background: var(--bg-color);
+    color: var(--text-main);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s;
+    flex: 1;
+}
+
+.btnLight:hover {
+    background: var(--nav-hover-bg);
+}
+
+.btnDanger {
+    padding: 6px 16px;
+    background: var(--error-color);
+    color: white;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: opacity 0.2s;
+    flex: 1;
+}
+
+.btnDanger:hover {
+    opacity: 0.9;
+}
+
+.propCardContainer {
+    background: var(--card-bg);
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 16px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
 }
 
-.cardHeader {
+.propCardTop {
     display: flex;
-    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.propAvatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    background: rgba(255, 160, 0, 0.1);
+    color: var(--warning-color);
+    display: flex;
     align-items: center;
-    margin-bottom: var(--spacing-md);
+    justify-content: center;
+    flex-shrink: 0;
 }
 
-.cardTitle {
-    font-size: 0.875rem;
-    color: var(--text-light);
-    font-weight: 500;
+.propCardInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.cardValue {
-    font-size: 2rem;
-    font-weight: 600;
+.propCardTitle {
+    font-size: 1rem;
+    font-weight: 700;
     color: var(--text-main);
-    margin: 0;
 }
 
-.cardTrend {
-    font-size: 0.875rem;
-    margin-top: var(--spacing-sm);
+.propCardSubtitle {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0px;
 }
 
-.trendUp {
-    color: var(--success-color);
+.propCardTime {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin: 2px 0 6px;
 }
 
-.trendDown {
+.cardDivider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 0 0 16px 0;
+}
+
+.propCardActions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.btnLightFull {
+    flex: 1;
+    padding: 8px;
+    background: var(--bg-color);
+    color: var(--text-main);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-align: center;
+    transition: background 0.2s;
+}
+
+.btnLightFull:hover {
+    background: var(--nav-hover-bg);
+}
+
+.btnDangerFull {
+    flex: 1;
+    padding: 8px;
+    background: var(--error-color);
+    color: white;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-align: center;
+    transition: opacity 0.2s;
+}
+
+.btnDangerFull:hover {
+    opacity: 0.9;
+}
+
+.tag {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-weight: 600;
+    text-transform: capitalize;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.tag.pending {
+    background: rgba(255, 160, 0, 0.15);
+    color: var(--warning-color);
+}
+
+.tag.inactive, .tag.unapproved {
+    background: rgba(211, 47, 47, 0.15);
     color: var(--error-color);
 }
 
-.icon {
-    color: var(--primary-color);
-    padding: 8px;
-    background-color: var(--bg-color);
+.tag.new, .tag.active {
+    background: rgba(76, 175, 80, 0.15);
+    color: var(--success-color);
+}
+.revenueFilters {
+    display: flex;
+    gap: 16px;
+}
+
+.dateField {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dateField label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.dateInput {
+    padding: 6px 10px;
     border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+    filter: invert(1);
 }

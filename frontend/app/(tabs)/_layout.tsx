@@ -91,6 +91,7 @@ export default function TabLayout() {
         options={{
           title: "Services",
           tabBarIcon: ({ color }) => <Briefcase color={color} />,
+          href: isHostOrAdmin ? null : undefined, // Hide if host/admin
         }}
       />
       <Tabs.Screen

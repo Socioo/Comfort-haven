@@ -7,8 +7,17 @@ import Properties from "./pages/Properties";
 import Bookings from "./pages/Bookings";
 import UserDetails from "./pages/UserDetails";
 import PropertyDetails from "./pages/PropertyDetails";
-import Settings from "./pages/Settings";
+import BookingDetails from "./pages/BookingDetails";
+import AdminSettings from "./pages/AdminSettings";
+import AppSettings from "./pages/AppSettings";
 import Team from "./pages/Team";
+import Support from "./pages/Support";
+import Payouts from "./pages/Payouts";
+import PayoutDetails from "./pages/PayoutDetails";
+import Refunds from "./pages/Refunds";
+import RefundDetails from "./pages/RefundDetails";
+import PaymentSettings from "./pages/PaymentSettings";
+import Notifications from "./pages/Notifications";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -32,10 +41,19 @@ function App() {
               <Route path="properties" element={<Properties />} />
               <Route path="properties/:id" element={<PropertyDetails />} />
               <Route path="bookings" element={<Bookings />} />
+              <Route path="bookings/:id" element={<BookingDetails />} />
               <Route path="guests/:id" element={<UserDetails />} />
               <Route path="hosts/:id" element={<UserDetails />} />
               <Route path="team" element={<Team />} />
-              <Route path="settings" element={<Settings />} />
+              <Route path="settings" element={<AppSettings />} />
+              <Route path="admin-settings" element={<AdminSettings />} />
+              <Route path="support" element={<Support />} />
+              <Route path="payouts" element={<Payouts />} />
+              <Route path="payouts/:id" element={<PayoutDetails />} />
+              <Route path="refunds" element={<Refunds />} />
+              <Route path="refunds/:id" element={<RefundDetails />} />
+              <Route path="payment-settings" element={<PaymentSettings />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
           </Route>
 

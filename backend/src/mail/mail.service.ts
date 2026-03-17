@@ -1,0 +1,146 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as dns from 'dns';
+
+@Injectable()
+export class MailService {
+  private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(MailService.name);
+
+  constructor(private configService: ConfigService) {
+    // Force IPv4 as the default for all DNS lookups in this process
+    if (dns.setDefaultResultOrder) {
+      dns.setDefaultResultOrder('ipv4first');
+    }
+  }
+
+  private async ensureTransporter() {
+    if (this.transporter) return;
+
+    const host = this.configService.get('MAIL_HOST');
+    const user = this.configService.get('MAIL_USER');
+    const pass = this.configService.get('MAIL_PASS');
+
+    if (!user || !pass) {
+      this.logger.warn('No SMTP credentials found in ELV. Creating a test account with Ethereal...');
+      const testAccount = await nodemailer.createTestAccount();
+      this.transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+      this.logger.log('Test account created. Emails will be available for preview via Ethereal.');
+    } else {
+      const port = Number(this.configService.get('MAIL_PORT')) || 587;
+      const secureConfig = this.configService.get('MAIL_SECURE');
+      const secure = secureConfig === true || secureConfig === 'true';
+
+      this.transporter = nodemailer.createTransport({
+        host: host || 'smtp.gmail.com',
+        port,
+        secure, // true for 465, false for 587
+        auth: { user, pass },
+        family: 4,
+        lookup: (hostname, options, callback) => {
+          dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+            this.logger.log(`DNS Lookup result: ${hostname} => ${address} (IPv${family})`);
+            callback(err, address, family);
+          });
+        },
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 20000,
+      } as any);
+
+      // Verify connection immediately
+      this.transporter.verify((error) => {
+        if (error) {
+          this.logger.error(`SMTP Connection Check FAILED: ${error.message}`);
+          // If we fail, try to fall back to test account if in development
+          if (process.env.NODE_ENV === 'development') {
+             this.logger.warn('Real SMTP failed. Falling back to Ethereal for dev preview...');
+             this.transporter = undefined as any; // Forces recreate with Ethereal on next ensure
+          }
+        } else {
+          this.logger.log('SUCCESS: SMTP Server is connected and ready (Forced IPv4)');
+        }
+      });
+    }
+  }
+
+  async sendInvitationEmail(email: string, name: string, password: string, customMessage?: string) {
+    await this.ensureTransporter();
+
+    const logoPath = path.join(process.cwd(), '..', 'frontend', 'assets', 'images', 'icon.png');
+    
+    const mailOptions = {
+      from: `"Comfort Haven" <${this.configService.get('MAIL_USER') || 'noreply@comfort-haven.com'}>`,
+      to: email,
+      subject: 'Welcome to Comfort Haven - Your Admin Invitation',
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+          <div style="background-color: #4a90e2; padding: 30px; text-align: center;">
+            <img src="cid:logo" alt="Comfort Haven Logo" style="width: 80px; height: 80px; margin-bottom: 10px; border-radius: 15px;" />
+            <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to Comfort Haven</h1>
+          </div>
+          <div style="padding: 40px; color: #333;">
+            <h2 style="color: #4a90e2; margin-top: 0;">Hello, ${name}!</h2>
+            <p style="font-size: 16px; line-height: 1.6;">
+              ${customMessage || 'You have been invited to join the Comfort Haven administration team. We are excited to have you on board!'}
+            </p>
+            
+            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 30px 0;">
+              <p style="margin: 0 0 10px 0; font-weight: bold; color: #666; font-size: 14px; text-transform: uppercase;">Login Credentials</p>
+              <div style="display: flex; margin-bottom: 10px;">
+                <span style="color: #888; width: 80px;">Email:</span>
+                <span style="font-family: monospace; font-weight: bold;">${email}</span>
+              </div>
+              <div style="display: flex;">
+                <span style="color: #888; width: 80px;">Password:</span>
+                <span style="font-family: monospace; font-weight: bold;">${password}</span>
+              </div>
+            </div>
+
+            <p style="background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 6px; border-left: 4px solid #ffeeba; font-size: 14px;">
+              <strong>Security Tip:</strong> You will be required to change this temporary password immediately after your first login.
+            </p>
+
+            <div style="text-align: center; margin-top: 40px;">
+              <a href="${this.configService.get('CORS_ORIGIN') || 'http://localhost:5173'}" 
+                 style="background-color: #4a90e2; color: white; padding: 15px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                 Go to Admin Dashboard
+              </a>
+            </div>
+          </div>
+          <div style="background-color: #f1f1f1; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+            <p>&copy; 2026 Comfort Haven Project. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: 'icon.png',
+          path: logoPath,
+          cid: 'logo'
+        }
+      ]
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Invitation email sent: ${info.messageId}`);
+      if (nodemailer.getTestMessageUrl(info)) {
+        this.logger.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send invitation email to ${email}: ${error.message}`);
+    }
+  }
+}

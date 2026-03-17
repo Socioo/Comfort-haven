@@ -8,10 +8,11 @@
     margin-left: 250px;
     background-color: var(--bg-color);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .content {
-    padding: var(--spacing-xl);
-    max-width: 1200px;
-    margin: 0 auto;
+    padding: 32px;
+    flex: 1;
 }

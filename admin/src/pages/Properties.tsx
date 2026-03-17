@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import styles from "../styles/Pages.module.css";
+import listStyles from "../styles/Guests.module.css";
 import {
-  Check,
   X,
-  Eye,
-  AlertTriangle,
+  Search,
   Image as ImageIcon,
   Upload,
   Plus,
@@ -26,6 +25,18 @@ interface Property {
   createdAt: string;
   images?: string[];
 }
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return 'N/A';
+  const d = new Date(dateString);
+  return isNaN(d.getTime()) ? 'N/A' : d.toISOString().split('T')[0];
+};
+
+const formatTime = (dateString?: string) => {
+  if (!dateString) return 'N/A';
+  const d = new Date(dateString);
+  return isNaN(d.getTime()) ? 'N/A' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 const Properties = () => {
   const navigate = useNavigate();
@@ -77,22 +88,7 @@ const Properties = () => {
     }
   };
 
-  const handleStatusChange = async (
-    id: string,
-    newStatus: Property["status"],
-  ) => {
-    const previousProperties = [...properties];
-    setProperties((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
-    );
 
-    try {
-      await api.patch(`/properties/${id}`, { status: newStatus });
-    } catch (error) {
-      console.error("Failed to update status", error);
-      setProperties(previousProperties);
-    }
-  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -173,25 +169,61 @@ const Properties = () => {
     });
   };
 
+  const stats = useMemo(() => {
+    const total = properties.length;
+    const active = properties.filter(p => p.status === 'active').length;
+    const suspended = properties.filter(p => p.status === 'suspended').length;
+    const pending = properties.filter(p => p.status === 'pending').length;
+    return { total, active, suspended, pending };
+  }, [properties]);
+
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div>
-      <div className={styles.header}>
-        <h1>Properties Management</h1>
-        <div className={styles.controls}>
-          <button
-            className={classNames(styles.btn, styles.primary)}
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus size={18} style={{ marginRight: "8px" }} />
-            Add Property (Admin)
-          </button>
+    <div className={listStyles.container}>
+      <div className={listStyles.pageHeader}>
+        <div className={listStyles.headerLeft}>
+          <h1 className={listStyles.pageTitle}>Property record</h1>
+          <div className={listStyles.searchBar}>
+              <Search size={18} color="var(--text-light)" />
+              <input 
+                  type="text" 
+                  placeholder="search menu" 
+                  className={listStyles.searchInput}
+              />
+          </div>
         </div>
+        <button
+            className={listStyles.viewBtn}
+            style={{ padding: '8px 24px', display: 'flex', alignItems: 'center' }}
+            onClick={() => setIsModalOpen(true)}
+        >
+            <Plus size={18} style={{ marginRight: "8px" }} />
+            Add Property
+        </button>
       </div>
 
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
+      <div className={listStyles.statsGrid}>
+          <div className={listStyles.statCardSolid}>
+              <span className={listStyles.statLabel}>Total properties</span>
+              <span className={listStyles.statValue}>{stats.total}</span>
+          </div>
+          <div className={listStyles.statCardLight}>
+              <span className={listStyles.statLabel}>Active properties</span>
+              <span className={listStyles.statValue}>{stats.active}</span>
+          </div>
+          <div className={listStyles.statCardLight}>
+              <span className={listStyles.statLabel}>Suspended properties</span>
+              <span className={listStyles.statValue}>{stats.suspended}</span>
+          </div>
+          <div className={listStyles.statCardSolid}>
+              <span className={listStyles.statLabel}>Pending approvals</span>
+              <span className={listStyles.statValue}>{stats.pending}</span>
+          </div>
+      </div>
+
+      <div className={listStyles.tableContainer}>
+        <table className={listStyles.customTable}>
           <thead>
             <tr>
               <th>Image</th>
@@ -234,7 +266,7 @@ const Properties = () => {
                         }}
                       />
                     ) : (
-                      <ImageIcon size={16} color="#999" />
+                      <ImageIcon size={16} color="var(--dark-gray)" />
                     )}
                   </div>
                 </td>
@@ -245,64 +277,29 @@ const Properties = () => {
                 <td>
                   <span
                     className={classNames(
-                      styles.status,
-                      styles[property.status],
+                      listStyles.statusBadge,
+                      listStyles[property.status === 'pending' ? 'suspended' : property.status],
                     )}
                   >
                     {property.status}
                   </span>
                 </td>
-                <td>{new Date(property.createdAt).toLocaleDateString()}</td>
-                <td className={styles.actions}>
+                <td>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{formatDate(property.createdAt)}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
+                            {formatTime(property.createdAt)}
+                        </span>
+                    </div>
+                </td>
+                <td style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '100%', minHeight: '80px' }}>
                   <button
-                    className={styles.btn}
+                    className={listStyles.viewBtn}
                     title="View Details"
                     onClick={() => navigate(`/properties/${property.id}`)}
                   >
-                    <Eye size={16} />
+                    View
                   </button>
-                  {property.status === "pending" && (
-                    <>
-                      <button
-                        className={classNames(styles.btn, styles.success)}
-                        onClick={() =>
-                          handleStatusChange(property.id, "active")
-                        }
-                        title="Approve"
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button
-                        className={classNames(styles.btn, styles.danger)}
-                        onClick={() =>
-                          handleStatusChange(property.id, "suspended")
-                        }
-                        title="Reject"
-                      >
-                        <X size={16} />
-                      </button>
-                    </>
-                  )}
-                  {property.status === "active" && (
-                    <button
-                      className={classNames(styles.btn, styles.danger)}
-                      onClick={() =>
-                        handleStatusChange(property.id, "suspended")
-                      }
-                      title="Suspend"
-                    >
-                      <AlertTriangle size={16} />
-                    </button>
-                  )}
-                  {property.status === "suspended" && (
-                    <button
-                      className={classNames(styles.btn, styles.success)}
-                      onClick={() => handleStatusChange(property.id, "active")}
-                      title="Activate"
-                    >
-                      <Check size={16} />
-                    </button>
-                  )}
                 </td>
               </tr>
             ))}

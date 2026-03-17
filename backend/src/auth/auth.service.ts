@@ -19,9 +19,8 @@ export class AuthService {
 
   async signUp(signUpDto: SignUpDto): Promise<AuthResponseDto> {
     // Check if user already exists
-    const existingUser = await this.usersRepository.findOne({
-      where: { email: signUpDto.email },
-    });
+    const email = signUpDto.email.toLowerCase().trim();
+    const existingUser = await this.usersRepository.findOne({ where: { email } });
 
     if (existingUser) {
       throw new ConflictException('Email already exists');
@@ -49,18 +48,26 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    const email = loginDto.email.toLowerCase().trim();
+    console.log('AuthService.login attempt for:', email);
+    
     const user = await this.usersRepository.findOne({
-      where: { email: loginDto.email },
-      select: ['id', 'email', 'name', 'phone', 'password', 'role', 'profileImage', 'isVerified'],
+      where: { email },
+      select: ['id', 'email', 'name', 'phone', 'password', 'role', 'profileImage', 'isVerified', 'mustChangePassword'],
     });
 
     if (!user) {
+      console.log('User not found for email:', email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    console.log('User found, validating password...');
+    console.log(`Debug: Password to check length: ${loginDto.password?.length}`);
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    console.log('Password valid:', isPasswordValid);
 
     if (!isPasswordValid) {
+      console.log(`Debug: Comparison failed. Provided: ${loginDto.password?.length} chars, Stored Hash starts with: ${user.password?.substring(0, 10)}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -179,6 +186,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      mustChangePassword: user.mustChangePassword,
     };
 
     const [at, rt] = await Promise.all([
@@ -201,6 +209,7 @@ export class AuthService {
       role: user.role,
       profileImage: user.profileImage,
       isVerified: user.isVerified,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 

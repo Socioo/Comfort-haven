@@ -9,6 +9,10 @@ import {
   User,
   Star,
   Image as ImageIcon,
+  Check,
+  AlertTriangle,
+  ShieldCheck,
+  ShieldOff
 } from "lucide-react";
 import classNames from "classnames";
 
@@ -42,7 +46,6 @@ const PropertyDetails = () => {
     const fetchProperty = async () => {
       try {
         const response = await api.get(`/properties/${id}`);
-        // Ensure price is a number
         const data = response.data;
         data.price = Number(data.price);
         setProperty(data);
@@ -56,6 +59,22 @@ const PropertyDetails = () => {
 
     if (id) fetchProperty();
   }, [id]);
+
+  const handleStatusChange = async (newStatus: PropertyDetail["status"]) => {
+    if (!property) return;
+    
+    // Optimistic update
+    const previousStatus = property.status;
+    setProperty({ ...property, status: newStatus });
+
+    try {
+      await api.patch(`/properties/${id}`, { status: newStatus });
+    } catch (err) {
+      console.error("Failed to update property status", err);
+      alert("Failed to update status. Please try again.");
+      setProperty({ ...property, status: previousStatus });
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div className={styles.error}>{error}</div>;
@@ -81,7 +100,6 @@ const PropertyDetails = () => {
       </button>
 
       <div className={styles.card} style={{ padding: "0", overflow: "hidden" }}>
-        {/* Image Gallery Preview - Just showing first image largely for now */}
         <div
           style={{
             height: "300px",
@@ -114,7 +132,6 @@ const PropertyDetails = () => {
               <ImageIcon size={64} />
             </div>
           )}
-          {/* Fallback Icon that shows up if img is hidden */}
           <div style={{ position: "absolute", zIndex: 0 }}>
             <ImageIcon size={64} color="#ccc" />
           </div>
@@ -275,16 +292,110 @@ const PropertyDetails = () => {
                       border: "1px solid #ddd",
                       borderRadius: "6px",
                       cursor: "pointer",
+                      marginBottom: "16px"
                     }}
                   >
                     View Host Profile
                   </button>
                 </div>
               ) : (
-                <div style={{ color: "#666", fontStyle: "italic" }}>
+                <div style={{ color: "#666", fontStyle: "italic", marginBottom: "16px" }}>
                   Unknown Host
                 </div>
               )}
+
+              {/* Administrative Actions */}
+              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #eee' }}>
+                <h4 style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Administrative actions
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {property.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => handleStatusChange('active')}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          background: '#dcfce7',
+                          color: '#16a34a',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <ShieldCheck size={18} /> Approve Property
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange('suspended')}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          background: '#fee2e2',
+                          color: '#ef4444',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <ShieldOff size={18} /> Reject Property
+                      </button>
+                    </>
+                  )}
+                  {property.status === 'active' && (
+                    <button
+                      onClick={() => handleStatusChange('suspended')}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: '#fef3c7',
+                        color: '#d97706',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <AlertTriangle size={18} /> Suspend Property
+                    </button>
+                  )}
+                  {property.status === 'suspended' && (
+                    <button
+                      onClick={() => handleStatusChange('active')}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: '#dcfce7',
+                        color: '#16a34a',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Check size={18} /> Activate Property
+                    </button>
+                  )}
+                </div>
+              </div>
 
               <div
                 style={{

@@ -1,105 +1,318 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { 
+    Users, 
+    Home, 
+    TrendingUp, 
+    Clock, 
+    UserCheck, 
+    PlusCircle
+} from "lucide-react";
+import { 
+    AreaChart, 
+    Area, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    Legend
+} from 'recharts';
 import api from "../services/api";
+import classNames from "classnames";
 import styles from "../styles/Dashboard.module.css";
-import { Users, Home, Calendar, Banknote } from "lucide-react";
+import { useTheme } from "../contexts/ThemeContext";
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalHosts: 0,
-    totalProperties: 0,
-    totalBookings: 0,
-    totalRevenue: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const { theme } = useTheme();
+    const [stats, setStats] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [period, setPeriod] = useState('7d');
+    const [revenueStart, setRevenueStart] = useState('');
+    const [revenueEnd, setRevenueEnd] = useState('');
 
-  useEffect(() => {
+    useEffect(() => {
+        fetchStats();
+    }, [period, revenueStart, revenueEnd]);
+
     const fetchStats = async () => {
-      try {
-        const response = await api.get("/stats");
-        setStats(response.data);
-        setError(null);
-      } catch (error) {
-        console.error("Failed to fetch stats", error);
-        setError(
-          "Failed to load dashboard data. Please check backend connection.",
-        );
-      } finally {
-        setLoading(false);
-      }
+        try {
+            let url = `/stats?period=${period}`;
+            if (revenueStart) url += `&revenueStart=${revenueStart}`;
+            if (revenueEnd) url += `&revenueEnd=${revenueEnd}`;
+            
+            const response = await api.get(url);
+            setStats(response.data);
+            setError(null);
+        } catch (error) {
+            console.error("Failed to fetch stats", error);
+            setError("Failed to load dashboard data.");
+        } finally {
+            setLoading(false);
+        }
     };
-    fetchStats();
-  }, []);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{ color: "red", padding: 20 }}>{error}</div>;
-
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Overview of system performance.</p>
-
-      <div className={styles.grid}>
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Total Users</span>
-            <Users className={styles.icon} size={24} />
-          </div>
-          <h3 className={styles.cardValue}>{stats.totalUsers}</h3>
-          <span className={styles.cardTrend}>
-            <span className={styles.trendUp}>+12%</span> from last month
-          </span>
+    if (loading) return (
+        <div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="loader">Loading Dashboard...</div>
         </div>
+    );
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Total Hosts</span>
-            <Users className={styles.icon} size={24} />
-          </div>
-          <h3 className={styles.cardValue}>{stats.totalHosts}</h3>
-          <span className={styles.cardTrend}>
-            <span className={styles.trendUp}>+5%</span> from last month
-          </span>
-        </div>
+    if (error) return <div style={{ color: "red", padding: 40, textAlign: 'center' }}>{error}</div>;
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Active Properties</span>
-            <Home className={styles.icon} size={24} />
-          </div>
-          <h3 className={styles.cardValue}>{stats.totalProperties}</h3>
-          <span className={styles.cardTrend}>
-            <span className={styles.trendUp}>+5%</span> from last month
-          </span>
-        </div>
+    const summaryCards = [
+        { label: "Total Guests", value: stats.summary.totalGuests, icon: Users, color: "var(--primary-color)", bg: "rgba(47, 149, 220, 0.15)" },
+        { label: "Total Hosts", value: stats.summary.totalHosts, icon: UserCheck, color: "var(--success-color)", bg: "rgba(76, 175, 80, 0.15)" },
+        { label: "Active Properties", value: stats.summary.activeProperties, icon: Home, color: "var(--warning-color)", bg: "rgba(255, 160, 0, 0.15)" },
+        { label: "Active Guests", value: stats.summary.activeGuests, icon: TrendingUp, color: "var(--error-color)", bg: "rgba(211, 47, 47, 0.15)" },
+        { label: "Active Hosts", value: stats.summary.activeHosts, icon: UserCheck, color: "#BF5AF2", bg: "rgba(191, 90, 242, 0.15)" },
+    ];
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Active Bookings</span>
-            <Calendar className={styles.icon} size={24} />
-          </div>
-          <h3 className={styles.cardValue}>{stats.totalBookings}</h3>
-          <span className={styles.cardTrend}>
-            <span className={styles.trendDown}>-2%</span> from last week
-          </span>
-        </div>
+    const handleAcceptUser = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            await api.patch(`/users/${id}/status`, { status: "active" });
+            fetchStats(); // Refresh dashboard
+        } catch (err) {
+            console.error("Failed to accept user", err);
+            alert("Failed to accept user.");
+        }
+    };
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Total Revenue</span>
-            <Banknote className={styles.icon} size={24} />
-          </div>
-          <h3 className={styles.cardValue}>
-            ₦{stats.totalRevenue.toLocaleString()}
-          </h3>
-          <span className={styles.cardTrend}>
-            <span className={styles.trendUp}>+18%</span> from last month
-          </span>
+    const handleAcceptProperty = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            await api.patch(`/properties/${id}`, { status: "active" });
+            fetchStats(); // Refresh dashboard
+        } catch (err) {
+            console.error("Failed to accept property", err);
+            alert("Failed to accept property.");
+        }
+    };
+
+    return (
+        <div className={styles.dashboard}>
+            <header className={styles.header}>
+                <h1>Welcome, Ahmad 👋</h1>
+                <p>Here's what's happening at Comfort Haven today.</p>
+            </header>
+
+            <div className={styles.statsGrid}>
+                {summaryCards.map((card, i) => (
+                    <div key={i} className={styles.statCard}>
+                        <div className={styles.statHeader}>
+                            <div className={styles.statIcon} style={{ background: card.bg, color: card.color }}>
+                                <card.icon size={20} />
+                            </div>
+                        </div>
+                        <div className={styles.statValue}>{card.value}</div>
+                        <div className={styles.statLabel}>{card.label}</div>
+                    </div>
+                ))}
+            </div>
+
+            <div className={styles.mainGrid}>
+                <div className={styles.content}>
+                    <div className={styles.revenueCard}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+                            <div>
+                                <div className={styles.revenueLabel}>Total Revenue (NGN)</div>
+                                <div className={styles.revenueValue}>₦{stats.summary.totalRevenue.toLocaleString()}</div>
+                            </div>
+                            <div className={styles.revenueFilters}>
+                                <div className={styles.dateField}>
+                                    <label>From</label>
+                                    <input 
+                                        type="date" 
+                                        value={revenueStart} 
+                                        onChange={(e) => setRevenueStart(e.target.value)}
+                                        className={styles.dateInput}
+                                    />
+                                </div>
+                                <div className={styles.dateField}>
+                                    <label>To</label>
+                                    <input 
+                                        type="date" 
+                                        value={revenueEnd} 
+                                        onChange={(e) => setRevenueEnd(e.target.value)}
+                                        className={styles.dateInput}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ height: 200, marginTop: 20 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.activityData}>
+                                    <defs>
+                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={theme === 'dark' ? 'var(--primary-color)' : '#ffffff'} stopOpacity={theme === 'dark' ? 0.3 : 0.4}/>
+                                            <stop offset="95%" stopColor={theme === 'dark' ? 'var(--primary-color)' : '#ffffff'} stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <Area type="monotone" dataKey="properties" stroke="#ffffff" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className={styles.chartContainer}>
+                        <div className={styles.chartHeader}>
+                            <div className={styles.chartTitle}>New Visitors</div>
+                            <select 
+                                value={period}
+                                onChange={(e) => setPeriod(e.target.value)}
+                                className={styles.themeSelect}
+                                style={{ 
+                                    padding: '8px 12px', 
+                                    borderRadius: 8, 
+                                    border: '1px solid var(--border-color)', 
+                                    outline: 'none', 
+                                    backgroundColor: 'var(--bg-color)', 
+                                    color: 'var(--text-main)', 
+                                    fontWeight: 500, 
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <option value="7d">Last 7 Days</option>
+                                <option value="30d">Last 30 Days</option>
+                                <option value="3m">Last 3 Months</option>
+                                <option value="6m">Last 6 Months</option>
+                                <option value="9m">Last 9 Months</option>
+                                <option value="1y">Last Year</option>
+                            </select>
+                        </div>
+                        <div style={{ height: 350 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={stats.activityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#E2E8F0'} />
+                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#94a3b8' : '#64748B' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#94a3b8' : '#64748B' }} />
+                                    <Tooltip 
+                                        contentStyle={{ 
+                                            borderRadius: 12, 
+                                            border: 'none', 
+                                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)',
+                                            backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+                                            color: theme === 'dark' ? '#f8fafc' : '#334155'
+                                        }}
+                                        itemStyle={{ color: theme === 'dark' ? '#f8fafc' : '#334155' }}
+                                        cursor={{ fill: theme === 'dark' ? '#334155' : '#F1F5F9' }}
+                                    />
+                                    <Legend iconType="circle" wrapperStyle={{ paddingTop: 20 }} />
+                                    <Bar dataKey="guests" name="New Guests" fill="#3B82F6" radius={[4, 4, 4, 4]} barSize={12} />
+                                    <Bar dataKey="hosts" name="New Hosts" fill="#10B981" radius={[4, 4, 4, 4]} barSize={12} />
+                                    <Bar dataKey="properties" name="New Properties" fill="#F59E0B" radius={[4, 4, 4, 4]} barSize={12} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+
+                <aside className={styles.sidebar}>
+                    <div className={styles.activityCard}>
+                        <div className={styles.sectionTitle}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Clock size={20} />
+                                Activities
+                            </div>
+                            <span style={{ fontSize: '1.25rem', color: '#64748b' }}>•••</span>
+                        </div>
+                        <div className={styles.activityList}>
+                            {stats.recentHosts.slice(0, 3).map((host: any) => (
+                                <div key={host.id} className={styles.hostCardContainer}>
+                                    <div className={styles.hostAvatar}>
+                                        {host.name.charAt(0)}
+                                    </div>
+                                    <div className={styles.hostCardInfo}>
+                                        <div className={styles.hostCardName}>{host.name}</div>
+                                        <div className={styles.hostCardMeta}>
+                                            <span>Role: Host</span>
+                                            <span style={{ color: '#cbd5e1' }}>•</span>
+                                            <span>{host.createdAt ? new Date(host.createdAt).toLocaleDateString() : 'Just now'}</span>
+                                        </div>
+                                        <div className={styles.hostCardActions}>
+                                            <button 
+                                                className={styles.btnLight}
+                                                onClick={() => navigate(`/hosts/${host.id}`)}
+                                            >
+                                                View
+                                            </button>
+                                            <button 
+                                                className={styles.btnDanger}
+                                                onClick={(e) => handleAcceptUser(host.id, e)}
+                                            >
+                                                Verify
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <a href="/hosts" className={styles.viewAllLink}>View all</a>
+                    </div>
+
+                    <div className={styles.activityCard}>
+                        <div className={styles.sectionTitle}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <PlusCircle size={20} />
+                                Property submission
+                            </div>
+                            <span style={{ fontSize: '1.25rem', color: '#64748b' }}>•••</span>
+                        </div>
+                        <div className={styles.activityList}>
+                            {stats.recentProperties.slice(0, 3).map((prop: any) => (
+                                <div key={prop.id} className={styles.propCardContainer}>
+                                    <div 
+                                        className={styles.propCardTop}
+                                        onClick={() => navigate(`/properties/${prop.id}`)}
+                                        style={{ cursor: 'pointer' }}
+                                    >
+                                        <div className={styles.propAvatar}>
+                                            <Home size={32} />
+                                        </div>
+                                        <div className={styles.propCardInfo}>
+                                            <div className={styles.propCardTitle}>Property host</div>
+                                            <div className={styles.propCardSubtitle}>{prop.title}</div>
+                                            <div className={styles.propCardTime}>
+                                                {prop.createdAt ? new Date(prop.createdAt).toLocaleDateString() : 'Just now'}
+                                            </div>
+                                            <span className={classNames(styles.tag, styles[prop.status] || styles.pending)}>
+                                                {prop.status || 'pending'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <hr className={styles.cardDivider} />
+                                    <div className={styles.propCardActions}>
+                                        <button 
+                                            className={styles.btnLightFull}
+                                            onClick={(e) => { e.stopPropagation(); handleAcceptProperty(prop.id, e) }}
+                                        >
+                                            Approve
+                                        </button>
+                                        <button 
+                                            className={styles.btnDangerFull}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                alert("Property rejection will be processed.");
+                                            }}
+                                        >
+                                            Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <a href="/properties" className={styles.viewAllLink}>View all</a>
+                    </div>
+                </aside>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Dashboard;

@@ -13,6 +13,11 @@ import { StatsModule } from './stats/stats.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { MessagesModule } from './messages/messages.module';
+import { MailModule } from './mail/mail.module';
+import { SupportModule } from './support/support.module';
+import { FinanceModule } from './finance/finance.module';
+import { ConfigurationModule } from './config/config.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -49,6 +54,11 @@ import typeormConfig from './config/typeorm.config';
     FavoritesModule,
     ReviewsModule,
     MessagesModule,
+    MailModule,
+    SupportModule,
+    FinanceModule,
+    ConfigurationModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
