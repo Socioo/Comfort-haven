@@ -42,7 +42,9 @@ export class StatsController {
         const activeProperties = properties.filter(p => p.status === 'active').length;
         
         // Calculate revenue
-        let filteredBookings = bookings.filter(b => b.status === 'confirmed');
+        let filteredBookings = bookings.filter(b => 
+            ['confirmed', 'completed'].includes(b.status?.toLowerCase())
+        );
         
         if (revenueStart || revenueEnd) {
             const start = revenueStart ? new Date(revenueStart) : new Date(0);
@@ -64,13 +66,14 @@ export class StatsController {
 
         // Recent Activities
         const recentHosts = users
-            .filter(u => u.role === UserRole.HOST)
+            .filter(u => u.role === UserRole.HOST && !u.isVerified)
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-            .slice(0, 5);
+            .slice(0, 3);
 
         const recentProperties = properties
+            .filter(p => p.status === 'pending')
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-            .slice(0, 5);
+            .slice(0, 3);
 
         return {
             summary: {

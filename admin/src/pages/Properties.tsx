@@ -14,6 +14,9 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import classNames from "classnames";
+import Pagination from "../components/Pagination";
+import NotificationModal from "../components/NotificationModal";
+import type { NotificationType } from "../components/NotificationModal";
 
 interface Property {
   id: string;
@@ -25,6 +28,13 @@ interface Property {
   createdAt: string;
   images?: string[];
 }
+
+const getImageUrl = (url?: string) => {
+  if (!url) return "";
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const baseUrl = 'http://localhost:3000';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'N/A';
@@ -56,6 +66,15 @@ const Properties = () => {
     ownerId: "",
     status: "pending" as Property["status"],
     amenities: "",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [notification, setNotification] = useState<{ isOpen: boolean; type: NotificationType; title: string; message: string }>({
+    isOpen: false,
+    type: "info",
+    title: "",
+    message: ""
   });
 
   useEffect(() => {
@@ -116,7 +135,12 @@ const Properties = () => {
       setMedia((prev) => [...prev, ...response.data]);
     } catch (error) {
       console.error("Upload failed", error);
-      alert("Failed to upload media.");
+      setNotification({
+        isOpen: true,
+        type: "error",
+        title: "Upload Failed",
+        message: "Failed to upload media. Please try again."
+      });
     } finally {
       setSubmitting(false);
     }
@@ -148,7 +172,12 @@ const Properties = () => {
       fetchProperties();
     } catch (error) {
       console.error("Failed to add property", error);
-      alert("Failed to add property. Please check all fields.");
+      setNotification({
+        isOpen: true,
+        type: "error",
+        title: "Save Failed",
+        message: "Failed to add property. Please check all fields and try again."
+      });
     } finally {
       setSubmitting(false);
     }
@@ -169,6 +198,19 @@ const Properties = () => {
     });
   };
 
+  const filteredProperties = useMemo(() => {
+    return properties.filter(p => 
+      p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.host.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [properties, searchTerm]);
+
+  const paginatedProperties = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredProperties.slice(start, start + itemsPerPage);
+  }, [filteredProperties, currentPage]);
+
   const stats = useMemo(() => {
     const total = properties.length;
     const active = properties.filter(p => p.status === 'active').length;
@@ -176,6 +218,11 @@ const Properties = () => {
     const pending = properties.filter(p => p.status === 'pending').length;
     return { total, active, suspended, pending };
   }, [properties]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (loading) return <div>Loading...</div>;
 
@@ -190,6 +237,8 @@ const Properties = () => {
                   type="text" 
                   placeholder="search menu" 
                   className={listStyles.searchInput}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
               />
           </div>
         </div>
@@ -237,7 +286,7 @@ const Properties = () => {
             </tr>
           </thead>
           <tbody>
-            {properties.map((property) => (
+            {paginatedProperties.map((property) => (
               <tr key={property.id}>
                 <td>
                   <div
@@ -254,7 +303,7 @@ const Properties = () => {
                   >
                     {property.images && property.images.length > 0 ? (
                       <img
-                        src={property.images[0]}
+                        src={getImageUrl(property.images[0])}
                         alt={property.title}
                         style={{
                           width: "100%",
@@ -305,6 +354,12 @@ const Properties = () => {
             ))}
           </tbody>
         </table>
+        <Pagination 
+          currentPage={currentPage}
+          totalItems={filteredProperties.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {isModalOpen && (
@@ -412,7 +467,7 @@ const Properties = () => {
                     {media.map((item, index) => (
                       <div key={index} className={styles.mediaItem}>
                         {item.type === "image" ? (
-                          <img src={item.url} alt="Uploaded" />
+                          <img src={getImageUrl(item.url)} alt="Uploaded" />
                         ) : (
                           <video src={item.url} />
                         )}
@@ -477,6 +532,15 @@ const Properties = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {notification.isOpen && (
+        <NotificationModal 
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={() => setNotification({ ...notification, isOpen: false })}
+        />
       )}
     </div>
   );

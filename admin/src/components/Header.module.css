@@ -2,7 +2,7 @@
     height: 70px;
     background: transparent;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     padding: 0 32px;
     position: sticky;
@@ -240,4 +240,36 @@
     font-weight: 700;
     font-size: 0.9rem;
     flex-shrink: 0;
+}
+.menuBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.menuBtn:hover {
+    background: var(--bg-color);
+}
+
+@media (max-width: 900px) {
+    .header {
+        padding: 0 20px;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .menuBtn {
+        display: flex;
+    }
+    
+    .profileInfo {
+        display: none;
+    }
 }

@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Booking } from '../../types';
+import { Booking } from '../types';
 
 interface BookingsContextType {
   bookings: Booking[];
+  isAddingBooking: boolean;
   addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => Promise<void>;
   getUserBookings: (userId: string) => Booking[];
 }
@@ -11,16 +12,22 @@ const BookingsContext = createContext<BookingsContextType | undefined>(undefined
 
 export const BookingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isAddingBooking, setIsAddingBooking] = useState(false);
 
   const addBooking = async (bookingData: Omit<Booking, 'id' | 'createdAt'>) => {
-    const newBooking: Booking = {
-      ...bookingData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    };
-    
-    setBookings(prev => [...prev, newBooking]);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsAddingBooking(true);
+    try {
+      const newBooking: Booking = {
+        ...bookingData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+      
+      setBookings(prev => [...prev, newBooking]);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } finally {
+      setIsAddingBooking(false);
+    }
   };
 
   const getUserBookings = (userId: string) => {
@@ -31,6 +38,7 @@ export const BookingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     <BookingsContext.Provider
       value={{
         bookings,
+        isAddingBooking,
         addBooking,
         getUserBookings,
       }}

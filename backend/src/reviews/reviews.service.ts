@@ -16,12 +16,14 @@ export class ReviewsService {
   ) {}
 
   async create(userId: string, createReviewDto: CreateReviewDto) {
-    const property = await this.propertyRepository.findOne({
-      where: { id: createReviewDto.propertyId },
-    });
+    if (createReviewDto.propertyId) {
+      const property = await this.propertyRepository.findOne({
+        where: { id: createReviewDto.propertyId },
+      });
 
-    if (!property) {
-      throw new NotFoundException('Property not found');
+      if (!property) {
+        throw new NotFoundException('Property not found');
+      }
     }
 
     const review = this.reviewsRepository.create({

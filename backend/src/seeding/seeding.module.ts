@@ -5,9 +5,10 @@ import { User } from '../users/entities/user.entity';
 import { Property } from '../properties/entities/property.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 import { Favorite } from '../favorites/entities/favorite.entity';
+import { Faq } from '../faqs/entities/faq.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([User, Property, Booking, Favorite])],
+    imports: [TypeOrmModule.forFeature([User, Property, Booking, Favorite, Faq])],
     providers: [SeedingService],
     exports: [SeedingService],
 })

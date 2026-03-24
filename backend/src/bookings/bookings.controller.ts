@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
@@ -35,13 +35,33 @@ export class BookingsController {
     }
 
     @Get('user/:userId')
-    findByUser(@Param('userId') userId: string) {
-        return this.bookingsService.findByUser(userId);
+    findByUser(
+        @Param('userId') userId: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+        @Query('status') status?: string,
+    ) {
+        return this.bookingsService.findByUser(userId, { startDate, endDate, status });
     }
 
     @Get('property/:propertyId')
-    findByProperty(@Param('propertyId') propertyId: string) {
-        return this.bookingsService.findByProperty(propertyId);
+    findByProperty(
+        @Param('propertyId') propertyId: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+        @Query('status') status?: string,
+    ) {
+        return this.bookingsService.findByProperty(propertyId, { startDate, endDate, status });
+    }
+
+    @Get('host/:hostId')
+    findByHost(
+        @Param('hostId') hostId: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+        @Query('status') status?: string,
+    ) {
+        return this.bookingsService.findByHost(hostId, { startDate, endDate, status });
     }
 
     @Post(':id/cancel')

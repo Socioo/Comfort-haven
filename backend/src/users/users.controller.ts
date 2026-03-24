@@ -1,4 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { UsersService } from './users.service';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -65,11 +68,33 @@ export class UsersController {
         return this.usersService.updatePassword(id, updateData);
     }
 
+    @Post(':id/profile-image')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './uploads/users',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            }
+        })
+    }))
+    async uploadProfileImage(@Param('id') id: string, @UploadedFile() file: any) {
+        const profileImagePath = `/uploads/users/${file.filename}`;
+        return this.usersService.update(id, { profileImage: profileImagePath });
+    }
+
     @Patch(':id/admin-reset-password')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     async adminResetPassword(@Param('id') id: string, @Body('newPassword') newPassword: string) {
         return this.usersService.adminResetPassword(id, newPassword);
+    }
+
+    @Patch(':id/verify')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.SUB_ADMIN)
+    async verify(@Param('id') id: string) {
+        return this.usersService.adminVerify(id);
     }
 
     @Delete(':id')

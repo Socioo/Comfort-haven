@@ -4,6 +4,8 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
+  useMemo,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authAPI } from "../services/api";
@@ -20,7 +22,14 @@ export interface User {
   // For UI fallbacks
   firstName?: string;
   lastName?: string;
-  photoUrl?: string;
+  photoUrl?: string; // This will map to profileImage from backend
+  notifications?: {
+    newProperties: boolean;
+    newBookings: boolean;
+    marketing: boolean;
+    propertyApproval: boolean;
+    verificationStatus: boolean;
+  };
 }
 
 interface AuthContextType {
@@ -73,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     setIsSigningIn(true);
     try {
       const response = await authAPI.login({ email, password });
@@ -97,9 +106,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     } finally {
       setIsSigningIn(false);
     }
-  };
+  }, []);
 
-  const signUp = async (
+  const signUp = useCallback(async (
     name: string,
     email: string,
     phone: string,
@@ -133,9 +142,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     } finally {
       setIsSigningUp(false);
     }
-  };
+  }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     setIsSigningIn(true);
     try {
       // This needs valid Google OAuth token logic, skipping for now as per original mock
@@ -147,23 +156,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     } finally {
       setIsSigningIn(false);
     }
-  };
+  }, []);
 
-  const signOut = async () => {
-    try {
-      await authAPI.logout();
-    } catch (error) {
-      console.error("Sign out error:", error);
-    } finally {
-      await AsyncStorage.removeItem("access_token");
-      await AsyncStorage.removeItem("refresh_token");
-      await AsyncStorage.removeItem("user");
-      setToken(null);
-      setUser(null);
-    }
-  };
+  const signOut = useCallback(async () => {
+    // 1. Clear state IMMEDIATELY for instant UI response
+    setToken(null);
+    setUser(null);
 
-  const refreshUser = async () => {
+    // 2. Clear storage concurrently
+    const clearStorage = async () => {
+      try {
+        await AsyncStorage.multiRemove([
+          "access_token",
+          "refresh_token",
+          "user"
+        ]);
+      } catch (e) {
+        console.error("Error clearing storage:", e);
+      }
+    };
+
+    // 3. Call backend logout in background
+    const callBackendLogout = async () => {
+      try {
+        await authAPI.logout();
+      } catch (error: any) {
+        // Ignore errors during logout (like 401) as we've already cleared local state
+        if (error.response?.status !== 401) {
+          console.log("Background sign out API call info:", error.message || error);
+        }
+      }
+    };
+
+    // Execute storage clearing and optional backend call
+    await Promise.all([
+      clearStorage(),
+      callBackendLogout()
+    ]);
+  }, []);
+
+  const refreshUser = useCallback(async () => {
     try {
       const response = await authAPI.getProfile();
       const userData = response.data;
@@ -172,32 +204,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     } catch (error) {
       console.error("Refresh user error:", error);
     }
-  };
+  }, []);
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = useCallback((userData: Partial<User>) => {
     setUser((prev) => {
       if (!prev) return null;
       const updated = { ...prev, ...userData };
       AsyncStorage.setItem("user", JSON.stringify(updated));
       return updated;
     });
-  };
+  }, []);
+
+  const authValue = useMemo(() => ({
+    user,
+    token,
+    isLoading,
+    isSigningIn,
+    isSigningUp,
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signOut,
+    refreshUser,
+    updateUser,
+  }), [
+    user, 
+    token, 
+    isLoading, 
+    isSigningIn, 
+    isSigningUp, 
+    signIn, 
+    signUp, 
+    signInWithGoogle, 
+    signOut, 
+    refreshUser, 
+    updateUser
+  ]);
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        isSigningIn,
-        isSigningUp,
-        signIn,
-        signUp,
-        signInWithGoogle,
-        signOut,
-        refreshUser,
-        updateUser,
-      }}
+      value={authValue}
     >
       {children}
     </AuthContext.Provider>

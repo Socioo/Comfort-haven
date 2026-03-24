@@ -16,8 +16,10 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   onClick 
 }) => {
   const getInitials = (name: string) => {
+    if (!name) return "";
     return name
       .split(' ')
+      .filter(n => n)
       .map(n => n[0])
       .join('')
       .toUpperCase()
@@ -40,11 +42,19 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     flexShrink: 0,
   };
 
+  const getImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    // For relative paths from backend (e.g. uploads/...)
+    const baseUrl = 'http://localhost:3000';
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
   if (image) {
     return (
       <div className={className} style={avatarStyle} onClick={onClick}>
         <img 
-          src={image} 
+          src={getImageUrl(image)} 
           alt={name} 
           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
           onError={(e) => {

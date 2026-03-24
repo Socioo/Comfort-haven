@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+
 import api from "../services/api";
 import styles from "../styles/Finance.module.css";
 import { Search, User } from "lucide-react";
 import classNames from "classnames";
+import RefundModal from "../components/RefundModal";
 
 interface Refund {
   id: string;
@@ -23,10 +24,10 @@ interface Refund {
 }
 
 const Refunds = () => {
-  const navigate = useNavigate();
   const [refunds, setRefunds] = useState<Refund[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRefundId, setSelectedRefundId] = useState<string | null>(null);
 
   const sampleRefunds: Refund[] = [
     {
@@ -151,21 +152,21 @@ const Refunds = () => {
     }
   ];
 
-  useEffect(() => {
-    const fetchRefunds = async () => {
-      try {
-        const response = await api.get("/finance/refunds");
-        setRefunds(response.data.length > 0 ? response.data : sampleRefunds);
-      } catch (error) {
-        console.error("Error fetching refunds:", error);
-        setRefunds(sampleRefunds);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchRefunds = async () => {
+    try {
+      const response = await api.get("/finance/refunds");
+      setRefunds(response.data.length > 0 ? response.data : sampleRefunds);
+    } catch (error) {
+      console.error("Error fetching refunds:", error);
+      setRefunds(sampleRefunds);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchRefunds();
-  }, [sampleRefunds]);
+  }, []);
 
   const filteredRefunds = useMemo(() => {
     return refunds.filter(r => 
@@ -266,7 +267,7 @@ const Refunds = () => {
                 <td>
                   <button 
                     className={styles.viewBtn}
-                    onClick={() => navigate(`/refunds/${r.id}`)}
+                    onClick={() => setSelectedRefundId(r.id)}
                   >
                     View
                   </button>
@@ -276,6 +277,13 @@ const Refunds = () => {
           </tbody>
         </table>
       </div>
+      {selectedRefundId && (
+        <RefundModal 
+          refundId={selectedRefundId} 
+          onClose={() => setSelectedRefundId(null)} 
+          onUpdate={fetchRefunds}
+        />
+      )}
     </div>
   );
 };

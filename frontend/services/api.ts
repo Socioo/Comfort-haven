@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 // IMPORTANT: Replace with your actual backend URL
 // For physical devices or Expo Go, use your machine's local IP address (e.g. 192.168.x.x)
-const API_BASE_URL = 'http://192.168.43.200:3000';
+export const API_BASE_URL = 'http://192.168.43.200:3000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -158,10 +158,13 @@ export const bookingsAPI = {
   cancel: (id: string) => api.post(`/bookings/${id}/cancel`),
   
   // Get user bookings
-  getUserBookings: (userId: string) => api.get(`/bookings/user/${userId}`),
+  getUserBookings: (userId: string, params?: any) => api.get(`/bookings/user/${userId}`, { params }),
   
   // Get property bookings
-  getPropertyBookings: (propertyId: string) => api.get(`/bookings/property/${propertyId}`),
+  getPropertyBookings: (propertyId: string, params?: any) => api.get(`/bookings/property/${propertyId}`, { params }),
+
+  // Get host bookings
+  getHostBookings: (hostId: string, params?: any) => api.get(`/bookings/host/${hostId}`, { params }),
 };
 
 // Favorites API
@@ -204,6 +207,14 @@ export const usersAPI = {
   
   // Update user status (admin)
   updateStatus: (id: string, status: string) => api.patch(`/users/${id}/status`, { status }),
+
+  // Update password
+  updatePassword: (id: string, data: any) => api.patch(`/users/${id}/password`, data),
+
+  // Upload profile image
+  uploadProfileImage: (id: string, formData: FormData) => api.post(`/users/${id}/profile-image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 };
 
 // Messages API
@@ -211,6 +222,26 @@ export const messagesAPI = {
   getInbox: () => api.get('/messages/inbox'),
   getChatHistory: (userId: string) => api.get(`/messages/${userId}`),
   sendMessage: (receiverId: string, content: string) => api.post('/messages', { receiverId, content }),
+};
+
+
+// Notifications API
+export const notificationsAPI = {
+  getAll: () => api.get('/notifications'),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.post('/notifications/read-all'),
+};
+
+// Settings API
+export const settingsAPI = {
+  getAll: () => api.get('/settings'),
+};
+
+// FAQs API
+export const faqsAPI = {
+  getAll: () => api.get('/faqs'),
+  getById: (id: string) => api.get(`/faqs/${id}`),
 };
 
 export default api;

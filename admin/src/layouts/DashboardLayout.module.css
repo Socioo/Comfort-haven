@@ -10,9 +10,37 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    transition: margin-left 0.3s ease;
 }
 
 .content {
     padding: 32px;
     flex: 1;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 950;
+    backdrop-filter: blur(4px);
+}
+
+@media (max-width: 900px) {
+    .main {
+        margin-left: 0;
+    }
+    
+    .content {
+        padding: 20px;
+    }
+}
+
+@media (min-width: 901px) {
+    .main {
+        margin-left: 250px;
+    }
 }

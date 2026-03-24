@@ -1,6 +1,6 @@
 .sidebar {
     width: 250px;
-    background-color: var(--card-bg); /* Changed from #FFFFFF */
+    background-color: var(--card-bg);
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -8,11 +8,17 @@
     left: 0;
     top: 0;
     z-index: 1000;
-    border-right: 1px solid var(--border-color); /* Changed from rgba(0, 0, 0, 0.05) */
+    border-right: 1px solid var(--border-color);
+    transition: left 0.3s ease, width 0.3s ease;
+    overflow-x: hidden;
+    white-space: nowrap;
 }
 
 .brand {
-    padding: 32px 24px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .brand h2 {
@@ -121,4 +127,53 @@
 .logoutBtn:hover {
     background-color: var(--nav-hover-bg); /* Changed from rgba(0, 0, 0, 0.02) */
     color: var(--error-color);
+}
+
+.closeBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+@media (max-width: 900px) {
+    .sidebar {
+        width: 280px;
+        left: -280px;
+        transition: left 0.3s ease;
+    }
+    
+    .sidebar.open {
+        left: 0;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.15);
+    }
+    
+    .closeBtn {
+        display: flex;
+    }
+    
+    /* Ensure all text is visible when sidebar opens on mobile */
+    .sidebar .brand h2 span,
+    .sidebar .link span,
+    .sidebar .headerLeft span,
+    .sidebar .logoutBtn span {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: inline !important;
+    }
+
+    .sidebar .menuHeader > svg:last-child {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+
+    .sidebar .subMenu {
+        display: flex;
+    }
 }

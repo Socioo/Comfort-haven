@@ -15,6 +15,7 @@ import {
   ShieldOff
 } from "lucide-react";
 import classNames from "classnames";
+import UserModal from "../components/UserModal";
 
 interface PropertyDetail {
   id: string;
@@ -35,12 +36,20 @@ interface PropertyDetail {
   createdAt: string;
 }
 
+const getImageUrl = (url?: string) => {
+  if (!url) return "";
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const baseUrl = 'http://localhost:3000';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [property, setProperty] = useState<PropertyDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -112,7 +121,7 @@ const PropertyDetails = () => {
         >
           {property.images && property.images.length > 0 ? (
             <img
-              src={property.images[0]}
+              src={getImageUrl(property.images[0])}
               alt={property.title}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
               onError={(e) => {
@@ -270,9 +279,18 @@ const PropertyDetails = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        overflow: "hidden"
                       }}
                     >
-                      <User size={20} />
+                      {(property.owner as any)?.profileImage ? (
+                        <img 
+                          src={getImageUrl((property.owner as any).profileImage)} 
+                          alt={property.owner.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <User size={20} />
+                      )}
                     </div>
                     <div>
                       <div style={{ fontWeight: "bold" }}>
@@ -284,7 +302,7 @@ const PropertyDetails = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => navigate(`/hosts/${property.owner?.id}`)}
+                    onClick={() => property.owner?.id && setSelectedUserId(property.owner.id)}
                     style={{
                       width: "100%",
                       padding: "8px",
@@ -419,6 +437,9 @@ const PropertyDetails = () => {
           </div>
         </div>
       </div>
+      {selectedUserId && (
+        <UserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+      )}
     </div>
   );
 };
