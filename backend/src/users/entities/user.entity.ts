@@ -35,8 +35,11 @@ export class User {
   @Column({ nullable: true, select: false })
   hashedRefreshToken: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   profileImage: string;
+
+  @Column({ type: 'text', nullable: true })
+  bio: string;
 
   @Column({ default: false })
   isVerified: boolean;
@@ -54,17 +57,19 @@ export class User {
     type: 'jsonb',
     nullable: true,
     default: {
-      newUsers: true,
       newProperties: true,
-      newBookings: false,
+      newBookings: true,
       marketing: false,
+      propertyApproval: true,
+      verificationStatus: true,
     },
   })
   notifications: {
-    newUsers: boolean;
     newProperties: boolean;
     newBookings: boolean;
     marketing: boolean;
+    propertyApproval: boolean;
+    verificationStatus: boolean;
   };
 
   @Column({

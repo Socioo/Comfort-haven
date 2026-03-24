@@ -21,7 +21,7 @@ const Login = () => {
     try {
       // POST to the backend auth endpoint
       const response = await axios.post(
-        "http://192.168.43.200:3000/auth/login",
+        "http://localhost:3000/auth/login",
         {
           email,
           password,

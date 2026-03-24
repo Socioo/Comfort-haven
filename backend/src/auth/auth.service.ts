@@ -8,6 +8,7 @@ import { User } from '../users/entities/user.entity';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async signUp(signUpDto: SignUpDto): Promise<AuthResponseDto> {
@@ -35,15 +37,27 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    await this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
 
-    const tokens = await this.getTokens(user);
-    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    // Notify admins about new user registration
+    try {
+        await this.notificationsService.notifyAdmins({
+            type: 'success',
+            title: `New ${savedUser.role} Joined`,
+            message: `${savedUser.name} has just registered as a ${savedUser.role}.`,
+            metadata: { userId: savedUser.id }
+        });
+    } catch (e) {
+        console.error('Failed to send registration notification', e);
+    }
+
+    const tokens = await this.getTokens(savedUser);
+    await this.updateRefreshToken(savedUser.id, tokens.refreshToken);
 
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: this.toUserDto(user),
+      user: this.toUserDto(savedUser),
     };
   }
 
@@ -185,6 +199,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
     };
@@ -208,8 +223,10 @@ export class AuthService {
       phone: user.phone,
       role: user.role,
       profileImage: user.profileImage,
+      photoUrl: user.profileImage, // Alias for mobile app compatibility
       isVerified: user.isVerified,
       mustChangePassword: user.mustChangePassword,
+      notifications: user.notifications,
     };
   }
 

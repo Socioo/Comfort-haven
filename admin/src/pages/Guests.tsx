@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+
 import api from "../services/api";
 import styles from "../styles/Guests.module.css";
 import { Search } from "lucide-react";
 import classNames from "classnames";
-import { User } from "lucide-react";
+import UserAvatar from "../components/UserAvatar";
+import UserModal from "../components/UserModal";
+import Pagination from "../components/Pagination";
 
 interface Guest {
   id: string;
@@ -28,10 +30,14 @@ const formatTime = (dateString?: string) => {
   return isNaN(d.getTime()) ? 'N/A' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+
 const Guests = () => {
-  const navigate = useNavigate();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchGuests();
@@ -48,6 +54,18 @@ const Guests = () => {
     }
   };
 
+  const filteredGuests = useMemo(() => {
+    return guests.filter(g => 
+      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [guests, searchTerm]);
+
+  const paginatedGuests = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredGuests.slice(start, start + itemsPerPage);
+  }, [filteredGuests, currentPage]);
+
   const stats = useMemo(() => {
     const total = guests.length;
     const active = guests.filter(g => g.status === 'active').length;
@@ -56,6 +74,11 @@ const Guests = () => {
     const totalBookings = Math.max(Math.floor(total * 1.5), 1); 
     return { total, active, inactive, totalBookings };
   }, [guests]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (loading) return <div>Loading...</div>;
 
@@ -70,6 +93,8 @@ const Guests = () => {
                   type="text" 
                   placeholder="search menu" 
                   className={styles.searchInput}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
               />
           </div>
         </div>
@@ -103,11 +128,11 @@ const Guests = () => {
               <th>User name</th>
               <th>Email address</th>
               <th>Location</th>
-              <th></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {guests.map((guest) => (
+            {paginatedGuests.map((guest) => (
               <tr key={guest.id}>
                 <td>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -126,12 +151,12 @@ const Guests = () => {
                 </td>
                 <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div className={styles.avatarContainer}>
-                            {guest.profileImage ? (
-                                <img src={guest.profileImage} alt={guest.name} className={styles.avatarImage} />
-                            ) : (
-                                <User size={16} color="#94a3b8" />
-                            )}
+                        <div className={styles.avatarContainer} style={{ background: 'none' }}>
+                            <UserAvatar 
+                              name={guest.name} 
+                              image={guest.profileImage} 
+                              size={32} 
+                            />
                         </div>
                         <span style={{ fontWeight: 500 }}>{guest.name}</span>
                     </div>
@@ -142,7 +167,7 @@ const Guests = () => {
                 <td style={{ textAlign: 'right' }}>
                   <button
                     className={styles.viewBtn}
-                    onClick={() => navigate(`/guests/${guest.id}`)}
+                    onClick={() => setSelectedUserId(guest.id)}
                   >
                     View
                   </button>
@@ -151,7 +176,21 @@ const Guests = () => {
             ))}
           </tbody>
         </table>
+        <Pagination 
+          currentPage={currentPage}
+          totalItems={filteredGuests.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
+      
+      {selectedUserId && (
+        <UserModal 
+          userId={selectedUserId} 
+          onClose={() => setSelectedUserId(null)} 
+          onUpdate={fetchGuests}
+        />
+      )}
     </div>
   );
 };

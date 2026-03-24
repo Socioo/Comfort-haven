@@ -7,6 +7,11 @@ import { useAuth } from "../contexts/AuthContext";
 import UserAvatar from "../components/UserAvatar";
 import styles from "../styles/Pages.module.css";
 import listStyles from "../styles/Guests.module.css";
+import ResetPasswordModal from "../components/ResetPasswordModal";
+import Pagination from "../components/Pagination";
+import NotificationModal from "../components/NotificationModal";
+import type { NotificationType } from "../components/NotificationModal";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
 
 interface TeamMember {
   id: string;
@@ -37,12 +42,28 @@ const Team = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-  const [formData, setFormData] = useState({
+   const [formData, setFormData] = useState({
     name: "",
     email: "",
     role: "sub-admin",
     message: "",
   });
+  const [resetMember, setResetMember] = useState<TeamMember | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [notification, setNotification] = useState<{ isOpen: boolean; type: NotificationType; title: string; message: string }>({
+    isOpen: false,
+    type: "info",
+    title: "",
+    message: ""
+  });
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; memberId: string; memberName: string }>({
+    isOpen: false,
+    memberId: "",
+    memberName: ""
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchMembers();
@@ -96,7 +117,12 @@ const Team = () => {
       fetchMembers();
     } catch (error) {
       console.error("Failed to save team member", error);
-      alert("Failed to save team member. Please try again.");
+      setNotification({
+        isOpen: true,
+        type: "error",
+        title: "Save Failed",
+        message: "Failed to save team member. Please try again."
+      });
     } finally {
       setSubmitting(false);
     }
@@ -108,28 +134,51 @@ const Team = () => {
     setFormData({ name: "", email: "", role: "sub-admin", message: "" });
   };
 
-  const handleResetPassword = async (member: TeamMember) => {
-    const newPassword = window.prompt(`Enter new password for ${member.name}:`, "Password123!");
-    if (!newPassword) return;
-
-    try {
-      await api.patch(`/users/${member.id}/admin-reset-password`, { newPassword });
-      alert(`Password for ${member.name} has been reset successfully.`);
-    } catch (error) {
-      console.error("Failed to reset password", error);
-      alert("Failed to reset password. Please try again.");
-    }
+  const handleResetPassword = (member: TeamMember) => {
+    setResetMember(member);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to remove this team member?")) return;
+  const handleDeleteClick = (member: TeamMember) => {
+    setDeleteModal({ isOpen: true, memberId: member.id, memberName: member.name });
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
     try {
-      await api.delete(`/users/${id}`);
+      await api.delete(`/users/${deleteModal.memberId}`);
+      setDeleteModal({ isOpen: false, memberId: "", memberName: "" });
       fetchMembers();
+      setNotification({
+        isOpen: true,
+        type: "success",
+        title: "Member Removed",
+        message: `${deleteModal.memberName} has been successfully removed from the team.`
+      });
     } catch (error) {
       console.error("Failed to delete member", error);
+      setNotification({
+        isOpen: true,
+        type: "error",
+        title: "Delete Failed",
+        message: "Failed to remove team member. Please try again."
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
+
+   const filteredMembers = useMemo(() => {
+    return members.filter(m => 
+      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.role.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [members, searchTerm]);
+
+  const paginatedMembers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredMembers.slice(start, start + itemsPerPage);
+  }, [filteredMembers, currentPage]);
 
   const stats = useMemo(() => {
     const total = members.length;
@@ -137,6 +186,11 @@ const Team = () => {
     const subAdmins = members.filter(m => m.role === 'sub-admin').length;
     return { total, fullAdmins, subAdmins };
   }, [members]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (loading) return <div>Loading...</div>;
 
@@ -155,6 +209,8 @@ const Team = () => {
                   type="text" 
                   placeholder="search menu" 
                   className={listStyles.searchInput}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
               />
           </div>
         </div>
@@ -200,8 +256,8 @@ const Team = () => {
             </tr>
           </thead>
           <tbody>
-            {members.length > 0 ? (
-              members.map((member) => (
+            {paginatedMembers.length > 0 ? (
+              paginatedMembers.map((member) => (
                 <tr key={member.id}>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -250,7 +306,7 @@ const Team = () => {
                     <button
                       className={listStyles.viewBtn}
                       style={{ background: '#fee2e2', color: '#ef4444', padding: '6px 12px' }}
-                      onClick={() => handleDelete(member.id)}
+                      onClick={() => handleDeleteClick(member)}
                       title="Remove Member"
                     >
                       <Trash2 size={16} />
@@ -267,6 +323,12 @@ const Team = () => {
             )}
           </tbody>
         </table>
+        <Pagination 
+          currentPage={currentPage}
+          totalItems={filteredMembers.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {isModalOpen && (
@@ -355,6 +417,42 @@ const Team = () => {
             </form>
           </div>
         </div>
+      )}
+      {resetMember && (
+        <ResetPasswordModal 
+          member={resetMember} 
+          onClose={() => setResetMember(null)} 
+          onSuccess={() => {
+            const memberName = resetMember.name;
+            setResetMember(null);
+            setNotification({
+              isOpen: true,
+              type: "success",
+              title: "Password Reset",
+              message: `Password for ${memberName} has been reset successfully.`
+            });
+          }}
+        />
+      )}
+
+      {notification.isOpen && (
+        <NotificationModal 
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={() => setNotification({ ...notification, isOpen: false })}
+        />
+      )}
+
+      {deleteModal.isOpen && (
+        <DeleteConfirmationModal 
+          title="Remove Team Member"
+          message={`Are you sure you want to remove ${deleteModal.memberName} from the team? This action will revoke their access to the admin dashboard.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+          isDeleting={isDeleting}
+          confirmText="Remove Member"
+        />
       )}
     </div>
   );

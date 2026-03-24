@@ -8,10 +8,17 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { messagesAPI } from "@/services/api";
+import { API_BASE_URL, messagesAPI } from "@/services/api";
 import Colors from "@/constants/Colors";
 import { Image } from "expo-image";
 import { useAuth } from "@/contexts/auth";
+import UserAvatar from "@/components/UserAvatar";
+
+const getImageUrl = (url: string | undefined | null) => {
+  if (!url) return undefined;
+  if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
+  return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+};
 import { MessageSquare } from "lucide-react-native";
 
 interface Conversation {
@@ -58,17 +65,12 @@ export default function InboxScreen() {
       style={styles.conversationItem}
       onPress={() => router.push(`/messages/${item.user.id}` as any)}
     >
-      {item.user.profileImage ? (
-        <Image
-          source={{ uri: item.user.profileImage }}
-          style={styles.avatar}
-          contentFit="cover"
-        />
-      ) : (
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarInitial}>{item.user.name.charAt(0)}</Text>
-        </View>
-      )}
+      <UserAvatar 
+        name={item.user.name} 
+        image={item.user.profileImage} 
+        size={50} 
+        style={styles.avatar}
+      />
 
       <View style={styles.messageContent}>
         <View style={styles.messageHeader}>

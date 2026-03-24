@@ -67,8 +67,8 @@
 
 .status.suspended,
 .status.banned {
-    background-color: rgba(211, 47, 47, 0.15);
-    color: var(--error-color);
+    background-color: rgba(100, 116, 139, 0.15);
+    color: var(--status-neutral);
 }
 
 .actions {
@@ -144,6 +144,41 @@
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.modalWrapper {
+    width: 100%;
+    max-width: 650px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 1rem;
+    background: transparent;
+    max-height: 90vh;
+}
+
+.modalDetailCard {
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modalActionCard {
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
 .modalHeader {
     display: flex;
     justify-content: space-between;
@@ -176,7 +211,7 @@
 
 .closeBtn:hover {
     background: var(--bg-color);
-    color: var(--error-color);
+    color: var(--primary-color);
     transform: rotate(90deg) scale(1.1);
 }
 
@@ -323,3 +358,43 @@
     gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .tableContainer {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modalWrapper {
+        max-width: 100%;
+        padding: 0.75rem;
+        max-height: 95vh;
+    }
+
+    .modalDetailCard {
+        max-height: 65vh;
+    }
+
+    .modalActionCard {
+        padding: 1.25rem;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .formGroup.fullWidth {
+        grid-column: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalWrapper {
+        padding: 0.5rem;
+    }
+    
+    .modalActionCard {
+        padding: 1rem;
+    }
+}

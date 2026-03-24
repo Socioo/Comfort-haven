@@ -84,6 +84,44 @@
     }
 }
 
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 20px;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .revenueValue {
+        font-size: 2rem;
+    }
+    
+    .revenueFilters {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .chartContainer {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .revenueValue {
+        font-size: 1.5rem;
+    }
+    
+    .revenueFilters {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .dateInput {
+        width: 100%;
+    }
+}
+
 .chartContainer {
     background: var(--card-bg);
     padding: 32px;
@@ -368,8 +406,8 @@
 }
 
 .tag.inactive, .tag.unapproved {
-    background: rgba(211, 47, 47, 0.15);
-    color: var(--error-color);
+    background: rgba(100, 116, 139, 0.15);
+    color: var(--status-neutral);
 }
 
 .tag.new, .tag.active {

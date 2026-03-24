@@ -26,8 +26,15 @@ import Colors from "@/constants/Colors";
 import { useAuth } from "@/contexts/auth";
 import { useFavorites } from "@/contexts/favorites";
 import * as Haptics from "expo-haptics";
-import { propertiesAPI, reviewsAPI } from "@/services/api";
+import { API_BASE_URL, propertiesAPI, reviewsAPI } from "@/services/api";
 import { Property, Review } from "@/types";
+import UserAvatar from "@/components/UserAvatar";
+
+const getImageUrl = (url: string | undefined | null) => {
+  if (!url) return undefined;
+  if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
+  return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+};
 
 const { width } = Dimensions.get("window");
 
@@ -158,7 +165,7 @@ export default function PropertyDetailsScreen() {
           {images.map((image, index) => (
             <Image
               key={index}
-              source={{ uri: image }}
+              source={{ uri: getImageUrl(image) }}
               style={styles.propertyImage}
               contentFit="cover"
             />
@@ -253,27 +260,12 @@ export default function PropertyDetailsScreen() {
               }}
               activeOpacity={0.7}
             >
-              {(property as any).owner?.profileImage || property.hostPhoto ? (
-                <Image
-                  source={{
-                    uri:
-                      (property as any).owner?.profileImage ||
-                      property.hostPhoto,
-                  }}
-                  style={styles.hostAvatar}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={styles.hostAvatarPlaceholder}>
-                  <Text style={styles.hostInitial}>
-                    {(
-                      (property as any).owner?.name ||
-                      property.hostName ||
-                      "H"
-                    ).charAt(0)}
-                  </Text>
-                </View>
-              )}
+              <UserAvatar 
+                name={(property as any).owner?.name || property.hostName || "Host"} 
+                image={(property as any).owner?.profileImage || property.hostPhoto} 
+                size={50} 
+                style={styles.hostAvatar}
+              />
               <View style={styles.hostInfo}>
                 <Text style={styles.hostName}>
                   {(property as any).owner?.name || property.hostName || "Host"}
@@ -301,19 +293,12 @@ export default function PropertyDetailsScreen() {
                 {reviews.map((review) => (
                   <View key={review.id} style={styles.reviewCard}>
                     <View style={styles.reviewHeader}>
-                      {review.userPhoto ? (
-                        <Image
-                          source={{ uri: review.userPhoto }}
-                          style={styles.reviewAvatar}
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <View style={styles.reviewAvatarPlaceholder}>
-                          <Text style={styles.reviewInitial}>
-                            {(review.userName || "U").charAt(0)}
-                          </Text>
-                        </View>
-                      )}
+                      <UserAvatar 
+                        name={review.userName || "User"} 
+                        image={review.userPhoto || (review as any).user?.profileImage} 
+                        size={40} 
+                        style={styles.reviewAvatar}
+                      />
                       <View style={styles.reviewHeaderContent}>
                         <Text style={styles.reviewerName}>
                           {review.userName || "User"}

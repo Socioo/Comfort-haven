@@ -14,7 +14,14 @@ import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { Star, MapPin, Send, AlertCircle } from "lucide-react-native";
 import Colors from "@/constants/Colors";
-import { usersAPI, propertiesAPI } from "@/services/api";
+import { API_BASE_URL, propertiesAPI, usersAPI } from "@/services/api";
+import UserAvatar from "@/components/UserAvatar";
+
+const getImageUrl = (url: string | undefined | null) => {
+  if (!url) return undefined;
+  if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
+  return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+};
 import { Property } from "@/types";
 import { User } from "@/types/user";
 import * as Haptics from "expo-haptics";
@@ -147,17 +154,12 @@ export default function HostDetailsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.hostHeader}>
-          {hostPhoto ? (
-            <Image
-              source={{ uri: hostPhoto }}
-              style={styles.hostAvatar}
-              contentFit="cover"
-            />
-          ) : (
-            <View style={styles.hostAvatarPlaceholder}>
-              <Text style={styles.hostInitial}>{hostName.charAt(0)}</Text>
-            </View>
-          )}
+          <UserAvatar 
+            name={hostName} 
+            image={hostPhoto} 
+            size={100} 
+            style={styles.hostAvatar}
+          />
           <Text style={styles.hostName}>{hostName}</Text>
           <Text style={styles.hostLabel}>Property Host</Text>
 

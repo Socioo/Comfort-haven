@@ -10,8 +10,14 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+import * as express from 'express';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Increase payload size for image uploads
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Security middleware
   app.use(helmet());

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://192.168.43.200:3000', // Adjust if backend is on different port or IP changes
+    baseURL: 'http://localhost:3000', // Adjust if backend is on different port or IP changes
 });
 
 api.interceptors.request.use((config) => {
@@ -25,6 +25,14 @@ export const adminAPI = {
   getNotifications: () => api.get('/notifications'),
   markNotificationAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
   getInboxSummary: () => api.get('/messages/inbox'),
+};
+
+export const faqAPI = {
+  getAll: () => api.get('/faqs'),
+  getOne: (id: string) => api.get(`/faqs/${id}`),
+  create: (data: any) => api.post('/faqs', data),
+  update: (id: string, data: any) => api.put(`/faqs/${id}`, data),
+  delete: (id: string) => api.delete(`/faqs/${id}`),
 };
 
 export default api;

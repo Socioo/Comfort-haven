@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsString, IsInt, Min, Max, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsString, IsInt, Min, Max, IsUUID, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateReviewDto {
-  @ApiProperty()
-  @IsNotEmpty()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsUUID()
-  propertyId: string;
+  propertyId?: string;
 
   @ApiProperty()
   @IsNotEmpty()

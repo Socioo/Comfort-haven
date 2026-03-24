@@ -87,9 +87,16 @@ const AdminSettings = () => {
       }
 
       if (user.appearance) {
-        setAppearance(user.appearance);
-        // We don't call setTheme(user.appearance.theme) here because it causes a flash/reset
-        // when navigating. ThemeContext already handles the current session theme.
+        const dbTheme = user.appearance.theme || theme;
+        setAppearance({
+          theme: dbTheme,
+          language: user.appearance.language || "en"
+        });
+        
+        // Sync context and DOM to match user settings if they differ from local storage
+        if (dbTheme !== theme) {
+          setTheme(dbTheme);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch user settings:", error);
@@ -112,9 +119,8 @@ const AdminSettings = () => {
       if (activeTab === "profile") {
         let profileImageUrl = profile.profileImage;
 
-        // In a real app, you would upload the file to S3/Cloudinary here
-        // For now, we'll convert to Base64 to simulate an upload if a file was selected
         if (selectedFile) {
+          console.log("Processing image for upload...");
           const reader = new FileReader();
           profileImageUrl = await new Promise((resolve) => {
             reader.onloadend = () => resolve(reader.result as string);
@@ -128,24 +134,28 @@ const AdminSettings = () => {
           profileImage: profileImageUrl,
         });
         await refreshUser();
-        alert("Profile updated successfully!");
+        alert("Success: Profile information and image updated!");
         setSelectedFile(null);
       } else if (activeTab === "notifications") {
         await adminAPI.updateNotifications(userId, notifications);
-        alert("Notifications updated successfully!");
+        alert("Success: Notification preferences updated!");
       } else if (activeTab === "appearance") {
         await adminAPI.updateAppearance(userId, appearance);
-        // Theme is already set reactively in the UI
         await refreshUser();
-        alert("Appearance saved successfully!");
+        alert("Success: Appearance settings saved!");
       } else if (activeTab === "security") {
         if (!security.currentPassword || !security.newPassword) {
-          alert("Please enter both current and new passwords.");
+          alert("Error: Please enter both current and new passwords.");
           setSaving(false);
           return;
         }
         if (security.newPassword !== security.confirmPassword) {
-          alert("Passwords do not match");
+          alert("Error: New passwords do not match.");
+          setSaving(false);
+          return;
+        }
+        if (security.newPassword.length < 6) {
+          alert("Error: New password must be at least 6 characters long.");
           setSaving(false);
           return;
         }
@@ -153,7 +163,7 @@ const AdminSettings = () => {
           currentPassword: security.currentPassword,
           newPassword: security.newPassword,
         });
-        alert("Password updated successfully!");
+        alert("Success: Your password has been updated securely!");
         setSecurity({
           currentPassword: "",
           newPassword: "",
@@ -162,7 +172,8 @@ const AdminSettings = () => {
       }
     } catch (error: any) {
       console.error("Failed to save settings:", error);
-      alert(error.response?.data?.message || "Failed to save settings.");
+      const message = error.response?.data?.message || "An unexpected error occurred. Please try again.";
+      alert(`Update Failed: ${message}`);
     } finally {
       setSaving(false);
     }

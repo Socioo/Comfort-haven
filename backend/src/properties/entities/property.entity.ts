@@ -59,7 +59,7 @@ export class Property {
     @Column('simple-array', { nullable: true })
     availableDates: string[];
 
-    @ManyToOne(() => User, (user) => user.properties)
+    @ManyToOne(() => User, (user) => user.properties, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'ownerId' })
     owner: User;
 

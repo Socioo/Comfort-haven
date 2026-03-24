@@ -35,3 +35,6 @@ export interface Review {
   comment: string;
   date: string;
 }
+
+export * from './auth';
+export * from './booking';

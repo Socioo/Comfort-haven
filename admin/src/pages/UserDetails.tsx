@@ -27,6 +27,13 @@ interface Property {
   images?: string[];
 }
 
+const getImageUrl = (url?: string) => {
+  if (!url) return "";
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const baseUrl = 'http://localhost:3000';
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 const UserDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -83,6 +90,18 @@ const UserDetails = () => {
       }
   };
 
+  const handleVerify = async () => {
+      try {
+          await api.patch(`/users/${id}/verify`);
+          setUser(prev => prev ? { ...prev, isVerified: true, status: 'active' } : null);
+          alert("Host verified successfully!");
+      } catch (error: any) {
+          console.error("Failed to verify host", error);
+          const msg = error.response?.data?.message || error.message || "Unknown error";
+          alert(`Failed to verify host: ${msg}`);
+      }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{ color: 'red' }}>{error}</div>;
   if (!user) return <div>User not found</div>;
@@ -115,7 +134,7 @@ const UserDetails = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '32px' }}>
             <div className={styles.detailAvatar} style={{ marginBottom: 0 }}>
                 {user.profileImage ? (
-                    <img src={user.profileImage} alt={user.name} className={styles.avatarImage} />
+                    <img src={getImageUrl(user.profileImage)} alt={user.name} className={styles.avatarImage} />
                 ) : (
                     <User size={40} color="#94a3b8" />
                 )}
@@ -176,7 +195,7 @@ const UserDetails = () => {
                     }} onClick={() => navigate(`/properties/${property.id}`)}>
                         <div style={{ width: '100%', height: '160px', background: '#f1f5f9' }}>
                             {property.images && property.images.length > 0 ? (
-                                <img src={property.images[0]} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={getImageUrl(property.images[0])} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : null}
                         </div>
                         <div style={{ padding: '16px' }}>
@@ -200,6 +219,15 @@ const UserDetails = () => {
 
       <div className={styles.suspendContainer} style={{ marginTop: '24px' }}>
           <div style={{ display: 'flex', gap: '16px' }}>
+              {user.role === 'host' && !user.isVerified && (
+                  <button 
+                      className={styles.suspendBtn} 
+                      onClick={handleVerify}
+                      style={{ background: '#10b981' }}
+                  >
+                      Verify Host
+                  </button>
+              )}
               <button 
                   className={styles.suspendBtn} 
                   onClick={handleToggleSuspend}

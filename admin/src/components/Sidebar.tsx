@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -9,11 +9,21 @@ import {
   ChevronRight,
   BarChart3,
   MessageSquare,
+  Contact,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import styles from "./Sidebar.module.css";
+import LogoutModal from "./LogoutModal";
+import classNames from "classnames";
 
-const Sidebar = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { logout, user } = useAuth();
   const location = useLocation();
   const pathname = location.pathname;
@@ -43,6 +53,17 @@ const Sidebar = () => {
     }
   }, [pathname, isManagementActive, isFinanceActive, isConfigurationActive]);
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+  };
+
   const toggleMenu = (menu: string) => {
     setOpenMenus(prev => {
       const newState = {
@@ -56,13 +77,19 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={classNames(styles.sidebar, { [styles.open]: isOpen })}>
       <div className={styles.brand}>
-        <h2>Comfort <span>Haven</span></h2>
+        <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }} onClick={onClose}>
+          <h2>Comfort <span>Haven</span></h2>
+        </Link>
+        <button className={styles.closeBtn} onClick={onClose}>
+          <X size={24} />
+        </button>
       </div>
       <nav className={styles.nav}>
         <NavLink
           to="/"
+          onClick={onClose}
           className={({ isActive }: any) =>
             isActive ? `${styles.link} ${styles.active}` : styles.link
           }
@@ -85,11 +112,11 @@ const Sidebar = () => {
         
         {openMenus.management && (
           <div className={styles.subMenu}>
-            <NavLink to="/guests" className={styles.subLink}>Guests</NavLink>
-            <NavLink to="/hosts" className={styles.subLink}>Hosts</NavLink>
-            <NavLink to="/properties" className={styles.subLink}>Properties</NavLink>
+            <NavLink to="/guests" className={styles.subLink} onClick={onClose}>Guests</NavLink>
+            <NavLink to="/hosts" className={styles.subLink} onClick={onClose}>Hosts</NavLink>
+            <NavLink to="/properties" className={styles.subLink} onClick={onClose}>Properties</NavLink>
             {(user?.role === 'admin' || user?.role === 'superadmin') && (
-              <NavLink to="/team" className={styles.subLink}>Team</NavLink>
+              <NavLink to="/team" className={styles.subLink} onClick={onClose}>Team</NavLink>
             )}
           </div>
         )}
@@ -108,21 +135,43 @@ const Sidebar = () => {
         
         {openMenus.finance && (
           <div className={styles.subMenu}>
-            <NavLink to="/bookings" className={styles.subLink}>Bookings</NavLink>
-            <NavLink to="/payouts" className={styles.subLink}>Payouts</NavLink>
-            <NavLink to="/refunds" className={styles.subLink}>Refunds</NavLink>
+            <NavLink to="/bookings" className={styles.subLink} onClick={onClose}>Bookings</NavLink>
+            <NavLink to="/payouts" className={styles.subLink} onClick={onClose}>Payouts</NavLink>
+            <NavLink to="/refunds" className={styles.subLink} onClick={onClose}>Refunds</NavLink>
           </div>
         )}
 
-        {/* Support Section (Direct Link) */}
         <NavLink
           to="/support"
+          onClick={onClose}
           className={({ isActive }: any) =>
             isActive ? `${styles.link} ${styles.active}` : styles.link
           }
         >
           <MessageSquare size={20} />
           <span>Support</span>
+        </NavLink>
+
+        <NavLink
+          to="/faqs"
+          onClick={onClose}
+          className={({ isActive }: any) =>
+            isActive ? `${styles.link} ${styles.active}` : styles.link
+          }
+        >
+          <HelpCircle size={20} />
+          <span>FAQs</span>
+        </NavLink>
+
+        <NavLink
+          to="/contact-info"
+          onClick={onClose}
+          className={({ isActive }: any) =>
+            isActive ? `${styles.link} ${styles.active}` : styles.link
+          }
+        >
+          <Contact size={20} />
+          <span>Contact & Social Info</span>
         </NavLink>
 
         {/* Configuration Group */}
@@ -139,19 +188,26 @@ const Sidebar = () => {
         
         {openMenus.configuration && (
           <div className={styles.subMenu}>
-            <NavLink to="/settings" className={styles.subLink}>App settings</NavLink>
-            <NavLink to="/admin-settings" className={styles.subLink}>Admin settings</NavLink>
-            <NavLink to="/payment-settings" className={styles.subLink}>Payment settings</NavLink>
+            <NavLink to="/settings" className={styles.subLink} onClick={onClose}>App settings</NavLink>
+            <NavLink to="/admin-settings" className={styles.subLink} onClick={onClose}>Admin settings</NavLink>
+            <NavLink to="/payment-settings" className={styles.subLink} onClick={onClose}>Payment settings</NavLink>
           </div>
         )}
       </nav>
 
       <div className={styles.bottomSection}>
-        <button onClick={logout} className={styles.logoutBtn}>
+        <button onClick={handleLogoutClick} className={styles.logoutBtn}>
           <LogOut size={20} />
           <span>Logout</span>
         </button>
       </div>
+
+      {showLogoutModal && (
+        <LogoutModal 
+          onConfirm={handleConfirmLogout} 
+          onCancel={() => setShowLogoutModal(false)} 
+        />
+      )}
     </aside>
   );
 };

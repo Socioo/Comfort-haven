@@ -15,10 +15,23 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth";
 import { useFavorites } from "@/contexts/favorites";
 import { Property } from "@/types";
-import { propertiesAPI } from "@/services/api";
+import { propertiesAPI, API_BASE_URL } from "@/services/api";
 import * as Haptics from "expo-haptics";
 
 const { width } = Dimensions.get("window");
+
+const getImageUrl = (url: string | undefined) => {
+  if (!url) return undefined;
+  if (
+    url.startsWith("http") ||
+    url.startsWith("data:") ||
+    url.startsWith("blob:")
+  )
+    return url;
+  const cleanUrl = url.startsWith("/") ? url : `/${url}`;
+  if (cleanUrl.startsWith("/uploads")) return `${API_BASE_URL}${cleanUrl}`;
+  return `${API_BASE_URL}/uploads${cleanUrl}`;
+};
 
 export default function TabOneScreen() {
   const router = useRouter();
@@ -26,6 +39,15 @@ export default function TabOneScreen() {
   const { toggleFavorite, isFavorite } = useFavorites();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "host") {
+        router.replace("/(tabs)/(host)" as any);
+      }
+      // Guest redirect removed - they can see Home now
+    }
+  }, [user, loading]);
 
   useEffect(() => {
     fetchProperties();

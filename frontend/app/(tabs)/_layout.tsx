@@ -57,6 +57,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => <Home color={color} />,
+          href: !isHostOrAdmin ? undefined : null, // Restore for Guest, hide for Host
           headerRight: () => (
             <Link href={"/messages" as any} asChild>
               <Pressable style={{ marginRight: 15 }}>
@@ -77,6 +78,7 @@ export default function TabLayout() {
         options={{
           title: "Explore",
           tabBarIcon: ({ color }) => <Search color={color} />,
+          href: !isHostOrAdmin ? undefined : null, // Restore for Guest, hide for Host
         }}
       />
       <Tabs.Screen
@@ -84,6 +86,7 @@ export default function TabLayout() {
         options={{
           title: "Favorites",
           tabBarIcon: ({ color }) => <Heart color={color} />,
+          href: !isHostOrAdmin ? undefined : null, // Restore for Guest, hide for Host
         }}
       />
       <Tabs.Screen
@@ -91,7 +94,7 @@ export default function TabLayout() {
         options={{
           title: "Services",
           tabBarIcon: ({ color }) => <Briefcase color={color} />,
-          href: isHostOrAdmin ? null : undefined, // Hide if host/admin
+          href: null, // Hidden for now as it's not yet ready
         }}
       />
       <Tabs.Screen
@@ -102,6 +105,19 @@ export default function TabLayout() {
             <LayoutDashboard color={color} size={size} />
           ),
           href: isHostOrAdmin ? undefined : null, // Hide if not host/admin
+          headerRight: () => (
+            <Link href={"/messages" as any} asChild>
+              <Pressable style={{ marginRight: 15 }}>
+                {({ pressed }) => (
+                  <MessageCircle
+                    size={25}
+                    color={Colors[colorScheme ?? "light"].text}
+                    style={{ opacity: pressed ? 0.5 : 1 }}
+                  />
+                )}
+              </Pressable>
+            </Link>
+          ),
         }}
       />
       <Tabs.Screen
@@ -122,3 +138,4 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+// Trigger re-bundling

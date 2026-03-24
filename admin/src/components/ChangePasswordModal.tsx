@@ -55,25 +55,66 @@ const ChangePasswordModal = () => {
   };
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modal} style={{ maxWidth: '450px' }}>
-        <div className={styles.modalHeader}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ padding: '8px', background: 'rgba(74, 144, 226, 0.1)', borderRadius: '8px', color: 'var(--primary-color)' }}>
-              <Key size={20} />
+    <div className={styles.modalOverlay} style={{ zIndex: 2000 }}>
+      <div 
+        className={styles.modal} 
+        style={{ 
+          maxWidth: '450px', 
+          borderRadius: '24px', 
+          padding: '0',
+          overflow: 'hidden',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+        }}
+      >
+        <div 
+          className={styles.modalHeader} 
+          style={{ 
+            padding: '32px 32px 24px', 
+            borderBottom: '1px solid #f1f5f9',
+            background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ 
+              padding: '12px', 
+              background: 'rgba(47, 149, 220, 0.1)', 
+              borderRadius: '16px', 
+              color: '#2f95dc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Key size={24} />
             </div>
-            <h2>Change Password Required</h2>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.025em' }}>
+                Secure Your Account
+              </h2>
+              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#64748b', fontWeight: '500' }}>
+                Password change required
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className={styles.modalContent}>
-          <p style={{ color: 'var(--text-light)', marginBottom: '24px', fontSize: '0.95rem' }}>
-            For security reasons, you are required to change your temporary password before proceeding.
-          </p>
+        <div style={{ padding: '32px' }}>
+          <div style={{ 
+            background: '#eff6ff', 
+            padding: '16px 20px', 
+            borderRadius: '16px', 
+            marginBottom: '32px', 
+            border: '1px solid #dbeafe',
+          }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e40af', lineHeight: '1.6', fontWeight: '500' }}>
+              For your security, you must update your temporary password before you can access the dashboard.
+            </p>
+          </div>
 
           <form onSubmit={handleSubmit}>
-            <div className={styles.formGroup}>
-              <label>Current Password</label>
+            <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>
+                Current Password
+              </label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showCurrent ? 'text' : 'password'}
@@ -82,19 +123,41 @@ const ChangePasswordModal = () => {
                   onChange={handleInputChange}
                   required
                   placeholder="Enter current password"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '1rem',
+                    transition: 'all 0.2s',
+                    outline: 'none',
+                    background: '#fcfdfe'
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
-                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer' }}
+                  style={{ 
+                    position: 'absolute', 
+                    right: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    background: 'none', 
+                    border: 'none', 
+                    color: '#94a3b8', 
+                    cursor: 'pointer',
+                    padding: '8px'
+                  }}
                 >
                   {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <div className={styles.formGroup}>
-              <label>New Password</label>
+            <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>
+                New Password
+              </label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showNew ? 'text' : 'password'}
@@ -103,19 +166,41 @@ const ChangePasswordModal = () => {
                   onChange={handleInputChange}
                   required
                   placeholder="At least 8 characters"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '1rem',
+                    transition: 'all 0.2s',
+                    outline: 'none',
+                    background: '#fcfdfe'
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
-                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer' }}
+                  style={{ 
+                    position: 'absolute', 
+                    right: '12px', 
+                    top: '50%', 
+                    transform: 'translateY(-50%)', 
+                    background: 'none', 
+                    border: 'none', 
+                    color: '#94a3b8', 
+                    cursor: 'pointer',
+                    padding: '8px'
+                  }}
                 >
                   {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <div className={styles.formGroup}>
-              <label>Confirm New Password</label>
+            <div className={styles.formGroup} style={{ marginBottom: '32px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>
+                Confirm New Password
+              </label>
               <input
                 type="password"
                 name="confirmPassword"
@@ -123,25 +208,57 @@ const ChangePasswordModal = () => {
                 onChange={handleInputChange}
                 required
                 placeholder="Repeat new password"
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '1rem',
+                  transition: 'all 0.2s',
+                  outline: 'none',
+                  background: '#fcfdfe'
+                }}
               />
             </div>
 
             {error && (
-              <div style={{ color: 'var(--danger-color)', fontSize: '0.85rem', marginBottom: '16px', background: 'rgba(231, 76, 60, 0.1)', padding: '10px', borderRadius: '4px', textAlign: 'center' }}>
+              <div style={{ 
+                color: '#ef4444', 
+                fontSize: '0.875rem', 
+                marginBottom: '24px', 
+                background: '#fee2e2', 
+                padding: '12px 16px', 
+                borderRadius: '12px', 
+                textAlign: 'center',
+                border: '1px solid #fecaca',
+                fontWeight: '500'
+              }}>
                 {error}
               </div>
             )}
 
-            <div className={styles.formActions} style={{ marginTop: '24px' }}>
-              <button
-                type="submit"
-                className={classNames(styles.btn, styles.primary)}
-                style={{ width: '100%' }}
-                disabled={loading}
-              >
-                {loading ? 'Updating...' : 'Update Password & Continue'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              className={classNames(styles.btn, styles.primary)}
+              style={{ 
+                width: '100%', 
+                padding: '16px', 
+                borderRadius: '14px', 
+                fontSize: '1rem', 
+                fontWeight: '700',
+                background: '#2f95dc',
+                color: 'white',
+                border: 'none',
+                boxShadow: '0 10px 15px -3px rgba(47, 149, 220, 0.3)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              disabled={loading}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              {loading ? 'Updating Security...' : 'Update Password & Access Dashboard'}
+            </button>
           </form>
         </div>
       </div>

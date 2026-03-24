@@ -21,15 +21,21 @@ export class RolesGuard implements CanActivate {
     const { user }: { user: User } = context.switchToHttp().getRequest();
     
     if (!user) {
+      console.error('RolesGuard: No user found in request. JWT Auth might have failed.');
       throw new ForbiddenException('User not authenticated');
     }
+
+    console.log(`RolesGuard: User ${user.email} with role ${user.role} attempting to access ${context.getHandler().name}`);
+    console.log(`RolesGuard: Required roles: ${requiredRoles.join(', ')}`);
 
     const hasRole = requiredRoles.some((role) => user.role === role);
     
     if (!hasRole) {
+      console.error(`RolesGuard: Permission denied for user ${user.email}. Role ${user.role} not in [${requiredRoles.join(', ')}]`);
       throw new ForbiddenException(`Required role: ${requiredRoles.join(' or ')}`);
     }
 
+    console.log('RolesGuard: Permission granted.');
     return true;
   }
 }

@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useRef,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { favoritesAPI } from "../services/api";
@@ -29,11 +30,20 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({
   const [favoriteProperties, setFavoriteProperties] = useState<Property[]>([]);
   const { user } = useAuth(); // Need user to fetch favorites
 
+  const lastLoadedUserId = useRef<string | null>(null);
+
   useEffect(() => {
     if (user) {
-      loadFavorites();
+      if (user.id !== lastLoadedUserId.current) {
+        loadFavorites();
+        lastLoadedUserId.current = user.id;
+      }
     } else {
-      setFavorites([]);
+      if (lastLoadedUserId.current !== null) {
+        setFavorites([]);
+        setFavoriteProperties([]);
+        lastLoadedUserId.current = null;
+      }
     }
   }, [user]);
 

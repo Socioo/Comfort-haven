@@ -9,6 +9,8 @@
   --warning-color: #FFA000;
   --error-color: #D32F2F;
   --info-color: #1976D2;
+  --status-neutral: #64748b;
+  --status-dark: #334155;
 
   /* Neutrals - Light Mode (Default) */
   --bg-color: #FFF5F2; /* Light Pinkish Background */
@@ -44,7 +46,7 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
-[data-theme='dark'] {
+:root[data-theme='dark'] {
   --bg-color: #0f172a;
   --card-bg: #1e293b;
   --text-main: #f8fafc;

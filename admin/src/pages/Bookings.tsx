@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+
 import api from "../services/api";
 import listStyles from "../styles/Guests.module.css";
 import { Search, User } from "lucide-react";
 import classNames from "classnames";
+import BookingModal from "../components/BookingModal";
+import Pagination from "../components/Pagination";
 
 interface Booking {
   id: string;
@@ -23,10 +25,12 @@ interface Booking {
 }
 
 const Bookings = () => {
-  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const sampleBookings: Booking[] = [
     {
@@ -155,6 +159,11 @@ const Bookings = () => {
     );
   }, [bookings, searchTerm]);
 
+  const paginatedBookings = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredBookings.slice(start, start + itemsPerPage);
+  }, [filteredBookings, currentPage]);
+
   const stats = useMemo(() => {
     const total = bookings.length;
     const successful = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed').length;
@@ -162,6 +171,11 @@ const Bookings = () => {
     const uncompleted = total - successful - failed;
     return { total, successful, uncompleted, failed };
   }, [bookings]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (loading) return <div>Loading...</div>;
 
@@ -215,7 +229,7 @@ const Bookings = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredBookings.map((b) => (
+            {paginatedBookings.map((b) => (
               <tr key={b.id}>
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -252,7 +266,7 @@ const Bookings = () => {
                 <td>
                   <button
                     className={listStyles.viewBtn}
-                    onClick={() => navigate(`/bookings/${b.id}`)}
+                    onClick={() => setSelectedBookingId(b.id)}
                   >
                     View
                   </button>
@@ -261,7 +275,16 @@ const Bookings = () => {
             ))}
           </tbody>
         </table>
+        <Pagination 
+          currentPage={currentPage}
+          totalItems={filteredBookings.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
+      {selectedBookingId && (
+        <BookingModal bookingId={selectedBookingId} onClose={() => setSelectedBookingId(null)} />
+      )}
     </div>
   );
 };

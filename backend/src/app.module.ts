@@ -18,6 +18,8 @@ import { SupportModule } from './support/support.module';
 import { FinanceModule } from './finance/finance.module';
 import { ConfigurationModule } from './config/config.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SettingsModule } from './settings/settings.module';
+import { FaqsModule } from './faqs/faqs.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -31,10 +33,10 @@ import typeormConfig from './config/typeorm.config';
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 10,
+      limit: 200,
     }]),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
     }),
     TypeOrmModule.forRootAsync({
@@ -59,6 +61,8 @@ import typeormConfig from './config/typeorm.config';
     FinanceModule,
     ConfigurationModule,
     NotificationsModule,
+    SettingsModule,
+    FaqsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

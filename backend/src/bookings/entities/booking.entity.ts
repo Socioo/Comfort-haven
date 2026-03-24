@@ -7,14 +7,14 @@ export class Booking {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @ManyToOne(() => Property, (property) => property.bookings)
+    @ManyToOne(() => Property, (property) => property.bookings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'propertyId' })
     property: Property;
 
     @Column()
     propertyId: string;
 
-    @ManyToOne(() => User, (user) => user.bookings)
+    @ManyToOne(() => User, (user) => user.bookings, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'guestId' })
     guest: User;
 

@@ -35,11 +35,11 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  const colorScheme = useColorScheme();
+  
   if (!loaded) {
     return null;
   }
-
-  const colorScheme = useColorScheme();
 
   const ComfortHavenTheme = {
     ...DefaultTheme,

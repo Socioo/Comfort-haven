@@ -18,6 +18,8 @@ import Refunds from "./pages/Refunds";
 import RefundDetails from "./pages/RefundDetails";
 import PaymentSettings from "./pages/PaymentSettings";
 import Notifications from "./pages/Notifications";
+import ContactSocialInfo from "./pages/ContactSocialInfo";
+import Faqs from "./pages/Faqs";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -48,12 +50,14 @@ function App() {
               <Route path="settings" element={<AppSettings />} />
               <Route path="admin-settings" element={<AdminSettings />} />
               <Route path="support" element={<Support />} />
+              <Route path="faqs" element={<Faqs />} />
               <Route path="payouts" element={<Payouts />} />
               <Route path="payouts/:id" element={<PayoutDetails />} />
               <Route path="refunds" element={<Refunds />} />
               <Route path="refunds/:id" element={<RefundDetails />} />
               <Route path="payment-settings" element={<PaymentSettings />} />
               <Route path="notifications" element={<Notifications />} />
+              <Route path="contact-info" element={<ContactSocialInfo />} />
             </Route>
           </Route>
 

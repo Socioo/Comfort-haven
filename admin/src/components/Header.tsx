@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Mail, Clock } from "lucide-react";
+import { Bell, Mail, Clock, Menu } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import UserAvatar from "./UserAvatar";
@@ -7,8 +7,12 @@ import styles from "./Header.module.css";
 import { adminAPI } from "../services/api";
 import classNames from "classnames";
 
-const Header = () => {
-    const { user } = useAuth();
+interface HeaderProps {
+    onMenuClick?: () => void;
+}
+
+const Header = ({ onMenuClick }: HeaderProps) => {
+    const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [unreadMessages, setUnreadMessages] = useState(0);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -21,6 +25,8 @@ const Header = () => {
     const messageRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!isAuthenticated) return; // Don't fetch if not logged in
+
         const fetchCounts = async () => {
             try {
                 const [msgRes, notifyRes, listRes] = await Promise.all([
@@ -44,7 +50,7 @@ const Header = () => {
         fetchCounts();
         const interval = setInterval(fetchCounts, 30000); // Refresh every 30s
         return () => clearInterval(interval);
-    }, []);
+    }, [isAuthenticated]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -71,6 +77,11 @@ const Header = () => {
 
     return (
         <header className={styles.header}>
+            <div className={styles.headerLeft}>
+                <button className={styles.menuBtn} onClick={onMenuClick}>
+                    <Menu size={24} />
+                </button>
+            </div>
             <div className={styles.actions}>
                 <div style={{ position: 'relative' }} ref={messageRef}>
                     <button 

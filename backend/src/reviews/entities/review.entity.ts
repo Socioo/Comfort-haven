@@ -24,7 +24,7 @@ export class Review {
   @JoinColumn({ name: 'propertyId' })
   property: Property;
 
-  @Column()
+  @Column({ nullable: true })
   propertyId: string;
 
   @CreateDateColumn()

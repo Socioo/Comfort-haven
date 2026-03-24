@@ -24,6 +24,7 @@ import api from "../services/api";
 import classNames from "classnames";
 import styles from "../styles/Dashboard.module.css";
 import { useTheme } from "../contexts/ThemeContext";
+import UserModal from "../components/UserModal";
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -34,6 +35,7 @@ const Dashboard = () => {
     const [period, setPeriod] = useState('7d');
     const [revenueStart, setRevenueStart] = useState('');
     const [revenueEnd, setRevenueEnd] = useState('');
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchStats();
@@ -62,24 +64,25 @@ const Dashboard = () => {
         </div>
     );
 
-    if (error) return <div style={{ color: "red", padding: 40, textAlign: 'center' }}>{error}</div>;
+    if (error) return <div style={{ color: "var(--error-color)", padding: 40, textAlign: 'center', fontWeight: '500' }}>{error}</div>;
 
     const summaryCards = [
         { label: "Total Guests", value: stats.summary.totalGuests, icon: Users, color: "var(--primary-color)", bg: "rgba(47, 149, 220, 0.15)" },
         { label: "Total Hosts", value: stats.summary.totalHosts, icon: UserCheck, color: "var(--success-color)", bg: "rgba(76, 175, 80, 0.15)" },
         { label: "Active Properties", value: stats.summary.activeProperties, icon: Home, color: "var(--warning-color)", bg: "rgba(255, 160, 0, 0.15)" },
-        { label: "Active Guests", value: stats.summary.activeGuests, icon: TrendingUp, color: "var(--error-color)", bg: "rgba(211, 47, 47, 0.15)" },
+        { label: "Active Guests", value: stats.summary.activeGuests, icon: TrendingUp, color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.15)" },
         { label: "Active Hosts", value: stats.summary.activeHosts, icon: UserCheck, color: "#BF5AF2", bg: "rgba(191, 90, 242, 0.15)" },
     ];
 
     const handleAcceptUser = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
-            await api.patch(`/users/${id}/status`, { status: "active" });
+            await api.patch(`/users/${id}/verify`);
             fetchStats(); // Refresh dashboard
-        } catch (err) {
-            console.error("Failed to accept user", err);
-            alert("Failed to accept user.");
+        } catch (err: any) {
+            console.error("Failed to verify host", err);
+            const msg = err.response?.data?.message || err.message || "Unknown error";
+            alert(`Failed to verify host: ${msg}`);
         }
     };
 
@@ -223,35 +226,52 @@ const Dashboard = () => {
                             <span style={{ fontSize: '1.25rem', color: '#64748b' }}>•••</span>
                         </div>
                         <div className={styles.activityList}>
-                            {stats.recentHosts.slice(0, 3).map((host: any) => (
-                                <div key={host.id} className={styles.hostCardContainer}>
-                                    <div className={styles.hostAvatar}>
-                                        {host.name.charAt(0)}
-                                    </div>
-                                    <div className={styles.hostCardInfo}>
-                                        <div className={styles.hostCardName}>{host.name}</div>
-                                        <div className={styles.hostCardMeta}>
-                                            <span>Role: Host</span>
-                                            <span style={{ color: '#cbd5e1' }}>•</span>
-                                            <span>{host.createdAt ? new Date(host.createdAt).toLocaleDateString() : 'Just now'}</span>
+                            {stats.recentHosts && stats.recentHosts.length > 0 ? (
+                                stats.recentHosts.slice(0, 3).map((activity: any) => (
+                                    <div key={activity.id} className={styles.hostCardContainer}>
+                                        <div className={styles.hostAvatar} style={{ backgroundColor: 'var(--success-color)' }}>
+                                            {activity.name.charAt(0)}
                                         </div>
-                                        <div className={styles.hostCardActions}>
-                                            <button 
-                                                className={styles.btnLight}
-                                                onClick={() => navigate(`/hosts/${host.id}`)}
-                                            >
-                                                View
-                                            </button>
-                                            <button 
-                                                className={styles.btnDanger}
-                                                onClick={(e) => handleAcceptUser(host.id, e)}
-                                            >
-                                                Verify
-                                            </button>
+                                        <div className={styles.hostCardInfo}>
+                                            <div className={styles.hostCardName}>{activity.name}</div>
+                                            <div className={styles.hostCardMeta}>
+                                                <span style={{ textTransform: 'capitalize' }}>Role: {activity.role}</span>
+                                                <span style={{ color: '#cbd5e1' }}>•</span>
+                                                <span>{activity.createdAt ? new Date(activity.createdAt).toLocaleDateString() : 'Just now'}</span>
+                                            </div>
+                                            <div className={styles.hostCardActions}>
+                                                <button 
+                                                    className={styles.btnLight}
+                                                    onClick={() => setSelectedUserId(activity.id)}
+                                                >
+                                                    View
+                                                </button>
+                                                <button 
+                                                    className={styles.btnPrimary}
+                                                    style={{ 
+                                                        padding: '6px 16px',
+                                                        background: 'var(--primary-color)',
+                                                        color: 'white',
+                                                        borderRadius: '10px',
+                                                        border: 'none',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.8rem',
+                                                        flex: 1
+                                                    }}
+                                                    onClick={(e) => handleAcceptUser(activity.id, e)}
+                                                >
+                                                    Verify
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
+                                ))
+                            ) : (
+                                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                                    no new host
                                 </div>
-                            ))}
+                            )}
                         </div>
                         <a href="/hosts" className={styles.viewAllLink}>View all</a>
                     </div>
@@ -265,52 +285,61 @@ const Dashboard = () => {
                             <span style={{ fontSize: '1.25rem', color: '#64748b' }}>•••</span>
                         </div>
                         <div className={styles.activityList}>
-                            {stats.recentProperties.slice(0, 3).map((prop: any) => (
-                                <div key={prop.id} className={styles.propCardContainer}>
-                                    <div 
-                                        className={styles.propCardTop}
-                                        onClick={() => navigate(`/properties/${prop.id}`)}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <div className={styles.propAvatar}>
-                                            <Home size={32} />
-                                        </div>
-                                        <div className={styles.propCardInfo}>
-                                            <div className={styles.propCardTitle}>Property host</div>
-                                            <div className={styles.propCardSubtitle}>{prop.title}</div>
-                                            <div className={styles.propCardTime}>
-                                                {prop.createdAt ? new Date(prop.createdAt).toLocaleDateString() : 'Just now'}
+                            {stats.recentProperties && stats.recentProperties.length > 0 ? (
+                                stats.recentProperties.slice(0, 3).map((prop: any) => (
+                                    <div key={prop.id} className={styles.propCardContainer}>
+                                        <div 
+                                            className={styles.propCardTop}
+                                            onClick={() => navigate(`/properties/${prop.id}`)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <div className={styles.propAvatar}>
+                                                <Home size={32} />
                                             </div>
-                                            <span className={classNames(styles.tag, styles[prop.status] || styles.pending)}>
-                                                {prop.status || 'pending'}
-                                            </span>
+                                            <div className={styles.propCardInfo}>
+                                                <div className={styles.propCardTitle}>Property host</div>
+                                                <div className={styles.propCardSubtitle}>{prop.title}</div>
+                                                <div className={styles.propCardTime}>
+                                                    {prop.createdAt ? new Date(prop.createdAt).toLocaleDateString() : 'Just now'}
+                                                </div>
+                                                <span className={classNames(styles.tag, styles[prop.status] || styles.pending)}>
+                                                    {prop.status || 'pending'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <hr className={styles.cardDivider} />
+                                        <div className={styles.propCardActions}>
+                                            <button 
+                                                className={styles.btnLightFull}
+                                                onClick={(e) => { e.stopPropagation(); handleAcceptProperty(prop.id, e) }}
+                                            >
+                                                Approve
+                                            </button>
+                                            <button 
+                                                className={styles.btnDangerFull}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    alert("Property rejection will be processed.");
+                                                }}
+                                            >
+                                                Reject
+                                            </button>
                                         </div>
                                     </div>
-                                    <hr className={styles.cardDivider} />
-                                    <div className={styles.propCardActions}>
-                                        <button 
-                                            className={styles.btnLightFull}
-                                            onClick={(e) => { e.stopPropagation(); handleAcceptProperty(prop.id, e) }}
-                                        >
-                                            Approve
-                                        </button>
-                                        <button 
-                                            className={styles.btnDangerFull}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                alert("Property rejection will be processed.");
-                                            }}
-                                        >
-                                            Reject
-                                        </button>
-                                    </div>
+                                ))
+                            ) : (
+                                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                                    no new property
                                 </div>
-                            ))}
+                            )}
                         </div>
                         <a href="/properties" className={styles.viewAllLink}>View all</a>
                     </div>
                 </aside>
             </div>
+            {selectedUserId && (
+                <UserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+            )}
         </div>
     );
 };

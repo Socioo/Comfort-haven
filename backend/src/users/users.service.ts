@@ -87,28 +87,34 @@ export class UsersService {
   }
 
   async updatePassword(id: string, updateData: any): Promise<User | null> {
+    console.log(`Attempting password update for user: ${id}`);
     const user = await this.usersRepository.findOne({
       where: { id },
       select: ['id', 'password', 'mustChangePassword'],
     });
 
     if (!user) {
+      console.error(`Password update failed: User ${id} not found`);
       throw new UnauthorizedException('User not found');
     }
 
     const { currentPassword, newPassword } = updateData;
 
+    console.log('Comparing current password...');
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid current password');
+      console.warn(`Password update failed: Invalid current password for user ${id}`);
+      throw new UnauthorizedException('Invalid current password. Please check your current password and try again.');
     }
 
+    console.log('Hashing new password...');
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.usersRepository.update(id, { 
       password: hashedPassword,
       mustChangePassword: false 
     });
 
+    console.log(`Password updated successfully for user ${id}`);
     return this.findById(id);
   }
 
@@ -122,9 +128,26 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await this.usersRepository.update(id, { password: hashedPassword });
+    await this.usersRepository.update(id, { 
+      password: hashedPassword,
+      mustChangePassword: true
+    });
 
     return this.findById(id);
+  }
+
+  async adminVerify(id: string): Promise<User | null> {
+    console.log(`Attempting to verify user: ${id}`);
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      console.error(`User not found for verification: ${id}`);
+      throw new UnauthorizedException('User not found');
+    }
+    console.log(`User found. Current status: ${user.status}, Role: ${user.role}. Updating to verified/active.`);
+    await this.usersRepository.update(id, { isVerified: true, status: 'active' });
+    const updatedUser = await this.findById(id);
+    console.log(`User ${id} verified successfully.`);
+    return updatedUser;
   }
 
   async findAll(): Promise<User[]> {
@@ -132,7 +155,10 @@ export class UsersService {
   }
 
   async findAllByRole(role: string): Promise<User[]> {
-    return this.usersRepository.find({ where: { role: role as any } });
+    return this.usersRepository.find({ 
+      where: { role: role as any },
+      relations: ['properties']
+    });
   }
 
   async remove(id: string): Promise<void> {

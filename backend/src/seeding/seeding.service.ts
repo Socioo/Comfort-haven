@@ -5,6 +5,7 @@ import { User } from '../users/entities/user.entity';
 import { Property } from '../properties/entities/property.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 import { Favorite } from '../favorites/entities/favorite.entity';
+import { Faq } from '../faqs/entities/faq.entity';
 import { UserRole } from '../common/constants';
 import * as bcrypt from 'bcryptjs';
 
@@ -21,6 +22,8 @@ export class SeedingService implements OnApplicationBootstrap {
         private bookingsRepository: Repository<Booking>,
         @InjectRepository(Favorite)
         private favoritesRepository: Repository<Favorite>,
+        @InjectRepository(Faq)
+        private faqsRepository: Repository<Faq>,
     ) { }
 
     async onApplicationBootstrap() {
@@ -39,13 +42,14 @@ export class SeedingService implements OnApplicationBootstrap {
         const properties = await this.seedProperties(users);
         await this.seedBookings(users, properties);
         await this.seedFavorites(users, properties);
+        await this.seedFaqs();
 
         this.logger.log('Seeding completed successfully!');
     }
 
     private async clearDatabase() {
         this.logger.log('Clearing existing data using raw SQL...');
-        const tables = ['favorites', 'bookings', 'reviews', 'messages', 'properties', 'users'];
+        const tables = ['faqs', 'favorites', 'bookings', 'reviews', 'messages', 'properties', 'users'];
         for (const table of tables) {
             try {
                 await this.usersRepository.query(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`);
@@ -225,6 +229,50 @@ export class SeedingService implements OnApplicationBootstrap {
 
         const favoritesEntities = this.favoritesRepository.create(favoritesData as any);
         await this.favoritesRepository.save(favoritesEntities);
+    }
+
+    private async seedFaqs() {
+        this.logger.log('Seeding house rent FAQs...');
+        const faqsData: Partial<Faq>[] = [
+            {
+                question: 'How do I pay for house rent?',
+                answer: 'You can pay through the app using your wallet, debit card, or bank transfer. All payments are processed securely.',
+                targetAudience: 'guest' as any
+            },
+            {
+                question: 'Can I pay house rent in installments?',
+                answer: 'This depends on the host\'s policy. Most hosts require full payment upfront, but some may offer monthly plans. Check the listing details for specific terms.',
+                targetAudience: 'guest' as any
+            },
+            {
+                question: 'What happens if I pay rent late?',
+                answer: 'Late payments may incur a penalty fee as specified in your rental agreement. Please ensure you pay on time to avoid extra charges.',
+                targetAudience: 'guest' as any
+            },
+            {
+                question: 'Is my rent payment secure?',
+                answer: 'Yes, all payments are processed through our secure payment gateway and held in escrow until check-in for your protection.',
+                targetAudience: 'both' as any
+            },
+            {
+                question: 'Can I get a refund if I cancel my booking?',
+                answer: 'Refunds are subject to the host\'s cancellation policy which is displayed on the property listing at the time of booking.',
+                targetAudience: 'guest' as any
+            },
+            {
+                question: 'How do I set the rent for my property?',
+                answer: 'Hosts can set and adjust the rent for their properties through the "My Listings" section in the host dashboard.',
+                targetAudience: 'host' as any
+            },
+            {
+                question: 'When do I receive the rent payment from guests?',
+                answer: 'Rent payments are typically released to the host 24 hours after the guest\'s scheduled check-in time, or according to the payout schedule configured in your settings.',
+                targetAudience: 'host' as any
+            }
+        ];
+
+        const faqsEntities = this.faqsRepository.create(faqsData as any);
+        await this.faqsRepository.save(faqsEntities);
     }
 
     async fixImages() {

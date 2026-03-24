@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+
 import api from "../services/api";
 import styles from "../styles/Finance.module.css";
 import { Search, User } from "lucide-react";
 import classNames from "classnames";
+import PayoutModal from "../components/PayoutModal";
 
 interface Payout {
   id: string;
@@ -22,10 +23,10 @@ interface Payout {
 }
 
 const Payouts = () => {
-  const navigate = useNavigate();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
 
   const samplePayouts: Payout[] = [
     {
@@ -110,21 +111,21 @@ const Payouts = () => {
     }
   ];
 
-  useEffect(() => {
-    const fetchPayouts = async () => {
-      try {
-        const response = await api.get("/finance/payouts");
-        setPayouts(response.data.length > 0 ? response.data : samplePayouts);
-      } catch (error) {
-        console.error("Failed to fetch payouts", error);
-        setPayouts(samplePayouts);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchPayouts = async () => {
+    try {
+      const response = await api.get("/finance/payouts");
+      setPayouts(response.data.length > 0 ? response.data : samplePayouts);
+    } catch (error) {
+      console.error("Failed to fetch payouts", error);
+      setPayouts(samplePayouts);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchPayouts();
-  }, [samplePayouts]);
+  }, []);
 
   const filteredPayouts = useMemo(() => {
     return payouts.filter(p => 
@@ -226,7 +227,7 @@ const Payouts = () => {
                 <td>
                   <button 
                     className={styles.viewBtn}
-                    onClick={() => navigate(`/payouts/${p.id}`)}
+                    onClick={() => setSelectedPayoutId(p.id)}
                   >
                     View
                   </button>
@@ -236,6 +237,13 @@ const Payouts = () => {
           </tbody>
         </table>
       </div>
+      {selectedPayoutId && (
+        <PayoutModal 
+          payoutId={selectedPayoutId} 
+          onClose={() => setSelectedPayoutId(null)} 
+          onUpdate={fetchPayouts}
+        />
+      )}
     </div>
   );
 };
