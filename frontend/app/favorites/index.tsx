@@ -1,8 +1,6 @@
 import React from "react";
 import {
   StyleSheet,
-  View,
-  Text,
   FlatList,
   TouchableOpacity,
   Pressable,
@@ -10,7 +8,9 @@ import {
 import { Image } from "expo-image";
 import { useRouter, Stack } from "expo-router";
 import { MapPin, Star, Heart } from "lucide-react-native";
+import { Text, View, Card } from "@/components/Themed";
 import Colors from "@/constants/Colors";
+import { useTheme } from "@/contexts/theme";
 import { mockProperties } from "@/mocks/properties";
 import { useAuth } from "@/contexts/auth";
 import { useFavorites } from "@/contexts/favorites";
@@ -18,6 +18,8 @@ import * as Haptics from "expo-haptics";
 
 export default function FavoritesScreen() {
   const router = useRouter();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
   const { favorites, toggleFavorite } = useFavorites();
 
@@ -37,7 +39,7 @@ export default function FavoritesScreen() {
 
   const renderProperty = ({ item }: { item: (typeof mockProperties)[0] }) => (
     <Pressable
-      style={styles.propertyCard}
+      style={[styles.propertyCard, { backgroundColor: themeColors.card }]}
       onPress={() => handlePropertyPress(item.id)}
     >
       <Image
@@ -46,7 +48,7 @@ export default function FavoritesScreen() {
         contentFit="cover"
       />
       <TouchableOpacity
-        style={styles.favoriteButton}
+        style={[styles.favoriteButton, { backgroundColor: themeColors.overlay }]}
         onPress={() => handleFavoritePress(item.id)}
       >
         <Heart color={Colors.primary} fill={Colors.primary} size={20} />
@@ -56,7 +58,7 @@ export default function FavoritesScreen() {
           {item.title}
         </Text>
         <View style={styles.locationRow}>
-          <MapPin color={Colors.textLight} size={14} />
+          <MapPin color={themeColors.textLight} size={14} />
           <Text style={styles.locationText} numberOfLines={1}>
             {item.location}, {item.lga}
           </Text>
@@ -83,7 +85,7 @@ export default function FavoritesScreen() {
       <>
         <Stack.Screen options={{ title: "Favorites" }} />
         <View style={styles.emptyContainer}>
-          <Heart color={Colors.textLight} size={64} />
+          <Heart color={themeColors.textLight} size={64} />
           <Text style={styles.emptyTitle}>Sign in to save favorites</Text>
           <Text style={styles.emptyText}>
             Create an account to save properties you love
@@ -104,7 +106,7 @@ export default function FavoritesScreen() {
       <>
         <Stack.Screen options={{ title: "Favorites" }} />
         <View style={styles.emptyContainer}>
-          <Heart color={Colors.textLight} size={64} />
+          <Heart color={themeColors.textLight} size={64} />
           <Text style={styles.emptyTitle}>No favorites yet</Text>
           <Text style={styles.emptyText}>
             Start exploring and save your favorite properties
@@ -138,14 +140,12 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   listContent: {
     padding: 20,
     gap: 16,
   },
   propertyCard: {
-    backgroundColor: Colors.card,
     borderRadius: 16,
     overflow: "hidden" as const,
     elevation: 2,
@@ -162,7 +162,6 @@ const styles = StyleSheet.create({
     position: "absolute" as const,
     top: 12,
     right: 12,
-    backgroundColor: Colors.overlay,
     borderRadius: 20,
     padding: 8,
   },
@@ -206,7 +205,6 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: "600" as const,
-    color: Colors.text,
   },
   reviewCount: {
     fontSize: 12,
@@ -219,7 +217,6 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     padding: 40,
@@ -227,7 +224,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 24,
     fontWeight: "bold" as const,
-    color: Colors.text,
     marginTop: 20,
     marginBottom: 8,
   },
@@ -244,7 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   signInButtonText: {
-    color: Colors.card,
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600" as const,
   },
@@ -255,7 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   exploreButtonText: {
-    color: Colors.card,
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600" as const,
   },

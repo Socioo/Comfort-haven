@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  View,
 } from "react-native";
 import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { useAuth } from "@/contexts/auth";
+import { useTheme } from "@/contexts/theme";
 import Colors from "@/constants/Colors";
-import { Text } from "@/components/Themed";
+import { Text, View } from "@/components/Themed";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -27,6 +27,10 @@ export default function HostBookingRequestsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  
+  const styles = createStyles(themeColors);
   
   // Hide parent tab header when this screen is open
   useLayoutEffect(() => {
@@ -78,7 +82,7 @@ export default function HostBookingRequestsScreen() {
       case "pending":
         return Colors.warning;
       default:
-        return Colors.textLight;
+        return themeColors.textLight;
     }
   };
 
@@ -105,7 +109,7 @@ export default function HostBookingRequestsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ChevronLeft color={Colors.text} size={24} />
+          <ChevronLeft color={themeColors.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Booking Requests</Text>
         <View style={{ width: 32 }} />
@@ -120,7 +124,7 @@ export default function HostBookingRequestsScreen() {
           <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
         ) : bookings.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <History size={64} color={Colors.textLight} strokeWidth={1} />
+            <History size={64} color={themeColors.textLight} strokeWidth={1} />
             <Text style={styles.emptyTitle}>No booking requests</Text>
             <Text style={styles.emptySubtitle}>
               When guests book your properties, they'll appear here.
@@ -152,7 +156,7 @@ export default function HostBookingRequestsScreen() {
 
               <View style={styles.cardContent}>
                 <View style={styles.infoRow}>
-                  <GuestIcon size={16} color={Colors.textLight} />
+                  <GuestIcon size={16} color={themeColors.textLight} />
                   <Text style={styles.infoText}>
                     Guest: {booking.guest?.name || (booking.guest?.firstName ? `${booking.guest.firstName} ${booking.guest.lastName}` : "Anonymous")}
                   </Text>
@@ -188,10 +192,9 @@ export default function HostBookingRequestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -200,9 +203,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   backButton: {
     padding: 4,
@@ -210,7 +213,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
   },
   scrollContent: {
     padding: 16,
@@ -228,20 +230,19 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.text,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     textAlign: "center",
     paddingHorizontal: 40,
   },
   bookingCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   cardHeader: {
     flexDirection: "row",
@@ -252,7 +253,6 @@ const styles = StyleSheet.create({
   propertyName: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
     marginBottom: 4,
   },
   statusRow: {
@@ -286,12 +286,12 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   dateRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.background,
+    backgroundColor: themeColors.background,
     padding: 12,
     borderRadius: 12,
     justifyContent: "space-between",
@@ -302,19 +302,18 @@ const styles = StyleSheet.create({
   },
   dateLabel: {
     fontSize: 10,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     marginBottom: 2,
     fontWeight: "600",
   },
   dateValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: Colors.text,
   },
   dateDivider: {
     width: 1,
     height: 24,
-    backgroundColor: Colors.border,
+    backgroundColor: themeColors.border,
   },
   actionButtons: {
     flexDirection: "row",

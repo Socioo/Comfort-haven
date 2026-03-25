@@ -1,12 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Booking } from './entities/booking.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
+import axios from 'axios';
+
+const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
 @Injectable()
 export class BookingsService {
+    private get paystackSecret(): string {
+        return process.env.PAYSTACK_SECRET_KEY || 'sk_test_your_key_here';
+    }
+
     constructor(
         @InjectRepository(Booking)
         private bookingsRepository: Repository<Booking>,
@@ -100,5 +107,72 @@ export class BookingsService {
 
     async cancel(id: string) {
         return this.bookingsRepository.update(id, { status: 'cancelled' });
+    }
+
+    async initializePayment(data: {
+        email: string;
+        amount: number; // in kobo (multiply NGN by 100)
+        metadata: {
+            propertyId: string;
+            guestId: string;
+            startDate: string;
+            endDate: string;
+            guests: number;
+        };
+    }) {
+        try {
+            const response = await axios.post(
+                `${PAYSTACK_BASE_URL}/transaction/initialize`,
+                {
+                    email: data.email,
+                    amount: Math.round(data.amount * 100), // convert to kobo
+                    metadata: data.metadata,
+                    callback_url: 'comforthaven://payment-callback',
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.paystackSecret}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+            return response.data.data; // { authorization_url, access_code, reference }
+        } catch (error) {
+            throw new BadRequestException('Failed to initialize payment: ' + error.message);
+        }
+    }
+
+    async verifyPaymentAndBook(reference: string) {
+        try {
+            // Verify payment with Paystack
+            const verifyResponse = await axios.get(
+                `${PAYSTACK_BASE_URL}/transaction/verify/${reference}`,
+                {
+                    headers: { Authorization: `Bearer ${this.paystackSecret}` },
+                }
+            );
+
+            const { status, metadata, amount } = verifyResponse.data.data;
+
+            if (status !== 'success') {
+                throw new BadRequestException('Payment verification failed: transaction not successful');
+            }
+
+            // Create the booking now payment is confirmed
+            const booking = this.bookingsRepository.create({
+                propertyId: metadata.propertyId,
+                guestId: metadata.guestId,
+                startDate: metadata.startDate,
+                endDate: metadata.endDate,
+                totalPrice: amount / 100, // convert back from kobo
+                status: 'confirmed',
+                paymentReference: reference,
+            });
+
+            return this.bookingsRepository.save(booking);
+        } catch (error) {
+            if (error instanceof BadRequestException) throw error;
+            throw new BadRequestException('Failed to verify payment: ' + error.message);
+        }
     }
 }

@@ -9,8 +9,9 @@ import {
   Modal,
 } from "react-native";
 import Colors from "@/constants/Colors";
-import { Text, View } from "@/components/Themed";
+import { Text, View, Card } from "@/components/Themed";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/contexts/theme";
 import { useAuth } from "@/contexts/auth";
 import * as Haptics from "expo-haptics";
 import {
@@ -24,6 +25,7 @@ import {
   User as UserIcon,
   Lock,
   Globe,
+  Palette,
 } from "lucide-react-native";
 import { Image } from "expo-image";
 import { API_BASE_URL } from "@/services/api";
@@ -45,7 +47,11 @@ const getImageUrl = (url: string | undefined) => {
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
+  const styles = createStyles(themeColors);
 
   const handleSignOut = async () => {
     setShowLogoutModal(true);
@@ -61,8 +67,8 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
-      <View style={styles.emptyContainer}>
-        <UserIcon color={Colors.textLight} size={64} />
+      <View style={[styles.emptyContainer, { backgroundColor: themeColors.background }]}>
+        <UserIcon color={themeColors.textLight} size={64} />
         <Text style={styles.emptyTitle}>Not signed in</Text>
         <Text style={styles.emptyText}>
           Sign in to access your profile and bookings
@@ -99,12 +105,12 @@ export default function ProfileScreen() {
         <Icon color={Colors.primary} size={22} strokeWidth={1.5} />
         <Text style={styles.menuItemText}>{label}</Text>
       </View>
-      {showChevron && <ChevronRight color={Colors.textLight} size={20} />}
+      {showChevron && <ChevronRight color={themeColors.textLight} size={20} />}
     </TouchableOpacity>
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: themeColors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Header (Avatar & Info) */}
         <View style={styles.header}>
@@ -126,14 +132,16 @@ export default function ProfileScreen() {
         </View>
 
         {/* Group 1: Account */}
-        <View style={styles.group}>
+        <Card style={styles.group}>
           <MenuItem icon={UserIcon} label="Personal Info" onPress={() => router.push("/(tabs)/profile/personal-info" as any)} showChevron={true} />
           <View style={styles.divider} />
+          <MenuItem icon={Palette} label="Appearance" onPress={() => router.push("/(tabs)/profile/appearance" as any)} showChevron={true} />
+          <View style={styles.divider} />
           <MenuItem icon={Lock} label="Change Password" onPress={() => router.push("/(tabs)/profile/change-password" as any)} showChevron={true} />
-        </View>
+        </Card>
 
         {/* Group 2: Activity */}
-        <View style={styles.group}>
+        <Card style={styles.group}>
           <MenuItem 
             icon={CalendarCheck} 
             label={user.role === "host" ? "Booking History" : "Bookings"} 
@@ -145,21 +153,21 @@ export default function ProfileScreen() {
             label="Notifications" 
             onPress={() => router.push("/(tabs)/profile/notifications")}
           />
-        </View>
+        </Card>
 
         {/* Group 3: Support */}
-        <View style={styles.group}>
+        <Card style={styles.group}>
           <MenuItem icon={CircleHelp} label="FAQs" onPress={() => router.push("/(tabs)/profile/faqs" as any)} showChevron={true} />
           <View style={styles.divider} />
           <MenuItem icon={MessageSquare} label="User Reviews" onPress={() => router.push("/(tabs)/profile/user-review" as any)} showChevron={true} />
           <View style={styles.divider} />
           <MenuItem icon={Globe} label="Contact & Social Info" onPress={() => router.push("/(tabs)/profile/contact-social" as any)} showChevron={true} />
-        </View>
+        </Card>
 
         {/* Group 4: Logout */}
-        <View style={styles.group}>
+        <Card style={styles.group}>
           <MenuItem icon={LogOut} label="Log Out" onPress={handleSignOut} />
-        </View>
+        </Card>
       </ScrollView>
 
       {/* Logout Confirmation Modal */}
@@ -174,7 +182,7 @@ export default function ProfileScreen() {
           activeOpacity={1} 
           onPress={() => setShowLogoutModal(false)}
         >
-          <TouchableOpacity activeOpacity={1} style={styles.modalContent}>
+          <TouchableOpacity activeOpacity={1} style={[styles.modalContent, { backgroundColor: themeColors.card }]}>
             <Text style={styles.modalTitle}>Are sure you want to logout?</Text>
             
             <TouchableOpacity 
@@ -197,10 +205,9 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   content: {
     padding: 20,
@@ -216,7 +223,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginRight: 20,
     backgroundColor: "transparent",
-    shadowColor: "#000",
+    shadowColor: themeColors.shadow || "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -231,7 +238,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#FFD1B9",
+    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -242,18 +249,16 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 22,
     fontWeight: "700",
-    color: Colors.text,
     marginBottom: 4,
   },
   tagline: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   group: {
-    backgroundColor: Colors.card,
     borderRadius: 20,
     paddingVertical: 4,
-    shadowColor: "#000",
+    shadowColor: themeColors.shadow || "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: themeColors.border,
     marginLeft: 58,
   },
   menuItem: {
@@ -281,28 +286,25 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 16,
-    color: Colors.text,
-    fontWeight: "500",
+    fontWeight: "500" as const,
   },
   emptyContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     padding: 40,
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: Colors.text,
+    fontWeight: "bold" as const,
     marginTop: 20,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.textLight,
-    textAlign: "center",
+    textAlign: "center" as const,
     marginBottom: 24,
+    color: themeColors.textLight,
   },
   signInButton: {
     backgroundColor: Colors.primary,
@@ -314,9 +316,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   signInButtonText: {
-    color: Colors.white,
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "600" as const,
   },
   signUpButton: {
     backgroundColor: "transparent",
@@ -342,7 +344,6 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "100%",
-    backgroundColor: Colors.card,
     borderRadius: 30,
     padding: 30,
     alignItems: "center",
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.primary, // Using primary blue instead of red/orange
+    color: Colors.primary,
     textAlign: "center",
     marginBottom: 30,
     lineHeight: 28,
@@ -370,9 +371,9 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   confirmButtonText: {
-    color: Colors.white,
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "700" as const,
   },
   cancelButton: {
     width: "100%",

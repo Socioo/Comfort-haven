@@ -140,10 +140,22 @@
 }
 
 .markAllRead {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--primary-color);
     cursor: pointer;
     font-weight: 600;
+}
+
+.clearAll {
+    font-size: 0.7rem;
+    color: var(--error-color);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.headerActions {
+    display: flex;
+    gap: 12px;
 }
 
 .notificationList {

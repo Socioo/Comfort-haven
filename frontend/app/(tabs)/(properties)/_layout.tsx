@@ -6,6 +6,8 @@ import React, { useState, useEffect } from "react";
 import * as ImagePicker from 'expo-image-picker';
 import { propertiesAPI } from "@/services/api";
 import { router, useLocalSearchParams } from "expo-router";
+import { Text, View, Card } from "@/components/Themed";
+import { useTheme } from "@/contexts/theme";
 import {
   Alert,
   Image,
@@ -13,10 +15,8 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -25,7 +25,11 @@ export default function HostPropertiesScreen() {
   const { getHostProperties, addProperty, deleteProperty, isAddingProperty } =
     useProperties();
   const { action } = useLocalSearchParams();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const [showAddModal, setShowAddModal] = useState(false);
+  
+  const styles = createStyles(themeColors);
 
   useEffect(() => {
     if (action === 'add') {
@@ -170,7 +174,7 @@ export default function HostPropertiesScreen() {
 
   if (user?.role !== "host") {
     return (
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={["bottom"]}>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             This feature is only available for hosts
@@ -181,7 +185,7 @@ export default function HostPropertiesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={["bottom"]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -275,11 +279,11 @@ export default function HostPropertiesScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView style={styles.modalContainer}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: themeColors.background }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add New Property</Text>
             <TouchableOpacity onPress={() => setShowAddModal(false)}>
-              <X color={Colors.text} size={24} />
+              <X color={themeColors.text} size={24} />
             </TouchableOpacity>
           </View>
 
@@ -476,116 +480,121 @@ export default function HostPropertiesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: "700" as const,
-    color: Colors.text,
+    fontWeight: "700",
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   addButton: {
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: Colors.primary,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 8,
-    boxShadow: `0px 4px 8px ${Colors.primary}4D`, // 4D is approx 30% alpha
+    shadowColor: themeColors.shadow || "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   emptyState: {
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: 80,
     paddingHorizontal: 40,
   },
   emptyStateTitle: {
     fontSize: 20,
-    fontWeight: "600" as const,
-    color: Colors.text,
+    fontWeight: "600",
+    color: themeColors.text,
     marginBottom: 8,
   },
   emptyStateText: {
     fontSize: 14,
-    color: Colors.textLight,
-    textAlign: "center" as const,
+    color: themeColors.textLight,
+    textAlign: "center",
   },
   propertiesList: {
     padding: 20,
     gap: 16,
   },
   propertyCard: {
-    backgroundColor: Colors.card,
     borderRadius: 16,
-    overflow: "hidden" as const,
+    overflow: "hidden",
     elevation: 4,
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+    backgroundColor: themeColors.card,
+    shadowColor: themeColors.shadow || "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: themeColors.border,
   },
   propertyImage: {
     width: "100%",
     height: 200,
-    backgroundColor: Colors.border,
   },
   propertyInfo: {
     padding: 16,
   },
   propertyTitle: {
     fontSize: 18,
-    fontWeight: "600" as const,
-    color: Colors.text,
+    fontWeight: "600",
+    color: themeColors.text,
     marginBottom: 8,
   },
   propertyLocation: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     marginBottom: 12,
   },
   propertyLocationText: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     flex: 1,
   },
   propertyDetails: {
-    flexDirection: "row" as const,
+    flexDirection: "row",
     gap: 16,
     marginBottom: 12,
   },
   propertyDetail: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   propertyDetailText: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   propertyFooter: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   propertyPrice: {
     fontSize: 18,
-    fontWeight: "700" as const,
+    fontWeight: "700",
     color: Colors.primary,
   },
   deleteButton: {
@@ -593,20 +602,19 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   modalHeader: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "600" as const,
-    color: Colors.text,
+    fontWeight: "600",
+    color: themeColors.text,
   },
   modalContent: {
     flex: 1,
@@ -616,7 +624,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   formRow: {
-    flexDirection: "row" as const,
+    flexDirection: "row",
     gap: 12,
     marginBottom: 20,
   },
@@ -628,29 +636,29 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600" as const,
-    color: Colors.text,
+    fontWeight: "600",
+    color: themeColors.text,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: Colors.card,
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    color: Colors.text,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
+    color: themeColors.text,
+    backgroundColor: themeColors.card,
   },
   textArea: {
     minHeight: 100,
-    textAlignVertical: "top" as const,
+    textAlignVertical: "top",
   },
   mediaPicker: {
-    backgroundColor: Colors.card,
     borderRadius: 12,
     padding: 24,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
+    backgroundColor: themeColors.card,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
@@ -672,7 +680,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: Colors.border,
+    backgroundColor: themeColors.border,
   },
   removeMedia: {
     position: 'absolute',
@@ -702,7 +710,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: 12,
     padding: 16,
-    alignItems: "center" as const,
+    alignItems: "center",
     marginTop: 10,
     marginBottom: 40,
   },
@@ -711,18 +719,19 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: 16,
-    fontWeight: "600" as const,
-    color: Colors.white,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 40,
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.textLight,
-    textAlign: "center" as const,
+    color: themeColors.textLight,
+    textAlign: "center",
   },
+
 });

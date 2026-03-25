@@ -29,14 +29,14 @@ export class SettingsController {
 
   @Patch()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   updateMany(@Body() body: { settings: { key: string; value: string }[] }) {
     return this.settingsService.updateMany(body.settings);
   }
 
   @Patch(':key')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   update(@Param('key') key: string, @Body() body: { value: string }) {
     return this.settingsService.updateByKey(key, body.value);
   }

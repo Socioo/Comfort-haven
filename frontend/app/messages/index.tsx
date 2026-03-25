@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
+  StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { API_BASE_URL, messagesAPI } from "@/services/api";
-import Colors from "@/constants/Colors";
 import { Image } from "expo-image";
 import { useAuth } from "@/contexts/auth";
+import { Text, View, Card } from "@/components/Themed";
+import Colors from "@/constants/Colors";
+import { useTheme } from "@/contexts/theme";
 import UserAvatar from "@/components/UserAvatar";
+import { MessageSquare } from "lucide-react-native";
 
 const getImageUrl = (url: string | undefined | null) => {
   if (!url) return undefined;
   if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
   return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 };
-import { MessageSquare } from "lucide-react-native";
 
 interface Conversation {
   user: {
@@ -35,7 +36,10 @@ interface Conversation {
 export default function InboxScreen() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
 
   useEffect(() => {
@@ -44,14 +48,16 @@ export default function InboxScreen() {
     }
   }, [user]);
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (isRefresh = false) => {
     try {
+      if (isRefresh) setRefreshing(true);
       const response = await messagesAPI.getInbox();
       setConversations(response.data);
     } catch (error) {
       console.error("Failed to fetch inbox:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -62,7 +68,7 @@ export default function InboxScreen() {
 
   const renderItem = ({ item }: { item: Conversation }) => (
     <TouchableOpacity
-      style={styles.conversationItem}
+      style={[styles.conversationItem, { backgroundColor: themeColors.card }]}
       onPress={() => router.push(`/messages/${item.user.id}` as any)}
     >
       <UserAvatar 
@@ -99,7 +105,7 @@ export default function InboxScreen() {
   if (!user) {
     return (
       <View style={styles.centerContainer}>
-        <MessageSquare size={48} color={Colors.textLight} />
+        <MessageSquare size={48} color={themeColors.textLight} />
         <Text style={styles.loginText}>Sign in to view your messages</Text>
         <TouchableOpacity
           style={styles.btn}
@@ -123,7 +129,7 @@ export default function InboxScreen() {
     <View style={styles.container}>
       {conversations.length === 0 ? (
         <View style={styles.centerContainer}>
-          <MessageSquare size={48} color={Colors.textLight} />
+          <MessageSquare size={48} color={themeColors.textLight} />
           <Text style={styles.emptyTitle}>No messages yet</Text>
           <Text style={styles.emptyText}>
             When you contact a host, your messages will appear here.
@@ -135,6 +141,8 @@ export default function InboxScreen() {
           keyExtractor={(item) => item.user.id}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
+          refreshing={refreshing}
+          onRefresh={() => fetchConversations(true)}
         />
       )}
     </View>
@@ -144,7 +152,6 @@ export default function InboxScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   centerContainer: {
     flex: 1,
@@ -159,32 +166,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    backgroundColor: Colors.card,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
     elevation: 2,
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-  },
-  avatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Colors.secondary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarInitial: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: Colors.white,
   },
   messageContent: {
     flex: 1,
@@ -198,18 +187,14 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
   },
   time: {
     fontSize: 12,
-    color: Colors.textLight,
   },
   lastMessage: {
     fontSize: 14,
-    color: Colors.textLight,
   },
   unreadMessage: {
-    color: Colors.text,
     fontWeight: "600",
   },
   badge: {
@@ -223,7 +208,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   badgeText: {
-    color: Colors.white,
+    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -231,11 +216,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginTop: 16,
-    color: Colors.text,
   },
   emptyText: {
     fontSize: 15,
-    color: Colors.textLight,
     textAlign: "center",
     marginTop: 8,
     paddingHorizontal: 20,
@@ -245,7 +228,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginTop: 16,
     marginBottom: 24,
-    color: Colors.text,
   },
   btn: {
     backgroundColor: Colors.primary,
@@ -254,7 +236,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   btnText: {
-    color: Colors.white,
+    color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: 16,
   },

@@ -18,6 +18,7 @@ export interface FAQ {
 const FaqManagement = () => {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [selectedFaq, setSelectedFaq] = useState<FAQ | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({ question: '', answer: '', targetAudience: 'both' });
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; faqId: string }>({
@@ -49,6 +50,7 @@ const FaqManagement = () => {
     setSelectedFaq(faq);
     setFormData({ question: faq.question, answer: faq.answer, targetAudience: faq.targetAudience });
     setIsCreating(false);
+    setIsEditing(false);
   };
 
   const handleCreateNew = () => {
@@ -59,7 +61,10 @@ const FaqManagement = () => {
 
   const cancelEdit = () => {
     setIsCreating(false);
-    setSelectedFaq(null);
+    setIsEditing(false);
+    if (isCreating) {
+      setSelectedFaq(null);
+    }
   };
 
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
@@ -147,53 +152,80 @@ const FaqManagement = () => {
           {(selectedFaq || isCreating) ? (
             <div className={styles.editorContent}>
                <div className={styles.editorHeader}>
-                <h3>{isCreating ? 'Create New FAQ' : 'Update FAQ'}</h3>
+                <h3>{isCreating ? 'Create New FAQ' : (isEditing ? 'Update FAQ' : 'FAQ Details')}</h3>
                 <button className={styles.cancelBtn} onClick={cancelEdit}>
                   <X size={18} />
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className={styles.faqForm}>
-                <div className={pageStyles.formGroup}>
-                  <label>Question</label>
-                  <input 
-                    type="text" 
-                    value={formData.question}
-                    onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                    placeholder="Enter the question here"
-                    required
-                  />
-                </div>
+              {(isCreating || isEditing) ? (
+                <form onSubmit={handleSave} className={styles.faqForm}>
+                  <div className={pageStyles.formGroup}>
+                    <label>Question</label>
+                    <input 
+                      type="text" 
+                      value={formData.question}
+                      onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+                      placeholder="Enter the question here"
+                      required
+                    />
+                  </div>
 
-                <div className={pageStyles.formGroup}>
-                  <label>Target Audience</label>
-                  <select 
-                    value={formData.targetAudience}
-                    onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value as any })}
-                  >
-                    <option value="both">Both (Host & Guest)</option>
-                    <option value="guest">Guest</option>
-                    <option value="host">Host</option>
-                  </select>
-                </div>
+                  <div className={pageStyles.formGroup}>
+                    <label>Target Audience</label>
+                    <select 
+                      value={formData.targetAudience}
+                      onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value as any })}
+                    >
+                      <option value="both">Both (Host & Guest)</option>
+                      <option value="guest">Guest</option>
+                      <option value="host">Host</option>
+                    </select>
+                  </div>
 
-                <div className={classNames(pageStyles.formGroup, styles.expanded)}>
-                  <label>Answer</label>
-                  <textarea 
-                    value={formData.answer}
-                    onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                    placeholder="Enter the detailed answer here..."
-                    required
-                    style={{ flex: 1, minHeight: '200px' }}
-                  />
-                </div>
+                  <div className={classNames(pageStyles.formGroup, styles.expanded)}>
+                    <label>Answer</label>
+                    <textarea 
+                      value={formData.answer}
+                      onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
+                      placeholder="Enter the detailed answer here..."
+                      required
+                      style={{ flex: 1, minHeight: '200px' }}
+                    />
+                  </div>
 
-                <div className={styles.formActions}>
-                  <button type="submit" className={classNames(pageStyles.btn, pageStyles.primary, styles.fullWidth)}>
-                    {isCreating ? 'Create FAQ' : 'Update FAQ'}
-                  </button>
+                  <div className={styles.formActions}>
+                    <button type="submit" className={classNames(pageStyles.btn, pageStyles.primary, styles.fullWidth)}>
+                      {isCreating ? 'Create FAQ' : 'Update FAQ'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className={styles.viewMode}>
+                  <div className={styles.viewField}>
+                    <label>Question</label>
+                    <p>{selectedFaq?.question}</p>
+                  </div>
+                  <div className={styles.viewField}>
+                    <label>Target Audience</label>
+                    <p style={{ textTransform: 'capitalize' }}>{selectedFaq?.targetAudience === 'both' ? 'Both (Host & Guest)' : selectedFaq?.targetAudience}</p>
+                  </div>
+                  <div className={styles.viewField}>
+                    <label>Answer</label>
+                    <div className={styles.answerBox}>
+                      {selectedFaq?.answer}
+                    </div>
+                  </div>
+                  <div className={styles.formActions} style={{ marginTop: '24px' }}>
+                    <button 
+                      className={classNames(pageStyles.btn, pageStyles.primary, styles.fullWidth)}
+                      onClick={() => setIsEditing(true)}
+                    >
+                      Update
+                    </button>
+                  </div>
                 </div>
-              </form>
+              )}
             </div>
           ) : (
             <div className={styles.placeholderState}>

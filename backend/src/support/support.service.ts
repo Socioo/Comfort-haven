@@ -46,7 +46,10 @@ export class SupportService {
   }
 
   async updateStatus(id: string, status: string) {
-    await this.ticketRepository.update(id, { status });
-    return this.findOne(id);
+    const result = await this.ticketRepository.update(id, { status });
+    if (result.affected === 0) {
+      throw new NotFoundException(`Ticket with id ${id} not found`);
+    }
+    return { success: true, id, status };
   }
 }

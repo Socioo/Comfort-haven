@@ -12,8 +12,14 @@
   --status-neutral: #64748b;
   --status-dark: #334155;
 
+  /* Status Backgrounds (Semantic) */
+  --success-bg: rgba(76, 175, 80, 0.15);
+  --warning-bg: rgba(255, 160, 0, 0.15);
+  --error-bg: rgba(211, 47, 47, 0.12);
+  --muted-bg: rgba(100, 116, 139, 0.15);
+
   /* Neutrals - Light Mode (Default) */
-  --bg-color: #FFF5F2; /* Light Pinkish Background */
+  --bg-color: #eef3f6; /* Soft light grayish-blue background */
   --card-bg: #FFFFFF;
   --text-main: #333333;
   --text-light: #666666;
@@ -55,11 +61,17 @@
   --sidebar-active-bg: rgba(74, 144, 226, 0.15);
   --nav-hover-bg: #2d3e50;
   --input-bg: #1e293b;
-  --white: #1e293b;
+  --white: #FFFFFF; /* Keep white as white for contrast on primary elements */
   --light-gray: #334155;
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+  --success-bg: rgba(76, 175, 80, 0.2);
+  --warning-bg: rgba(255, 160, 0, 0.2);
+  --error-bg: rgba(239, 68, 68, 0.15);
+  --muted-bg: rgba(100, 116, 139, 0.25);
 }
+
 
 body {
   background-color: var(--bg-color);

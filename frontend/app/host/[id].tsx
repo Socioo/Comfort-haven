@@ -14,6 +14,7 @@ import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { Star, MapPin, Send, AlertCircle } from "lucide-react-native";
 import Colors from "@/constants/Colors";
+import { useTheme } from "@/contexts/theme";
 import { API_BASE_URL, propertiesAPI, usersAPI } from "@/services/api";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -29,13 +30,13 @@ import * as Haptics from "expo-haptics";
 export default function HostDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [message, setMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState<
-    { text: string; isUser: boolean; time: string }[]
-  >([{ text: "Hello! How can I help you?", isUser: false, time: "10:30 AM" }]);
-
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  const styles = createStyles(themeColors);
+  
   const [hostInfo, setHostInfo] = useState<User | null>(null);
   const [hostProperties, setHostProperties] = useState<Property[]>([]);
+  const [showAllProperties, setShowAllProperties] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,40 +108,8 @@ export default function HostDetailsScreen() {
         ).toFixed(1)
       : "New";
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const now = new Date();
-      const timeString = now.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-      });
-
-      setChatMessages([
-        ...chatMessages,
-        { text: message, isUser: true, time: timeString },
-      ]);
-      setMessage("");
-
-      setTimeout(() => {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            text: "Thank you for your message. I will get back to you soon!",
-            isUser: false,
-            time: timeString,
-          },
-        ]);
-      }, 1000);
-    }
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={100}
-    >
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <Stack.Screen
         options={{
           title: "Host Details",
@@ -192,14 +161,23 @@ export default function HostDetailsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Properties ({hostProperties.length})
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>
+              Properties ({hostProperties.length})
+            </Text>
+            {hostProperties.length > 3 && (
+              <TouchableOpacity onPress={() => setShowAllProperties(!showAllProperties)}>
+                <Text style={{ color: Colors.primary, fontWeight: '600', fontSize: 14 }}>
+                  {showAllProperties ? "Show Less" : "See All"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.propertiesList}>
-            {hostProperties.map((property) => (
+            {(showAllProperties ? hostProperties : hostProperties.slice(0, 3)).map((property) => (
               <TouchableOpacity
                 key={property.id}
-                style={styles.propertyCard}
+                style={[styles.propertyCard, { backgroundColor: themeColors.card }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   router.push(`/property/${property.id}` as any);
@@ -215,7 +193,7 @@ export default function HostDetailsScreen() {
                     {property.title}
                   </Text>
                   <View style={styles.propertyLocation}>
-                    <MapPin color={Colors.textLight} size={12} />
+                    <MapPin color={themeColors.textLight} size={12} />
                     <Text style={styles.propertyLocationText} numberOfLines={1}>
                       {property.location}, {property.lga}
                     </Text>
@@ -239,71 +217,14 @@ export default function HostDetailsScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chat with Host</Text>
-          <View style={styles.chatContainer}>
-            {chatMessages.map((msg, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.chatBubble,
-                  msg.isUser ? styles.userBubble : styles.hostBubble,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.chatText,
-                    msg.isUser ? styles.userText : styles.hostText,
-                  ]}
-                >
-                  {msg.text}
-                </Text>
-                <Text
-                  style={[
-                    styles.chatTime,
-                    msg.isUser ? styles.userTime : styles.hostTime,
-                  ]}
-                >
-                  {msg.time}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
       </ScrollView>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor={Colors.textLight}
-          value={message}
-          onChangeText={setMessage}
-          multiline
-          maxLength={500}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            !message.trim() && styles.sendButtonDisabled,
-          ]}
-          onPress={handleSendMessage}
-          disabled={!message.trim()}
-        >
-          <Send
-            color={message.trim() ? Colors.card : Colors.textLight}
-            size={20}
-          />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -312,12 +233,11 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   hostHeader: {
-    alignItems: "center" as const,
+    alignItems: "center",
     paddingVertical: 32,
     paddingHorizontal: 20,
-    backgroundColor: Colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   hostAvatar: {
     width: 100,
@@ -325,55 +245,41 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 16,
   },
-  hostAvatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.primary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginBottom: 16,
-  },
-  hostInitial: {
-    fontSize: 40,
-    fontWeight: "bold" as const,
-    color: Colors.card,
-  },
   hostName: {
     fontSize: 24,
-    fontWeight: "bold" as const,
-    color: Colors.text,
+    fontWeight: "bold",
     marginBottom: 4,
+    color: themeColors.text,
   },
   hostLabel: {
     fontSize: 16,
-    color: Colors.textLight,
     marginBottom: 24,
+    color: themeColors.textLight,
   },
   statsContainer: {
-    flexDirection: "row" as const,
-    backgroundColor: Colors.background,
+    flexDirection: "row",
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 32,
     gap: 24,
+    backgroundColor: themeColors.card,
   },
   statBox: {
-    alignItems: "center" as const,
+    alignItems: "center",
   },
   statValue: {
     fontSize: 24,
-    fontWeight: "bold" as const,
+    fontWeight: "bold",
     color: Colors.primary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   statDivider: {
     width: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: themeColors.border,
   },
   section: {
     paddingHorizontal: 20,
@@ -381,25 +287,24 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "bold" as const,
-    color: Colors.text,
+    fontWeight: "bold",
     marginBottom: 16,
+    color: themeColors.text,
   },
   aboutText: {
     fontSize: 16,
-    color: Colors.text,
     lineHeight: 24,
+    color: themeColors.text,
   },
   propertiesList: {
     gap: 12,
   },
   propertyCard: {
-    flexDirection: "row" as const,
-    backgroundColor: Colors.card,
+    flexDirection: "row",
     borderRadius: 12,
-    overflow: "hidden" as const,
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   propertyImage: {
     width: 100,
@@ -408,43 +313,43 @@ const styles = StyleSheet.create({
   propertyInfo: {
     flex: 1,
     padding: 12,
-    justifyContent: "space-between" as const,
+    justifyContent: "space-between",
   },
   propertyTitle: {
     fontSize: 16,
-    fontWeight: "600" as const,
-    color: Colors.text,
+    fontWeight: "600",
     marginBottom: 4,
+    color: themeColors.text,
   },
   propertyLocation: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     marginBottom: 8,
   },
   propertyLocationText: {
     fontSize: 13,
-    color: Colors.textLight,
     flex: 1,
+    color: themeColors.textLight,
   },
   propertyFooter: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   propertyRating: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   ratingText: {
     fontSize: 14,
-    fontWeight: "600" as const,
-    color: Colors.text,
+    fontWeight: "600",
+    color: themeColors.text,
   },
   propertyPrice: {
     fontSize: 14,
-    fontWeight: "bold" as const,
+    fontWeight: "bold",
     color: Colors.primary,
   },
   chatContainer: {
@@ -458,16 +363,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   userBubble: {
-    alignSelf: "flex-end" as const,
+    alignSelf: "flex-end",
     backgroundColor: Colors.primary,
     borderBottomRightRadius: 4,
   },
   hostBubble: {
-    alignSelf: "flex-start" as const,
-    backgroundColor: Colors.card,
+    alignSelf: "flex-start",
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   chatText: {
     fontSize: 15,
@@ -475,10 +378,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userText: {
-    color: Colors.card,
+    color: "#FFFFFF",
   },
   hostText: {
-    color: Colors.text,
+    color: themeColors.text,
   },
   chatTime: {
     fontSize: 11,
@@ -487,59 +390,53 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.7)",
   },
   hostTime: {
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   inputContainer: {
-    flexDirection: "row" as const,
-    alignItems: "flex-end" as const,
+    flexDirection: "row",
+    alignItems: "flex-end",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.card,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
     gap: 12,
   },
   input: {
     flex: 1,
-    backgroundColor: Colors.background,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: Colors.text,
     maxHeight: 100,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   sendButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: Colors.primary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: "center",
+    justifyContent: "center",
   },
   sendButtonDisabled: {
-    backgroundColor: Colors.border,
+    opacity: 0.5,
   },
   errorContainer: {
     flex: 1,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
+    backgroundColor: themeColors.background,
   },
   errorText: {
     fontSize: 18,
-    color: Colors.textLight,
     marginBottom: 20,
     textAlign: "center",
+    color: themeColors.text,
   },
   loadingContainer: {
     flex: 1,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    backgroundColor: Colors.background,
+    alignItems: "center",
+    justifyContent: "center",
   },
   retryButton: {
     backgroundColor: Colors.primary,
@@ -548,8 +445,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
-    color: Colors.card,
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "bold" as const,
+    fontWeight: "bold",
   },
 });

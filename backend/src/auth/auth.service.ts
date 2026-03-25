@@ -9,6 +9,7 @@ import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
     private notificationsService: NotificationsService,
+    private mailService: MailService,
   ) {}
 
   async signUp(signUpDto: SignUpDto): Promise<AuthResponseDto> {
@@ -76,12 +78,13 @@ export class AuthService {
     }
 
     console.log('User found, validating password...');
-    console.log(`Debug: Password to check length: ${loginDto.password?.length}`);
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const password = loginDto.password ? loginDto.password.trim() : '';
+    console.log(`Debug: Password to check length: ${password.length}`);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     console.log('Password valid:', isPasswordValid);
 
     if (!isPasswordValid) {
-      console.log(`Debug: Comparison failed. Provided: ${loginDto.password?.length} chars, Stored Hash starts with: ${user.password?.substring(0, 10)}`);
+      console.log(`Debug: Comparison failed. Provided: ${password.length} chars, Stored Hash starts with: ${user.password?.substring(0, 10)}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -100,6 +103,7 @@ export class AuthService {
     name: string;
     googleId: string;
     profileImage?: string;
+    role?: UserRole;
   }) {
     let user = await this.usersRepository.findOne({
       where: [{ email: googleUser.email }, { googleId: googleUser.googleId }],
@@ -112,7 +116,7 @@ export class AuthService {
         googleId: googleUser.googleId,
         profileImage: googleUser.profileImage,
         isVerified: true,
-        role: UserRole.USER,
+        role: googleUser.role || UserRole.USER,
       });
       await this.usersRepository.save(user);
     } else if (!user.googleId) {
@@ -235,4 +239,52 @@ export class AuthService {
       where: { id: userId },
     });
   }
-}
+
+  async forgotPassword(email: string) {
+    const user = await this.usersRepository.findOne({ 
+      where: { email: email.toLowerCase().trim() } 
+    });
+
+    if (!user) {
+      // Return success even if user not found for security
+      return { message: 'If an account exists with this email, a reset code has been sent.' };
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 1);
+
+    await this.usersRepository.update(user.id, {
+      resetPasswordToken: otp,
+      resetPasswordExpires: expires,
+    });
+
+    await this.mailService.sendResetPasswordEmail(user.email, user.name, otp);
+
+    return { message: 'If an account exists with this email, a reset code has been sent.' };
+  }
+
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    const user = await this.usersRepository.findOne({
+      where: { 
+        email: email.toLowerCase().trim(),
+        resetPasswordToken: otp,
+      },
+      select: ['id', 'email', 'resetPasswordExpires']
+    });
+
+    if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      throw new UnauthorizedException('Invalid or expired reset code');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.usersRepository.update(user.id, {
+      password: hashedPassword,
+      resetPasswordToken: null as any,
+      resetPasswordExpires: null as any,
+    });
+
+    return { message: 'Password has been successfully reset.' };
+  }
+}

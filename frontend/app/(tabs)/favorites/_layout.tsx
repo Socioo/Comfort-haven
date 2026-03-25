@@ -7,8 +7,9 @@ import {
 } from "react-native";
 import Colors from "@/constants/Colors";
 import EditScreenInfo from "@/components/EditScreenInfo";
-import { Text, View } from "@/components/Themed";
+import { Text, View, Card } from "@/components/Themed";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/contexts/theme";
 import { useAuth } from "@/contexts/auth";
 import { useFavorites } from "@/contexts/favorites";
 import * as Haptics from "expo-haptics";
@@ -18,8 +19,11 @@ import { Property } from "@/types";
 
 export default function FavoritesScreen() {
   const router = useRouter();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
-  const { favoriteProperties, toggleFavorite } = useFavorites();
+  const { favoriteProperties, toggleFavorite, loadFavorites } = useFavorites();
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const handlePropertyPress = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -31,9 +35,15 @@ export default function FavoritesScreen() {
     toggleFavorite(property.id, property);
   };
 
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await loadFavorites();
+    setRefreshing(false);
+  }, [loadFavorites]);
+
   const renderProperty = ({ item }: { item: any }) => (
     <Pressable
-      style={styles.propertyCard}
+      style={[styles.propertyCard, { backgroundColor: themeColors.card }]}
       onPress={() => handlePropertyPress(item.id)}
     >
       <Image
@@ -47,7 +57,7 @@ export default function FavoritesScreen() {
         contentFit="cover"
       />
       <TouchableOpacity
-        style={styles.favoriteButton}
+        style={[styles.favoriteButton, { backgroundColor: themeColors.overlay }]}
         onPress={() => handleFavoritePress(item)}
       >
         <Heart color={Colors.primary} fill={Colors.primary} size={20} />
@@ -57,7 +67,7 @@ export default function FavoritesScreen() {
           {item.title}
         </Text>
         <View style={styles.locationRow}>
-          <MapPin color={Colors.textLight} size={14} />
+          <MapPin color={themeColors.textLight} size={14} />
           <Text style={styles.locationText} numberOfLines={1}>
             {item.location}, {item.lga}
           </Text>
@@ -84,7 +94,7 @@ export default function FavoritesScreen() {
   if (!user) {
     return (
       <View style={styles.emptyContainer}>
-        <Heart color={Colors.textLight} size={64} />
+        <Heart color={themeColors.textLight} size={64} />
         <Text style={styles.emptyTitle}>Sign in to save favorites</Text>
         <Text style={styles.emptyText}>
           Create an account to save properties you love
@@ -102,7 +112,7 @@ export default function FavoritesScreen() {
   if (favoriteProperties.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Heart color={Colors.textLight} size={64} />
+        <Heart color={themeColors.textLight} size={64} />
         <Text style={styles.emptyTitle}>No favorites yet</Text>
         <Text style={styles.emptyText}>
           Start exploring and save your favorite properties
@@ -124,6 +134,8 @@ export default function FavoritesScreen() {
         renderItem={renderProperty}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
     </View>
   );
@@ -132,14 +144,12 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   listContent: {
     padding: 20,
     gap: 16,
   },
   propertyCard: {
-    backgroundColor: Colors.card,
     borderRadius: 16,
     overflow: "hidden" as const,
     elevation: 2,
@@ -156,7 +166,6 @@ const styles = StyleSheet.create({
     position: "absolute" as const,
     top: 12,
     right: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
     padding: 8,
   },
@@ -166,7 +175,6 @@ const styles = StyleSheet.create({
   propertyTitle: {
     fontSize: 16,
     fontWeight: "600" as const,
-    color: Colors.text,
     marginBottom: 6,
   },
   locationRow: {
@@ -200,7 +208,6 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: "600" as const,
-    color: Colors.text,
   },
   reviewCount: {
     fontSize: 12,
@@ -213,7 +220,6 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     padding: 40,
@@ -221,7 +227,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 24,
     fontWeight: "bold" as const,
-    color: Colors.text,
     marginTop: 20,
     marginBottom: 8,
   },

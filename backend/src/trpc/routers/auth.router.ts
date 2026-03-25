@@ -27,9 +27,10 @@ export const authRouter = router({
       // Since we can't inject services directly, we'll need a different approach
       // Let's create a standalone function or use NestJS's dependency injection
       const authService = new AuthService(
-        null as any, // We'll need to pass the repository
+        null as any, // Repository
         new JwtService({ secret: process.env.JWT_SECRET || 'secret' }),
-        null as any // NotificationsService not used in tRPC context for now
+        null as any, // NotificationsService
+        null as any // MailService
       );
       
       const signUpDto = {
@@ -47,6 +48,7 @@ export const authRouter = router({
       const authService = new AuthService(
         null as any,
         new JwtService({ secret: process.env.JWT_SECRET || 'secret' }),
+        null as any,
         null as any
       );
       

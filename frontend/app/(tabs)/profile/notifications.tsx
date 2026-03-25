@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth";
 import Colors from "@/constants/Colors";
+import { useTheme } from "@/contexts/theme";
 import { Text, View } from "@/components/Themed";
 import {
   ChevronLeft,
@@ -27,6 +28,9 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { user, updateUser, isLoading: authLoading } = useAuth();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  const styles = createStyles(themeColors);
   
   const [activeTab, setActiveTab] = useState<"alerts" | "settings">("alerts");
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -49,7 +53,7 @@ export default function NotificationsScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ChevronLeft color={Colors.text} size={24} />
+            <ChevronLeft color={themeColors.text} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
           <View style={{ width: 24 }} />
@@ -143,7 +147,7 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ChevronLeft color={Colors.text} size={24} />
+          <ChevronLeft color={themeColors.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
         <View style={{ width: 24 }} />
@@ -186,7 +190,7 @@ export default function NotificationsScreen() {
               <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
             ) : notifications.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Bell size={64} color={Colors.textLight} strokeWidth={1} />
+                <Bell size={64} color={themeColors.textLight} strokeWidth={1} />
                 <Text style={styles.emptyTitle}>No notifications yet</Text>
                 <Text style={styles.emptySubtitle}>We'll notify you when something important happens.</Text>
               </View>
@@ -227,7 +231,7 @@ export default function NotificationsScreen() {
                   <Switch 
                     value={prefs.newBookings} 
                     onValueChange={() => handleToggle('newBookings')}
-                    trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                    trackColor={{ false: themeColors.border, true: Colors.primary + '80' }}
                     thumbColor={prefs.newBookings ? Colors.primary : Colors.white}
                   />
                 </View>
@@ -242,7 +246,7 @@ export default function NotificationsScreen() {
                   <Switch 
                     value={prefs.propertyApproval} 
                     onValueChange={() => handleToggle('propertyApproval')}
-                    trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                    trackColor={{ false: themeColors.border, true: Colors.primary + '80' }}
                     thumbColor={prefs.propertyApproval ? Colors.primary : Colors.white}
                   />
                 </View>
@@ -257,7 +261,7 @@ export default function NotificationsScreen() {
                   <Switch 
                     value={prefs.verificationStatus} 
                     onValueChange={() => handleToggle('verificationStatus')}
-                    trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                    trackColor={{ false: themeColors.border, true: Colors.primary + '80' }}
                     thumbColor={prefs.verificationStatus ? Colors.primary : Colors.white}
                   />
                 </View>
@@ -272,7 +276,7 @@ export default function NotificationsScreen() {
                   <Switch 
                     value={prefs.newProperties} 
                     onValueChange={() => handleToggle('newProperties')}
-                    trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                    trackColor={{ false: themeColors.border, true: Colors.primary + '80' }}
                     thumbColor={prefs.newProperties ? Colors.primary : Colors.white}
                   />
                 </View>
@@ -287,7 +291,7 @@ export default function NotificationsScreen() {
                   <Switch 
                     value={prefs.newBookings} 
                     onValueChange={() => handleToggle('newBookings')}
-                    trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                    trackColor={{ false: themeColors.border, true: Colors.primary + '80' }}
                     thumbColor={prefs.newBookings ? Colors.primary : Colors.white}
                   />
                 </View>
@@ -305,7 +309,7 @@ export default function NotificationsScreen() {
               <Switch 
                 value={prefs.marketing} 
                 onValueChange={() => handleToggle('marketing')}
-                trackColor={{ false: Colors.border, true: Colors.primary + '80' }}
+                trackColor={{ false: themeColors.border, true: Colors.primary + '80' }}
                 thumbColor={prefs.marketing ? Colors.primary : Colors.white}
               />
             </View>
@@ -316,10 +320,10 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: themeColors.background,
   },
   header: {
     flexDirection: "row",
@@ -328,7 +332,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
   },
   backButton: {
     padding: 4,
@@ -336,14 +340,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
+    color: themeColors.text,
   },
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   tab: {
     paddingVertical: 12,
@@ -357,7 +361,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 15,
     fontWeight: "600",
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   activeTabText: {
     color: Colors.primary,
@@ -371,7 +375,7 @@ const styles = StyleSheet.create({
   },
   resultsCount: {
     fontSize: 13,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     fontWeight: "500",
   },
   markAll: {
@@ -401,17 +405,17 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
+    color: themeColors.text,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     textAlign: "center",
     lineHeight: 20,
   },
   notificationItem: {
     flexDirection: "row",
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -440,21 +444,21 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: Colors.text,
+    color: themeColors.text,
     flex: 1,
     marginRight: 8,
   },
   notificationTime: {
     fontSize: 11,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   notificationMessage: {
     fontSize: 13,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     lineHeight: 18,
   },
   settingsGroup: {
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
@@ -486,16 +490,16 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
+    color: themeColors.text,
   },
   settingDescription: {
     fontSize: 12,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     lineHeight: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: themeColors.border,
     marginVertical: 4,
   },
 });

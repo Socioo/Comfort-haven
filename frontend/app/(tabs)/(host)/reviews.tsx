@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  View,
 } from "react-native";
 import { useRouter, useFocusEffect, useNavigation } from "expo-router";
 import { useAuth } from "@/contexts/auth";
+import { useTheme } from "@/contexts/theme";
 import Colors from "@/constants/Colors";
-import { Text } from "@/components/Themed";
+import { Text, View } from "@/components/Themed";
 import {
   Star,
   MessageSquare,
@@ -25,6 +25,10 @@ export default function HostReviewsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { user } = useAuth();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  
+  const styles = createStyles(themeColors);
   
   // Hide parent tab header when this screen is open
   useLayoutEffect(() => {
@@ -96,7 +100,7 @@ export default function HostReviewsScreen() {
           <Star
             key={star}
             size={14}
-            color={star <= rating ? Colors.warning : Colors.border}
+            color={star <= rating ? Colors.warning : themeColors.border}
             fill={star <= rating ? Colors.warning : "transparent"}
           />
         ))}
@@ -108,7 +112,7 @@ export default function HostReviewsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ChevronLeft color={Colors.text} size={24} />
+          <ChevronLeft color={themeColors.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Guest Reviews</Text>
         <View style={{ width: 32 }} />
@@ -123,7 +127,7 @@ export default function HostReviewsScreen() {
           <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
         ) : reviews.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <MessageSquare size={64} color={Colors.textLight} strokeWidth={1} />
+            <MessageSquare size={64} color={themeColors.textLight} strokeWidth={1} />
             <Text style={styles.emptyTitle}>No reviews yet</Text>
             <Text style={styles.emptySubtitle}>
               When guests review your properties, their feedback will appear here.
@@ -135,7 +139,7 @@ export default function HostReviewsScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.userInfo}>
                   <View style={styles.userAvatar}>
-                    <UserIcon size={20} color={Colors.textLight} />
+                    <UserIcon size={20} color={themeColors.textLight} />
                   </View>
                   <View>
                     <Text style={styles.userName}>{review.user?.name || "Guest"}</Text>
@@ -164,10 +168,9 @@ export default function HostReviewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -176,9 +179,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 16,
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   backButton: {
     padding: 4,
@@ -186,7 +189,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
   },
   scrollContent: {
     padding: 16,
@@ -204,20 +206,19 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.text,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     textAlign: "center",
     paddingHorizontal: 40,
   },
   reviewCard: {
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   cardHeader: {
     flexDirection: "row",
@@ -234,20 +235,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.background,
+    backgroundColor: themeColors.background,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   userName: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.text,
   },
   reviewDate: {
     fontSize: 12,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   starsContainer: {
     flexDirection: "row",
@@ -255,7 +255,6 @@ const styles = StyleSheet.create({
   },
   commentText: {
     fontSize: 14,
-    color: Colors.text,
     lineHeight: 20,
     marginBottom: 16,
   },
@@ -265,7 +264,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: themeColors.border,
   },
   propertyTitle: {
     fontSize: 12,

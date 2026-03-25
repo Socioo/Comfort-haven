@@ -7,7 +7,7 @@ import { UserRole } from '../common/constants';
 
 @Controller('config-settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.SUPER_ADMIN)
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 

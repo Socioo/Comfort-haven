@@ -78,7 +78,7 @@
     gap: 32px;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
     .mainGrid {
         grid-template-columns: 1fr;
     }
@@ -86,7 +86,12 @@
 
 @media (max-width: 768px) {
     .dashboard {
-        padding: 20px;
+        padding: 16px;
+    }
+    
+    .statsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
     }
     
     .header h1 {

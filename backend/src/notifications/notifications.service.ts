@@ -43,6 +43,10 @@ export class NotificationsService {
     return this.notificationsRepository.update({ userId, isRead: false }, { isRead: true });
   }
 
+  async deleteAll(userId: string) {
+    return this.notificationsRepository.delete({ userId });
+  }
+
   async notifyAdmins(data: { type: string; title: string; message: string; metadata?: any }) {
     const admins = await this.usersRepository.find({
       where: [

@@ -7,7 +7,7 @@ import { UserRole } from '../common/constants';
 
 @Controller('finance')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.SUPER_ADMIN, UserRole.FINANCE)
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 

@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  View,
-  Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -10,11 +8,15 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { messagesAPI, usersAPI } from "@/services/api";
 import { useAuth } from "@/contexts/auth";
-import Colors from "@/constants/Colors";
 import { Send, ArrowLeft } from "lucide-react-native";
+import { Text, View, Card } from "@/components/Themed";
+import Colors from "@/constants/Colors";
+import { useTheme } from "@/contexts/theme";
 
 interface Message {
   id: string;
@@ -26,6 +28,8 @@ interface Message {
 
 export default function ChatScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
   const [inputText, setInputText] = useState("");
@@ -35,6 +39,8 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
 
   useEffect(() => {
     if (userId && user) {
@@ -128,8 +134,8 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      behavior="padding"
+      keyboardVerticalOffset={headerHeight}
     >
       <Stack.Screen 
         options={{ 
@@ -137,16 +143,6 @@ export default function ChatScreen() {
           headerBackTitle: "",
         }} 
       />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <ArrowLeft color={Colors.text} size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{otherUser?.name || "Chat"}</Text>
-        <View style={{ width: 24 }} />
-      </View>
 
       <FlatList
         ref={flatListRef}
@@ -158,32 +154,36 @@ export default function ChatScreen() {
           flatListRef.current?.scrollToEnd({ animated: false })
         }
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
       />
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor={Colors.textLight}
-          value={inputText}
-          onChangeText={setInputText}
-          multiline
-          maxLength={500}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            !inputText.trim() && styles.sendButtonDisabled,
-          ]}
-          onPress={sendMessage}
-          disabled={!inputText.trim() || sending}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Send color="white" size={20} />
-          )}
-        </TouchableOpacity>
+      <View style={{ backgroundColor: themeColors.card, paddingBottom: Math.max(insets.bottom, 8) }}>
+        <Card style={styles.inputContainer}>
+          <TextInput
+            style={[styles.input, { backgroundColor: themeColors.background, color: themeColors.text }]}
+            placeholder="Type a message..."
+            placeholderTextColor={themeColors.textLight}
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={500}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              !inputText.trim() && styles.sendButtonDisabled,
+            ]}
+            onPress={sendMessage}
+            disabled={!inputText.trim() || sending}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Send color="#FFFFFF" size={20} />
+            )}
+          </TouchableOpacity>
+        </Card>
       </View>
     </KeyboardAvoidingView>
   );
@@ -192,7 +192,6 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   centerContainer: {
     flex: 1,
@@ -205,8 +204,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.card,
   },
   backButton: {
     padding: 4,
@@ -214,7 +211,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.text,
   },
   messagesList: {
     padding: 16,
@@ -236,8 +232,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   messageBubbleLeft: {
-    backgroundColor: Colors.card,
     borderBottomLeftRadius: 4,
+    borderWidth: 1,
   },
   messageBubbleRight: {
     backgroundColor: Colors.primary,
@@ -247,37 +243,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   messageTextLeft: {
-    color: Colors.text,
   },
   messageTextRight: {
-    color: "white",
+    color: "#FFFFFF",
   },
   messageTime: {
     fontSize: 11,
-    color: Colors.textLight,
     alignSelf: "flex-end",
     marginTop: 2,
   },
   inputContainer: {
     flexDirection: "row",
     padding: 12,
-    paddingBottom: Platform.OS === "ios" ? 24 : 12,
-    backgroundColor: Colors.card,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
     alignItems: "flex-end",
   },
   input: {
     flex: 1,
-    backgroundColor: Colors.background,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 12,
     fontSize: 16,
-    color: Colors.text,
     maxHeight: 100,
     minHeight: 40,
+    borderWidth: 1,
   },
   sendButton: {
     backgroundColor: Colors.primary,
@@ -289,6 +279,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   sendButtonDisabled: {
-    backgroundColor: Colors.border,
+    opacity: 0.5,
   },
 });

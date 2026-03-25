@@ -18,7 +18,7 @@ export class UsersController {
     findAll(@Query('role') role?: string) {
         if (role) {
             const normalizedRole = role.toLowerCase().endsWith('s') ? role.slice(0, -1) : role;
-            if (['user', 'host', 'admin', 'sub-admin'].includes(normalizedRole)) {
+            if (['user', 'host', 'super-admin', 'manager', 'finance', 'support'].includes(normalizedRole)) {
                 return this.usersService.findAllByRole(normalizedRole);
             }
         }
@@ -85,21 +85,21 @@ export class UsersController {
 
     @Patch(':id/admin-reset-password')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN)
     async adminResetPassword(@Param('id') id: string, @Body('newPassword') newPassword: string) {
         return this.usersService.adminResetPassword(id, newPassword);
     }
 
     @Patch(':id/verify')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.SUB_ADMIN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.MANAGER)
     async verify(@Param('id') id: string) {
         return this.usersService.adminVerify(id);
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN)
     async remove(@Param('id') id: string) {
         return this.usersService.remove(id);
     }

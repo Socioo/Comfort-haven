@@ -12,10 +12,24 @@ import {
   Check,
   AlertTriangle,
   ShieldCheck,
-  ShieldOff
+  ShieldOff,
+  X
 } from "lucide-react";
 import classNames from "classnames";
 import UserModal from "../components/UserModal";
+import UserAvatar from "../components/UserAvatar";
+
+interface Review {
+  id: string;
+  comment: string;
+  rating: number;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    profileImage: string;
+  };
+}
 
 interface PropertyDetail {
   id: string;
@@ -48,8 +62,11 @@ const PropertyDetails = () => {
   const navigate = useNavigate();
   const [property, setProperty] = useState<PropertyDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -66,7 +83,21 @@ const PropertyDetails = () => {
       }
     };
 
-    if (id) fetchProperty();
+    const fetchReviews = async () => {
+      try {
+        const response = await api.get(`/reviews/property/${id}`);
+        setReviews(response.data);
+      } catch (err) {
+        console.error("Failed to fetch reviews", err);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProperty();
+      fetchReviews();
+    }
   }, [id]);
 
   const handleStatusChange = async (newStatus: PropertyDetail["status"]) => {
@@ -102,7 +133,7 @@ const PropertyDetails = () => {
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: "#666",
+          color: "var(--text-light)",
         }}
       >
         <ArrowLeft size={20} /> Back
@@ -112,7 +143,7 @@ const PropertyDetails = () => {
         <div
           style={{
             height: "300px",
-            background: "#eee",
+            background: "var(--light-gray)",
             position: "relative",
             display: "flex",
             alignItems: "center",
@@ -123,7 +154,8 @@ const PropertyDetails = () => {
             <img
               src={getImageUrl(property.images[0])}
               alt={property.title}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
+              onClick={() => setSelectedImage(property.images[0])}
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}
@@ -135,14 +167,14 @@ const PropertyDetails = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 height: "100%",
-                color: "#999",
+                color: "var(--text-light)",
               }}
             >
               <ImageIcon size={64} />
             </div>
           )}
           <div style={{ position: "absolute", zIndex: 0 }}>
-            <ImageIcon size={64} color="#ccc" />
+            <ImageIcon size={64} color="var(--border-color)" />
           </div>
           <span
             className={classNames(styles.status, styles[property.status])}
@@ -151,6 +183,42 @@ const PropertyDetails = () => {
             {property.status}
           </span>
         </div>
+
+        {property.images && property.images.length > 1 && (
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            padding: '12px 32px', 
+            background: 'var(--bg-color)',
+            borderBottom: '1px solid var(--border-color)',
+            overflowX: 'auto'
+          }}>
+            {property.images.map((img, index) => (
+              <div 
+                key={index}
+                onClick={() => setSelectedImage(img)}
+                style={{
+                  width: '80px',
+                  height: '60px',
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  border: '2px solid transparent',
+                  transition: 'all 0.2s',
+                  flexShrink: 0
+                }}
+                onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
+              >
+                <img 
+                  src={getImageUrl(img)} 
+                  alt={`${property.title} ${index + 1}`} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div style={{ padding: "32px" }}>
           <div
@@ -168,7 +236,7 @@ const PropertyDetails = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
-                  color: "#666",
+                  color: "var(--text-light)",
                 }}
               >
                 <MapPin size={18} />
@@ -180,7 +248,7 @@ const PropertyDetails = () => {
                 style={{
                   fontSize: "24px",
                   fontWeight: "bold",
-                  color: "#2c3e50",
+                  color: "var(--text-main)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "flex-end",
@@ -192,7 +260,7 @@ const PropertyDetails = () => {
                   style={{
                     fontSize: "16px",
                     fontWeight: "normal",
-                    color: "#666",
+                    color: "var(--text-light)",
                   }}
                 >
                   /night
@@ -205,14 +273,14 @@ const PropertyDetails = () => {
                   gap: "4px",
                   justifyContent: "flex-end",
                   marginTop: "4px",
-                  color: "#f59e0b",
+                  color: "var(--warning-color)",
                 }}
               >
                 <Star size={16} fill="#f59e0b" />
                 <span style={{ fontWeight: "bold" }}>
                   {property.rating?.toFixed(1) || "N/A"}
                 </span>
-                <span style={{ color: "#666" }}>
+                <span style={{ color: "var(--text-light)" }}>
                   ({property.reviewCount} reviews)
                 </span>
               </div>
@@ -228,7 +296,7 @@ const PropertyDetails = () => {
           >
             <div>
               <h3>Description</h3>
-              <p style={{ lineHeight: "1.6", color: "#444" }}>
+              <p style={{ lineHeight: "1.6", color: "var(--text-main)" }}>
                 {property.description}
               </p>
 
@@ -238,25 +306,94 @@ const PropertyDetails = () => {
                   <span
                     key={index}
                     style={{
-                      background: "#f0f4f8",
+                      background: "var(--bg-color)",
                       padding: "6px 12px",
                       borderRadius: "20px",
                       fontSize: "14px",
-                      color: "#333",
+                      color: "var(--text-main)",
                     }}
                   >
                     {amenity}
                   </span>
                 ))}
               </div>
+
+              <h3 style={{ marginTop: "32px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                Guest Reviews 
+                <span style={{ fontSize: "14px", fontWeight: "normal", color: "var(--text-light)" }}>
+                  ({reviews.length})
+                </span>
+              </h3>
+
+              {reviewsLoading ? (
+                <div style={{ color: "var(--text-light)", fontStyle: "italic" }}>Loading reviews...</div>
+              ) : reviews.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {reviews.map((review) => (
+                    <div 
+                      key={review.id} 
+                      style={{ 
+                        padding: "16px", 
+                        background: "var(--card-bg)", 
+                        borderRadius: "12px", 
+                        border: "1px solid var(--border-color)" 
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                        <div 
+                          style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                          onClick={() => setSelectedUserId(review.user.id)}
+                        >
+                          <UserAvatar 
+                            name={review.user.name} 
+                            image={review.user.profileImage} 
+                            size={32} 
+                          />
+                          <div>
+                            <div style={{ fontWeight: "600", fontSize: "14px" }}>{review.user.name}</div>
+                            <div style={{ fontSize: "12px", color: "var(--text-light)" }}>
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "2px", color: "#f59e0b" }}>
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              size={14} 
+                              fill={i < review.rating ? "#f59e0b" : "none"} 
+                              stroke={i < review.rating ? "#f59e0b" : "currentColor"} 
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", color: "var(--text-main)" }}>
+                        {review.comment}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ 
+                  padding: "24px", 
+                  textAlign: "center", 
+                  background: "var(--bg-color)", 
+                  borderRadius: "12px", 
+                  color: "var(--text-light)",
+                  border: "1px dashed var(--border-color)"
+                }}>
+                  No reviews yet for this property.
+                </div>
+              )}
             </div>
 
             <div
               style={{
-                background: "#f8f9fa",
+                background: "var(--card-bg)",
                 padding: "24px",
                 borderRadius: "12px",
                 height: "fit-content",
+                border: "1px solid var(--border-color)",
               }}
             >
               <h3 style={{ marginTop: "0" }}>Host Info</h3>
@@ -275,7 +412,7 @@ const PropertyDetails = () => {
                         width: "40px",
                         height: "40px",
                         borderRadius: "50%",
-                        background: "#ddd",
+                        background: "var(--border-color)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -296,7 +433,7 @@ const PropertyDetails = () => {
                       <div style={{ fontWeight: "bold" }}>
                         {property.owner.name}
                       </div>
-                      <div style={{ fontSize: "14px", color: "#666" }}>
+                      <div style={{ fontSize: "14px", color: "var(--text-light)" }}>
                         {property.owner.email}
                       </div>
                     </div>
@@ -306,8 +443,9 @@ const PropertyDetails = () => {
                     style={{
                       width: "100%",
                       padding: "8px",
-                      background: "white",
-                      border: "1px solid #ddd",
+                      background: "var(--card-bg)",
+                      color: "var(--text-main)",
+                      border: "1px solid var(--border-color)",
                       borderRadius: "6px",
                       cursor: "pointer",
                       marginBottom: "16px"
@@ -317,14 +455,14 @@ const PropertyDetails = () => {
                   </button>
                 </div>
               ) : (
-                <div style={{ color: "#666", fontStyle: "italic", marginBottom: "16px" }}>
+                <div style={{ color: "var(--text-light)", fontStyle: "italic", marginBottom: "16px" }}>
                   Unknown Host
                 </div>
               )}
 
               {/* Administrative Actions */}
-              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #eee' }}>
-                <h4 style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
+                <h4 style={{ margin: '0 0 16px 0', color: 'var(--text-light)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Administrative actions
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -335,8 +473,8 @@ const PropertyDetails = () => {
                         style={{
                           width: '100%',
                           padding: '10px',
-                          background: '#dcfce7',
-                          color: '#16a34a',
+                          background: 'var(--success-bg)',
+                          color: 'var(--success-color)',
                           border: 'none',
                           borderRadius: '8px',
                           fontWeight: '600',
@@ -354,8 +492,8 @@ const PropertyDetails = () => {
                         style={{
                           width: '100%',
                           padding: '10px',
-                          background: '#fee2e2',
-                          color: '#ef4444',
+                          background: 'var(--error-bg)',
+                          color: 'var(--error-color)',
                           border: 'none',
                           borderRadius: '8px',
                           fontWeight: '600',
@@ -376,8 +514,8 @@ const PropertyDetails = () => {
                       style={{
                         width: '100%',
                         padding: '10px',
-                        background: '#fef3c7',
-                        color: '#d97706',
+                        background: 'var(--warning-bg)',
+                        color: 'var(--warning-color)',
                         border: 'none',
                         borderRadius: '8px',
                         fontWeight: '600',
@@ -397,8 +535,8 @@ const PropertyDetails = () => {
                       style={{
                         width: '100%',
                         padding: '10px',
-                        background: '#dcfce7',
-                        color: '#16a34a',
+                        background: 'var(--success-bg)',
+                        color: 'var(--success-color)',
                         border: 'none',
                         borderRadius: '8px',
                         fontWeight: '600',
@@ -419,13 +557,13 @@ const PropertyDetails = () => {
                 style={{
                   marginTop: "24px",
                   paddingTop: "24px",
-                  borderTop: "1px solid #ddd",
+                  borderTop: "1px solid var(--border-color)",
                 }}
               >
                 <div
                   style={{
                     fontSize: "14px",
-                    color: "#666",
+                    color: "var(--text-light)",
                     marginBottom: "8px",
                   }}
                 >
@@ -439,6 +577,57 @@ const PropertyDetails = () => {
       </div>
       {selectedUserId && (
         <UserModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+      )}
+
+      {selectedImage && (
+        <div 
+          className={styles.modalOverlay} 
+          onClick={() => setSelectedImage(null)}
+          style={{ cursor: 'zoom-out' }}
+        >
+          <div 
+            className={styles.modal} 
+            style={{ 
+              padding: 0, 
+              background: 'none', 
+              border: 'none', 
+              boxShadow: 'none',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={getImageUrl(selectedImage)} 
+              alt="Preview" 
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '100%', 
+                borderRadius: '12px',
+                boxShadow: 'var(--shadow-lg)'
+              }} 
+            />
+            <button 
+              onClick={() => setSelectedImage(null)}
+              className={styles.closeBtn}
+              style={{
+                position: 'absolute',
+                top: '-50px',
+                right: '0',
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(4px)',
+                width: '40px',
+                height: '40px'
+              }}
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

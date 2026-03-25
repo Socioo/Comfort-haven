@@ -122,43 +122,21 @@ const SupportModal = ({ issue, onClose, onUpdate }: SupportModalProps) => {
       await api.patch(`/support/${issue.id}/status`, { status });
       onUpdate?.();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update support status", err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to update status. Please try again.";
       setNotification({
         isOpen: true,
         type: "error",
         title: "Update Failed",
-        message: "Failed to update status. Please try again."
+        message: errorMessage
       });
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleRefundAction = async (status: string) => {
-    setUpdating(true);
-    try {
-      const ticketStatus = status === 'successful' ? 'Successful' : 'Pending';
-      await api.patch(`/support/${issue.id}/status`, { status: ticketStatus });
-      
-      if (issue.refundId && !issue.refundId.startsWith('#')) {
-        await api.patch(`/finance/refunds/${issue.refundId}`, { status });
-      }
-      
-      onUpdate?.();
-      onClose();
-    } catch (err) {
-      console.error("Failed to process refund action", err);
-      setNotification({
-        isOpen: true,
-        type: "error",
-        title: "Action Failed",
-        message: "Failed to process action. Please try again."
-      });
-    } finally {
-      setUpdating(false);
-    }
-  };
+
 
   const renderDetail = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -208,60 +186,37 @@ const SupportModal = ({ issue, onClose, onUpdate }: SupportModalProps) => {
           </div>
           <div className={styles.chatPreviewContainer}>
             <div className={styles.chatAvatar}>{issue.issuerName.substring(0, 2).toUpperCase()}</div>
-            <div className={styles.chatSnippet}>
+            <div className={styles.chatSnippet} style={{ fontSize: '0.8rem' }}>
               <p>I would like to request a refund for my recent property booking as the sink in the kitchen is completely blocked.</p>
               <span className={styles.chatSnippetTime}>9:00 PM</span>
             </div>
           </div>
         </div>
 
-        {(issue.summary.toLowerCase().includes('refund') || issue.summary.toLowerCase().includes('payout')) && issue.status !== 'Successful' && (
-          <div style={{ display: 'flex', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px', alignItems: 'center' }}>
+          {issue.status !== 'Successful' && (
             <button 
-              style={{ background: '#10b981', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: updating ? 'not-allowed' : 'pointer', flex: 1, transition: 'background 0.2s', opacity: updating ? 0.7 : 1 }}
-              onClick={() => handleRefundAction('successful')}
-              disabled={updating}
-            >
-              {updating ? "Processing..." : "Approve Refund"}
-            </button>
-            <button 
-              style={{ background: '#ef4444', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: updating ? 'not-allowed' : 'pointer', flex: 1, transition: 'background 0.2s', opacity: updating ? 0.7 : 1 }}
-              onClick={() => handleRefundAction('rejected')}
-              disabled={updating}
-            >
-              {updating ? "Processing..." : "Deny Refund"}
-            </button>
-          </div>
-        )}
-
-        {issue.status !== 'Successful' && !issue.summary.toLowerCase().includes('refund') && !issue.summary.toLowerCase().includes('payout') && (
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <button 
-              style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: updating ? 'not-allowed' : 'pointer', flex: 1, transition: 'background 0.2s', opacity: updating ? 0.7 : 1 }}
+              className={styles.primaryActionBtn}
+              style={{ padding: '10px 32px', fontSize: '0.9rem', width: 'auto' }}
               onClick={() => handleStatusUpdate('Successful')}
               disabled={updating}
             >
               {updating ? "Processing..." : "Mark as Resolved"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 
   const renderMessages = () => (
-    <div className={styles.chatContainer} style={{ height: '500px', margin: 0, border: 'none' }}>
-      <header className={styles.chatHeader} style={{ background: 'var(--bg-color)', padding: '16px 20px', borderRadius: '12px 12px 0 0' }}>
-        <div className={styles.headerLeft}>
-          <button className={styles.backBtn} onClick={() => setView("detail")}>
-            <ChevronLeft size={20} />
-          </button>
-          <div className={styles.chatInfo}>
-            <div className={styles.chatAvatar}>{issue.issuerName.substring(0, 2).toUpperCase()}</div>
-            <div className={styles.chatUserMeta}>
-              <h3 className={styles.chatUserName}>{issue.issuerName}</h3>
-              <p className={styles.chatTicketId}>{issue.refundId}</p>
-            </div>
+    <div className={styles.chatContainer} style={{ height: '100%', maxHeight: 'none', maxWidth: 'none', width: '100%', margin: 0, border: 'none', borderRadius: 0, flex: 1, minHeight: 0 }}>
+      <header className={styles.chatHeader} style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)' }}>
+        <div className={styles.chatInfo}>
+          <div className={styles.chatAvatar}>{issue.issuerName.substring(0, 2).toUpperCase()}</div>
+          <div className={styles.chatUserMeta}>
+            <h3 className={styles.chatUserName}>{issue.issuerName}</h3>
+            <p className={styles.chatTicketId}>{issue.refundId}</p>
           </div>
         </div>
         <div className={styles.headerActions}>
@@ -284,7 +239,7 @@ const SupportModal = ({ issue, onClose, onUpdate }: SupportModalProps) => {
         ))}
       </div>
 
-      <div className={styles.chatInputArea} style={{ padding: '16px 20px', background: 'var(--bg-color)', borderRadius: '0 0 12px 12px' }}>
+      <div className={styles.chatInputArea} style={{ padding: '16px 20px', borderRadius: '0 0 0 0' }}>
         <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
         <div className={styles.inputContainer}>
           <input 
@@ -312,18 +267,29 @@ const SupportModal = ({ issue, onClose, onUpdate }: SupportModalProps) => {
       <div 
         className={pageStyles.modal} 
         style={{ 
-          maxWidth: '900px', 
+          maxWidth: view === "messages" ? '1100px' : '900px', 
           width: '95%', 
+          height: '92vh',
           maxHeight: '92vh', 
-          overflowY: 'auto', 
+          overflowY: 'hidden', 
           padding: '0', 
           borderRadius: '20px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' 
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          display: 'flex',
+          flexDirection: 'column',
         }} 
         onClick={(e) => e.stopPropagation()}
       >
         <div className={pageStyles.modalHeader} style={{ padding: '20px 32px', borderBottom: '1px solid var(--border-color)', background: 'var(--card-bg)', position: 'sticky', top: 0, zIndex: 10 }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
+          {view === "messages" && (
+            <button 
+              onClick={() => setView("detail")} 
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none', color: 'var(--text-light)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', paddingRight: '16px' }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+          )}
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-main)', flex: 1 }}>
             {view === "detail" ? "Support Ticket Details" : "Conversation"}
           </h2>
           <button className={pageStyles.closeBtn} onClick={onClose} style={{ background: 'var(--bg-color)', color: 'var(--text-light)' }}>
@@ -331,7 +297,7 @@ const SupportModal = ({ issue, onClose, onUpdate }: SupportModalProps) => {
           </button>
         </div>
 
-        <div style={{ padding: view === "messages" ? '0' : '32px' }}>
+        <div style={{ padding: view === "messages" ? '0' : '32px', display: 'flex', flexDirection: 'column', flex: 1, overflowY: view === "messages" ? 'hidden' : 'auto', minHeight: 0 }}>
           {view === "detail" ? renderDetail() : renderMessages()}
         </div>
 

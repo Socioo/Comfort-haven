@@ -24,11 +24,13 @@ import api from "../services/api";
 import classNames from "classnames";
 import styles from "../styles/Dashboard.module.css";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
 import UserModal from "../components/UserModal";
 
 const Dashboard = () => {
     const navigate = useNavigate();
     const { theme } = useTheme();
+    const { user } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -100,7 +102,7 @@ const Dashboard = () => {
     return (
         <div className={styles.dashboard}>
             <header className={styles.header}>
-                <h1>Welcome, Ahmad 👋</h1>
+                <h1>Welcome, {user?.name ? user.name.split(' ')[0] : 'Admin'} 👋</h1>
                 <p>Here's what's happening at Comfort Haven today.</p>
             </header>
 
@@ -192,19 +194,19 @@ const Dashboard = () => {
                         <div style={{ height: 350 }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={stats.activityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#E2E8F0'} />
-                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#94a3b8' : '#64748B' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: theme === 'dark' ? '#94a3b8' : '#64748B' }} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--text-light)" }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--text-light)" }} />
                                     <Tooltip 
                                         contentStyle={{ 
                                             borderRadius: 12, 
                                             border: 'none', 
                                             boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)',
-                                            backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
-                                            color: theme === 'dark' ? '#f8fafc' : '#334155'
+                                            backgroundColor: 'var(--card-bg)',
+                                            color: 'var(--text-main)'
                                         }}
-                                        itemStyle={{ color: theme === 'dark' ? '#f8fafc' : '#334155' }}
-                                        cursor={{ fill: theme === 'dark' ? '#334155' : '#F1F5F9' }}
+                                        itemStyle={{ color: 'var(--text-main)' }}
+                                        cursor={{ fill: 'var(--bg-color)' }}
                                     />
                                     <Legend iconType="circle" wrapperStyle={{ paddingTop: 20 }} />
                                     <Bar dataKey="guests" name="New Guests" fill="#3B82F6" radius={[4, 4, 4, 4]} barSize={12} />
@@ -217,124 +219,128 @@ const Dashboard = () => {
                 </div>
 
                 <aside className={styles.sidebar}>
-                    <div className={styles.activityCard}>
-                        <div className={styles.sectionTitle}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Clock size={20} />
-                                Activities
-                            </div>
-                            <span style={{ fontSize: '1.25rem', color: '#64748b' }}>•••</span>
-                        </div>
-                        <div className={styles.activityList}>
-                            {stats.recentHosts && stats.recentHosts.length > 0 ? (
-                                stats.recentHosts.slice(0, 3).map((activity: any) => (
-                                    <div key={activity.id} className={styles.hostCardContainer}>
-                                        <div className={styles.hostAvatar} style={{ backgroundColor: 'var(--success-color)' }}>
-                                            {activity.name.charAt(0)}
-                                        </div>
-                                        <div className={styles.hostCardInfo}>
-                                            <div className={styles.hostCardName}>{activity.name}</div>
-                                            <div className={styles.hostCardMeta}>
-                                                <span style={{ textTransform: 'capitalize' }}>Role: {activity.role}</span>
-                                                <span style={{ color: '#cbd5e1' }}>•</span>
-                                                <span>{activity.createdAt ? new Date(activity.createdAt).toLocaleDateString() : 'Just now'}</span>
-                                            </div>
-                                            <div className={styles.hostCardActions}>
-                                                <button 
-                                                    className={styles.btnLight}
-                                                    onClick={() => setSelectedUserId(activity.id)}
-                                                >
-                                                    View
-                                                </button>
-                                                <button 
-                                                    className={styles.btnPrimary}
-                                                    style={{ 
-                                                        padding: '6px 16px',
-                                                        background: 'var(--primary-color)',
-                                                        color: 'white',
-                                                        borderRadius: '10px',
-                                                        border: 'none',
-                                                        fontWeight: '600',
-                                                        cursor: 'pointer',
-                                                        fontSize: '0.8rem',
-                                                        flex: 1
-                                                    }}
-                                                    onClick={(e) => handleAcceptUser(activity.id, e)}
-                                                >
-                                                    Verify
-                                                </button>
-                                            </div>
-                                        </div>
+                    {(user?.role === 'super-admin' || user?.role === 'manager') && (
+                        <>
+                            <div className={styles.activityCard}>
+                                <div className={styles.sectionTitle}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <Clock size={20} />
+                                        Activities
                                     </div>
-                                ))
-                            ) : (
-                                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
-                                    no new host
+                                    <span style={{ fontSize: '1.25rem', color: 'var(--text-light)' }}>•••</span>
                                 </div>
-                            )}
-                        </div>
-                        <a href="/hosts" className={styles.viewAllLink}>View all</a>
-                    </div>
-
-                    <div className={styles.activityCard}>
-                        <div className={styles.sectionTitle}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <PlusCircle size={20} />
-                                Property submission
-                            </div>
-                            <span style={{ fontSize: '1.25rem', color: '#64748b' }}>•••</span>
-                        </div>
-                        <div className={styles.activityList}>
-                            {stats.recentProperties && stats.recentProperties.length > 0 ? (
-                                stats.recentProperties.slice(0, 3).map((prop: any) => (
-                                    <div key={prop.id} className={styles.propCardContainer}>
-                                        <div 
-                                            className={styles.propCardTop}
-                                            onClick={() => navigate(`/properties/${prop.id}`)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <div className={styles.propAvatar}>
-                                                <Home size={32} />
-                                            </div>
-                                            <div className={styles.propCardInfo}>
-                                                <div className={styles.propCardTitle}>Property host</div>
-                                                <div className={styles.propCardSubtitle}>{prop.title}</div>
-                                                <div className={styles.propCardTime}>
-                                                    {prop.createdAt ? new Date(prop.createdAt).toLocaleDateString() : 'Just now'}
+                                <div className={styles.activityList}>
+                                    {stats.recentHosts && stats.recentHosts.length > 0 ? (
+                                        stats.recentHosts.slice(0, 3).map((activity: any) => (
+                                            <div key={activity.id} className={styles.hostCardContainer}>
+                                                <div className={styles.hostAvatar} style={{ backgroundColor: 'var(--success-color)' }}>
+                                                    {activity.name.charAt(0)}
                                                 </div>
-                                                <span className={classNames(styles.tag, styles[prop.status] || styles.pending)}>
-                                                    {prop.status || 'pending'}
-                                                </span>
+                                                <div className={styles.hostCardInfo}>
+                                                    <div className={styles.hostCardName}>{activity.name}</div>
+                                                    <div className={styles.hostCardMeta}>
+                                                        <span style={{ textTransform: 'capitalize' }}>Role: {activity.role}</span>
+                                                        <span style={{ color: 'var(--text-light)' }}>•</span>
+                                                        <span>{activity.createdAt ? new Date(activity.createdAt).toLocaleDateString() : 'Just now'}</span>
+                                                    </div>
+                                                    <div className={styles.hostCardActions}>
+                                                        <button 
+                                                            className={styles.btnLight}
+                                                            onClick={() => setSelectedUserId(activity.id)}
+                                                        >
+                                                            View
+                                                        </button>
+                                                        <button 
+                                                            className={styles.btnPrimary}
+                                                            style={{ 
+                                                                padding: '6px 16px',
+                                                                background: 'var(--primary-color)',
+                                                                color: 'white',
+                                                                borderRadius: '10px',
+                                                                border: 'none',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.8rem',
+                                                                flex: 1
+                                                            }}
+                                                            onClick={(e) => handleAcceptUser(activity.id, e)}
+                                                        >
+                                                            Verify
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
+                                        ))
+                                    ) : (
+                                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)' }}>
+                                            no new host
                                         </div>
-                                        <hr className={styles.cardDivider} />
-                                        <div className={styles.propCardActions}>
-                                            <button 
-                                                className={styles.btnLightFull}
-                                                onClick={(e) => { e.stopPropagation(); handleAcceptProperty(prop.id, e) }}
-                                            >
-                                                Approve
-                                            </button>
-                                            <button 
-                                                className={styles.btnDangerFull}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    alert("Property rejection will be processed.");
-                                                }}
-                                            >
-                                                Reject
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
-                                    no new property
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                        <a href="/properties" className={styles.viewAllLink}>View all</a>
-                    </div>
+                                <a href="/hosts" className={styles.viewAllLink}>View all</a>
+                            </div>
+
+                            <div className={styles.activityCard}>
+                                <div className={styles.sectionTitle}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <PlusCircle size={20} />
+                                        Property submission
+                                    </div>
+                                    <span style={{ fontSize: '1.25rem', color: 'var(--text-light)' }}>•••</span>
+                                </div>
+                                <div className={styles.activityList}>
+                                    {stats.recentProperties && stats.recentProperties.length > 0 ? (
+                                        stats.recentProperties.slice(0, 3).map((prop: any) => (
+                                            <div key={prop.id} className={styles.propCardContainer}>
+                                                <div 
+                                                    className={styles.propCardTop}
+                                                    onClick={() => navigate(`/properties/${prop.id}`)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <div className={styles.propAvatar}>
+                                                        <Home size={32} />
+                                                    </div>
+                                                    <div className={styles.propCardInfo}>
+                                                        <div className={styles.propCardTitle}>Property host</div>
+                                                        <div className={styles.propCardSubtitle}>{prop.title}</div>
+                                                        <div className={styles.propCardTime}>
+                                                            {prop.createdAt ? new Date(prop.createdAt).toLocaleDateString() : 'Just now'}
+                                                        </div>
+                                                        <span className={classNames(styles.tag, styles[prop.status] || styles.pending)}>
+                                                            {prop.status || 'pending'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <hr className={styles.cardDivider} />
+                                                <div className={styles.propCardActions}>
+                                                    <button 
+                                                        className={styles.btnLightFull}
+                                                        onClick={(e) => { e.stopPropagation(); handleAcceptProperty(prop.id, e) }}
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button 
+                                                        className={styles.btnDangerFull}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            alert("Property rejection will be processed.");
+                                                        }}
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-light)' }}>
+                                            no new property
+                                        </div>
+                                    )}
+                                </div>
+                                <a href="/properties" className={styles.viewAllLink}>View all</a>
+                            </div>
+                        </>
+                    )}
                 </aside>
             </div>
             {selectedUserId && (

@@ -97,8 +97,8 @@
 }
 
 .iconProperty {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    background: var(--success-bg);
+    color: var(--success-color);
 }
 
 .iconSystem {

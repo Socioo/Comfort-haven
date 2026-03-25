@@ -137,7 +137,7 @@ const Guests = () => {
                 <td>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span>{formatDate(guest.createdAt)}</span>
-                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
                             {formatTime(guest.createdAt)}
                         </span>
                     </div>

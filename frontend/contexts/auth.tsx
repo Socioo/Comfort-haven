@@ -9,6 +9,11 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authAPI } from "../services/api";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export type UserRole = "user" | "host" | "admin";
 
@@ -46,7 +51,7 @@ interface AuthContextType {
     password: string,
     role: UserRole,
   ) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (role?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -144,19 +149,84 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    redirectUri: makeRedirectUri({
+      // @ts-ignore - still needed for some Expo versions to force proxy
+      useProxy: true,
+      scheme: 'frontend',
+    }),
+  });
+
+  useEffect(() => {
+    if (request) {
+      console.log("Google Auth Redirect URI:", request.redirectUri);
+    }
+  }, [request]);
+
+  const signInWithGoogle = useCallback(async (role?: UserRole) => {
+    const isConfigured = 
+      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID && 
+      !process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID.includes('provide') &&
+      !process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID.includes('not-configured');
+
+    if (!isConfigured) {
+      alert("Google Client IDs are not configured. Please see the walkthrough for setup instructions and update your .env file.");
+      setIsSigningIn(false);
+      return;
+    }
     setIsSigningIn(true);
     try {
-      // This needs valid Google OAuth token logic, skipping for now as per original mock
-      // Ideally should call authAPI.googleLogin
-      console.warn("Google Sign In not implemented via API yet");
+      const result = await promptAsync();
+      
+      if (result?.type === 'success') {
+        const { authentication } = result;
+        
+        // Fetch user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+          headers: { Authorization: `Bearer ${authentication?.accessToken}` },
+        });
+        
+        const googleUser = await userInfoResponse.json();
+        
+        // Send to our backend
+        const response = await authAPI.googleLogin({
+          email: googleUser.email,
+          name: googleUser.name,
+          googleId: googleUser.id,
+          profileImage: googleUser.picture,
+          role: role,
+        });
+
+        const { accessToken, refreshToken, user: userData } = response.data;
+        
+        // Normalize and save
+        const at = accessToken || response.data.access_token;
+        const rt = refreshToken || response.data.refresh_token;
+
+        await AsyncStorage.setItem("access_token", at);
+        await AsyncStorage.setItem("refresh_token", rt);
+        await AsyncStorage.setItem("user", JSON.stringify(userData));
+
+        setToken(at);
+        setUser(userData);
+
+        // Check if profile is incomplete (missing phone number)
+        if (!userData.phone) {
+          const { router } = require("expo-router");
+          router.replace("/auth/complete-profile");
+        }
+      }
     } catch (error) {
       console.error("Google sign in error:", error);
       throw error;
     } finally {
       setIsSigningIn(false);
     }
-  }, []);
+  }, [promptAsync]);
 
   const signOut = useCallback(async () => {
     // 1. Clear state IMMEDIATELY for instant UI response

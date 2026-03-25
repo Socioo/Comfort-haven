@@ -152,17 +152,17 @@
 }
 
 .statusBadge.active {
-    background: #dcfce7;
+    background: var(--success-bg);
     color: var(--success-color);
 }
 
 .statusBadge.suspended, .statusBadge.banned {
-    background: #fef3c7;
+    background: var(--warning-bg);
     color: var(--warning-color);
 }
 
 .statusBadge.failed, .statusBadge.cancelled {
-    background: #f1f5f9;
+    background: var(--muted-bg);
     color: var(--status-neutral);
 }
 

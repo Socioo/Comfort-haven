@@ -12,8 +12,9 @@ import {
 import { useNavigation, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
+import { useTheme } from "@/contexts/theme";
 import Colors from "@/constants/Colors";
-import { Text, View } from "@/components/Themed";
+import { Text, View, Card } from "@/components/Themed";
 import { Image } from "expo-image";
 import { Camera, ChevronLeft, FileText, Mail, Phone, User as UserIcon } from "lucide-react-native";
 import { API_BASE_URL, authAPI, usersAPI } from "@/services/api";
@@ -37,6 +38,10 @@ export default function PersonalInfoScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { user, updateUser } = useAuth();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  
+  const styles = createStyles(themeColors);
   
   // Import usersAPI if needed or use authAPI if it's there
   // Actually I need to import usersAPI
@@ -163,12 +168,12 @@ export default function PersonalInfoScreen() {
     >
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <Card style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => (isEditing ? handleCancel() : router.back())}
           >
-            <ChevronLeft color={Colors.text} size={24} />
+            <ChevronLeft color={themeColors.text} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Personal Info</Text>
           <TouchableOpacity onPress={handleEditToggle} disabled={isSaving}>
@@ -178,7 +183,7 @@ export default function PersonalInfoScreen() {
               <Text style={styles.editButton}>{isEditing ? "SAVE" : "EDIT"}</Text>
             )}
           </TouchableOpacity>
-        </View>
+        </Card>
 
         <ScrollView
           style={styles.scroll}
@@ -186,7 +191,7 @@ export default function PersonalInfoScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Avatar + Name */}
-          <View style={styles.profileRow}>
+          <Card style={styles.profileRow}>
             <View style={styles.avatarContainer}>
               {user?.profileImage || user?.photoUrl ? (
                 <Image
@@ -214,10 +219,10 @@ export default function PersonalInfoScreen() {
               <Text style={styles.profileName} numberOfLines={1}>{form.name || "—"}</Text>
               <Text style={styles.profileBio} numberOfLines={2}>{form.bio || "No bio yet"}</Text>
             </View>
-          </View>
+          </Card>
 
           {/* Fields */}
-          <View style={styles.fieldsContainer}>
+          <Card style={styles.fieldsContainer}>
             {/* Full Name */}
             <View style={styles.field}>
               <View style={styles.fieldIcon}>
@@ -227,11 +232,11 @@ export default function PersonalInfoScreen() {
                 <Text style={styles.fieldLabel}>FULL NAME</Text>
                 {isEditing ? (
                   <TextInput
-                    style={styles.fieldInput}
+                    style={[styles.fieldInput, { color: themeColors.text }]}
                     value={form.name}
                     onChangeText={(v) => setForm((p) => ({ ...p, name: v }))}
                     placeholder="Your full name"
-                    placeholderTextColor={Colors.textLight}
+                    placeholderTextColor={themeColors.textLight}
                   />
                 ) : (
                   <Text style={styles.fieldValue}>{form.name || "—"}</Text>
@@ -263,11 +268,11 @@ export default function PersonalInfoScreen() {
                 <Text style={styles.fieldLabel}>PHONE NUMBER</Text>
                 {isEditing ? (
                   <TextInput
-                    style={styles.fieldInput}
+                    style={[styles.fieldInput, { color: themeColors.text }]}
                     value={form.phone}
                     onChangeText={(v) => setForm((p) => ({ ...p, phone: v }))}
                     placeholder="Your phone number"
-                    placeholderTextColor={Colors.textLight}
+                    placeholderTextColor={themeColors.textLight}
                     keyboardType="phone-pad"
                   />
                 ) : (
@@ -287,11 +292,11 @@ export default function PersonalInfoScreen() {
                 <Text style={styles.fieldLabel}>BIO</Text>
                 {isEditing ? (
                   <TextInput
-                    style={[styles.fieldInput, styles.bioInput]}
+                    style={[styles.fieldInput, styles.bioInput, { color: themeColors.text }]}
                     value={form.bio}
                     onChangeText={(v) => setForm((p) => ({ ...p, bio: v }))}
                     placeholder="Tell us a bit about yourself..."
-                    placeholderTextColor={Colors.textLight}
+                    placeholderTextColor={themeColors.textLight}
                     multiline
                     numberOfLines={4}
                     textAlignVertical="top"
@@ -301,17 +306,16 @@ export default function PersonalInfoScreen() {
                 )}
               </View>
             </View>
-          </View>
+          </Card>
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -320,9 +324,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 16,
-    backgroundColor: Colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   backButton: {
     padding: 4,
@@ -331,7 +334,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: "600",
-    color: Colors.text,
   },
   editButton: {
     fontSize: 14,
@@ -350,11 +352,10 @@ const styles = StyleSheet.create({
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 20, // Increased gap for better spacing
-    backgroundColor: Colors.card,
+    gap: 20,
     borderRadius: 20,
-    padding: 24, // More padding for premium feel
-    shadowColor: "#000",
+    padding: 24,
+    shadowColor: themeColors.shadow || "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -393,12 +394,10 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 4,
   },
   profileBio: {
     fontSize: 13,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     lineHeight: 18,
   },
   editAvatarBadge: {
@@ -412,7 +411,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: Colors.card,
+    borderColor: themeColors.card,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -420,10 +419,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fieldsContainer: {
-    backgroundColor: Colors.card,
     borderRadius: 20,
-    paddingVertical: 12, // Increased from 4
-    shadowColor: "#000",
+    paddingVertical: 12,
+    shadowColor: themeColors.shadow || "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -433,8 +431,8 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 24, // Increased from 20
-    paddingVertical: 18, // Increased from 16
+    paddingHorizontal: 24,
+    paddingVertical: 18,
     gap: 16,
     backgroundColor: "transparent",
   },
@@ -450,32 +448,29 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 11,
     fontWeight: "600",
-    color: Colors.textLight,
+    color: themeColors.textLight,
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   fieldValue: {
     fontSize: 15,
-    color: Colors.text,
     fontWeight: "500",
   },
   readOnly: {
-    color: Colors.darkGray,
+    color: themeColors.textLight,
   },
   fieldInput: {
     fontSize: 15,
-    color: Colors.text,
     borderBottomWidth: 1,
     borderBottomColor: Colors.primary,
-    paddingVertical: 8, // More breathing room
+    paddingVertical: 8,
     fontWeight: "500",
-    // To fix 'too long line', we can add paddingRight if preferred
     paddingRight: 10,
   },
   bioInput: {
     minHeight: 100,
-    borderBottomWidth: 1, // Changed from 0 to 1 to match others if they prefer lines
-    borderRadius: 0, // Matching other fields better
+    borderBottomWidth: 1,
+    borderRadius: 0,
     borderWidth: 0,
     padding: 0,
     paddingTop: 8,
@@ -483,7 +478,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
-    marginHorizontal: 24, // Match horizontal padding
+    backgroundColor: themeColors.border,
+    marginHorizontal: 24,
   },
 });

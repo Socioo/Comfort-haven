@@ -84,4 +84,18 @@ export class MessagesService {
       { isRead: true }
     );
   }
+
+  async markAllAsRead(userId: string): Promise<void> {
+    await this.messagesRepository.update(
+      { receiverId: userId, isRead: false },
+      { isRead: true }
+    );
+  }
+
+  async clearAllMessages(userId: string): Promise<void> {
+    await this.messagesRepository.delete([
+      { senderId: userId },
+      { receiverId: userId }
+    ]);
+  }
 }

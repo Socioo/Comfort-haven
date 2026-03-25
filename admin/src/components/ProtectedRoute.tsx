@@ -1,8 +1,12 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-const ProtectedRoute = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+interface ProtectedRouteProps {
+  allowedRoles?: string[];
+}
+
+const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -12,16 +16,20 @@ const ProtectedRoute = () => {
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
-          backgroundColor: "#f8fafc",
+          backgroundColor: "var(--bg-color)",
         }}
       >
-        <div>Loading...</div>
+        <div style={{ color: "var(--text-color)" }}>Loading...</div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

@@ -10,8 +10,9 @@ import {
   Platform,
   useWindowDimensions,
 } from "react-native";
-import { Text, View } from "@/components/Themed";
+import { Text, View, Card } from "@/components/Themed";
 import { useRouter, useNavigation } from "expo-router";
+import { useTheme } from "@/contexts/theme";
 import { ChevronLeft, Eye, EyeOff, Lock } from "lucide-react-native";
 import Colors from "@/constants/Colors";
 import { usersAPI } from "@/services/api";
@@ -23,6 +24,8 @@ export default function ChangePasswordScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
   const { width } = useWindowDimensions();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -89,12 +92,12 @@ export default function ChangePasswordScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ChevronLeft size={24} color={Colors.text} />
+      <Card style={styles.header}>
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: themeColors.background }]} onPress={() => router.back()}>
+          <ChevronLeft size={24} color={themeColors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Change Password</Text>
-      </View>
+      </Card>
 
       <ScrollView 
         contentContainerStyle={styles.content}
@@ -108,70 +111,70 @@ export default function ChangePasswordScreen() {
         {/* Current Password */}
         <View style={styles.inputWrapper}>
           <Text style={styles.label}>Current Password</Text>
-          <View style={styles.inputContainer}>
+          <Card style={styles.inputContainer}>
             <Lock size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: themeColors.text }]}
               placeholder="Enter current password"
-              placeholderTextColor={Colors.textLight}
+              placeholderTextColor={themeColors.textLight}
               secureTextEntry={!showCurrent}
               value={currentPassword}
               onChangeText={setCurrentPassword}
             />
             <TouchableOpacity onPress={() => setShowCurrent(!showCurrent)}>
               {showCurrent ? (
-                <EyeOff size={20} color={Colors.textLight} />
+                <EyeOff size={20} color={themeColors.textLight} />
               ) : (
-                <Eye size={20} color={Colors.textLight} />
+                <Eye size={20} color={themeColors.textLight} />
               )}
             </TouchableOpacity>
-          </View>
+          </Card>
         </View>
 
         {/* New Password */}
         <View style={styles.inputWrapper}>
           <Text style={styles.label}>New Password</Text>
-          <View style={styles.inputContainer}>
+          <Card style={styles.inputContainer}>
             <Lock size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: themeColors.text }]}
               placeholder="Enter new password"
-              placeholderTextColor={Colors.textLight}
+              placeholderTextColor={themeColors.textLight}
               secureTextEntry={!showNew}
               value={newPassword}
               onChangeText={setNewPassword}
             />
             <TouchableOpacity onPress={() => setShowNew(!showNew)}>
               {showNew ? (
-                <EyeOff size={20} color={Colors.textLight} />
+                <EyeOff size={20} color={themeColors.textLight} />
               ) : (
-                <Eye size={20} color={Colors.textLight} />
+                <Eye size={20} color={themeColors.textLight} />
               )}
             </TouchableOpacity>
-          </View>
+          </Card>
         </View>
 
         {/* Confirm New Password */}
         <View style={styles.inputWrapper}>
           <Text style={styles.label}>Confirm New Password</Text>
-          <View style={styles.inputContainer}>
+          <Card style={styles.inputContainer}>
             <Lock size={20} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: themeColors.text }]}
               placeholder="Confirm new password"
-              placeholderTextColor={Colors.textLight}
+              placeholderTextColor={themeColors.textLight}
               secureTextEntry={!showConfirm}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
             />
             <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
               {showConfirm ? (
-                <EyeOff size={20} color={Colors.textLight} />
+                <EyeOff size={20} color={themeColors.textLight} />
               ) : (
-                <Eye size={20} color={Colors.textLight} />
+                <Eye size={20} color={themeColors.textLight} />
               )}
             </TouchableOpacity>
-          </View>
+          </Card>
         </View>
 
         {newPassword && confirmPassword && newPassword !== confirmPassword && (
@@ -202,7 +205,6 @@ export default function ChangePasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -210,7 +212,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingBottom: 20,
-    backgroundColor: Colors.card,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
@@ -218,7 +219,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.background,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: Colors.shadow,
@@ -231,7 +231,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 15,
-    color: Colors.text,
   },
   content: {
     padding: 25,
@@ -255,13 +254,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.text,
     marginBottom: 8,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.card,
     borderRadius: 15,
     paddingHorizontal: 15,
     height: 56,
@@ -273,7 +270,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: Colors.text,
     fontSize: 15,
   },
   errorText: {
