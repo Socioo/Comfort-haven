@@ -46,7 +46,7 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 200, description: 'Google login successful.', type: AuthResponseDto })
-  async googleLogin(@Body() body: { email: string; name: string; googleId: string; profileImage?: string }) {
+  async googleLogin(@Body() body: { email: string; name: string; googleId: string; profileImage?: string; role?: any }) {
     return this.authService.googleLogin(body);
   }
 
@@ -84,5 +84,28 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async updateProfile(@Req() req, @Body() body: any) {
     return this.authService.updateProfile(req.user.id, body);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset code' })
+  @ApiResponse({ status: 200, description: 'Reset code sent if email exists.' })
+  async forgotPassword(@Body() body: { email: string }) {
+    if (!body || !body.email) {
+      throw new BadRequestException('Email is required');
+    }
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password with code' })
+  @ApiResponse({ status: 200, description: 'Password reset successful.' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired code.' })
+  async resetPassword(@Body() body: { email: string; otp: string; newPassword: string }) {
+    if (!body || !body.email || !body.otp || !body.newPassword) {
+      throw new BadRequestException('Email, OTP, and new password are required');
+    }
+    return this.authService.resetPassword(body.email, body.otp, body.newPassword);
   }
 }

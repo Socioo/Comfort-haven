@@ -50,7 +50,7 @@ export const createRoleMiddleware = (requiredRole: UserRole) =>
       throw new Error('Not authenticated');
     }
     
-    if (ctx.user.role !== requiredRole && ctx.user.role !== UserRole.ADMIN) {
+    if (ctx.user.role !== requiredRole && ctx.user.role !== UserRole.SUPER_ADMIN) {
       throw new Error(`Insufficient permissions. Required role: ${requiredRole}`);
     }
     
@@ -62,4 +62,4 @@ export const createRoleMiddleware = (requiredRole: UserRole) =>
   });
 
 export const hostProcedure = protectedProcedure.use(createRoleMiddleware(UserRole.HOST));
-export const adminProcedure = protectedProcedure.use(createRoleMiddleware(UserRole.ADMIN));
+export const adminProcedure = protectedProcedure.use(createRoleMiddleware(UserRole.SUPER_ADMIN));

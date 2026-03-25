@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { User } from '../users/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
+import { MailModule } from '../mail/mail.module';
 import { JWT_SECRET } from '../common/constants';
 
 @Module({
@@ -18,6 +19,7 @@ import { JWT_SECRET } from '../common/constants';
       signOptions: { expiresIn: '7d' },
     }),
     UsersModule,
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

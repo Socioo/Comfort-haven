@@ -1,17 +1,28 @@
 import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
-  View,
-  Text,
   ScrollView,
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
   Linking,
   Platform,
+  View,
+  useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { StatusBar } from 'expo-status-bar';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  runOnJS,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import {
   MapPin,
   Star,
@@ -21,33 +32,118 @@ import {
   Car,
   Tv,
   MessageCircle,
+  Maximize2,
+  X,
 } from "lucide-react-native";
+import { Text, View as ThemedView, Card } from "@/components/Themed";
+import { Modal } from "react-native";
+import ReviewModal from "@/components/ReviewModal";
 import Colors from "@/constants/Colors";
+import { useTheme } from "@/contexts/theme";
 import { useAuth } from "@/contexts/auth";
 import { useFavorites } from "@/contexts/favorites";
 import * as Haptics from "expo-haptics";
 import { API_BASE_URL, propertiesAPI, reviewsAPI } from "@/services/api";
 import { Property, Review } from "@/types";
 import UserAvatar from "@/components/UserAvatar";
+import { ResponsiveView } from "@/components/ResponsiveView";
 
-const getImageUrl = (url: string | undefined | null) => {
+const getMediaUrl = (url: string | undefined | null) => {
   if (!url) return undefined;
   if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
   return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
-const { width } = Dimensions.get("window");
+const isVideo = (url: string) => {
+  const videoExtensions = ['.mp4', '.mov', '.wmv', '.avi', '.mkv', '.webm'];
+  return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
+};
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+const VideoItem = ({ url, isFullscreen = false, width }: { url: string; isFullscreen?: boolean; width: number }) => {
+  const player = useVideoPlayer(url, (player) => {
+    player.loop = true;
+    player.muted = !isFullscreen;
+    player.play();
+  });
+
+  return (
+    <VideoView
+      style={isFullscreen ? { flex: 1 } : { width, height: 300 }}
+      player={player}
+      allowsFullscreen
+      allowsPictureInPicture
+    />
+  );
+};
 
 export default function PropertyDetailsScreen() {
   const router = useRouter();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 600;
+  const contentWidth = isTablet ? 800 : width;
 
   const [property, setProperty] = useState<Property | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
+  const [isFullscreenMediaVisible, setIsFullscreenMediaVisible] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+
+  // Fullscreen swipe state
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
+
+  const closeFullscreen = () => {
+    setIsFullscreenMediaVisible(false);
+    translateY.value = 0;
+    opacity.value = 1;
+  };
+
+  const gesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+        opacity.value = interpolate(
+          event.translationY,
+          [0, 300],
+          [1, 0.5],
+          Extrapolation.CLAMP
+        );
+      }
+    })
+    .onEnd((event) => {
+      if (event.translationY > 150 || event.velocityY > 1000) {
+        translateY.value = withSpring(SCREEN_HEIGHT, { velocity: event.velocityY }, () => {
+          runOnJS(closeFullscreen)();
+        });
+      } else {
+        translateY.value = withSpring(0);
+        opacity.value = withSpring(1);
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    backgroundColor: 'black',
+    opacity: opacity.value,
+  }));
+  
+  const navigation = useNavigation();
+  const styles = createStyles(themeColors, width, contentWidth);
+
+
 
   useEffect(() => {
     if (id) {
@@ -62,13 +158,6 @@ export default function PropertyDetailsScreen() {
         reviewsAPI.getByProperty(id),
       ]);
       setProperty(propertyResponse.data);
-      // Backend returns reviews in property response too, but let's use separate if needed or just use property.reviews if consistent
-      // The reviews endpoint might return specialized format.
-      // propertiesAPI.getById returns property with reviews relation now.
-      // So propertyResponse.data.reviews should exist.
-      // But let's check reviewsAPI as well if we want to be sure or if pagination is needed later.
-      // For now, let's use the reviews from property object if available, or fallback to reviews endpoint.
-
       const propertyData = propertyResponse.data;
       if (propertyData.reviews) {
         setReviews(propertyData.reviews);
@@ -136,13 +225,11 @@ export default function PropertyDetailsScreen() {
     TV: Tv,
   };
 
-  // Safe images handling
   const images =
     property.images && property.images.length > 0
       ? property.images
       : ["https://placehold.co/600x400"];
 
-  // Calculate rating locally if not provided
   const averageRating =
     reviews.length > 0
       ? (
@@ -151,37 +238,80 @@ export default function PropertyDetailsScreen() {
       : "New";
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.imageCarousel}
-        >
-          {images.map((image, index) => (
-            <Image
-              key={index}
-              source={{ uri: getImageUrl(image) }}
-              style={styles.propertyImage}
-              contentFit="cover"
-            />
-          ))}
-        </ScrollView>
+        <ResponsiveView maxWidth={800}>
+        <View style={styles.imageCarouselContainer}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageCarousel}
+            onMomentumScrollEnd={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / contentWidth);
+              setSelectedMediaIndex(index);
+            }}
+          >
+            {images.map((media, index) => (
+              <TouchableOpacity 
+                key={index} 
+                activeOpacity={0.9} 
+                onPress={() => {
+                  setSelectedMediaIndex(index);
+                  setIsFullscreenMediaVisible(true);
+                }}
+              >
+                {isVideo(media) ? (
+                  <VideoItem url={getMediaUrl(media)!} width={contentWidth} />
+                ) : (
+                  <Image
+                    source={{ uri: getMediaUrl(media) }}
+                    style={styles.propertyImage}
+                    contentFit="cover"
+                  />
+                )}
+                {isVideo(media) && (
+                  <View style={styles.videoOverlay}>
+                    <Maximize2 color="#FFFFFF" size={24} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {images.length > 1 && (
+            <View style={styles.paginationDots}>
+              {images.map((_, i) => (
+                <View 
+                  key={i} 
+                  style={[
+                    styles.dot, 
+                    selectedMediaIndex === i ? styles.activeDot : null
+                  ]} 
+                />
+              ))}
+            </View>
+          )}
+        </View>
 
         <View style={styles.content}>
           <View style={styles.headerSection}>
             <View style={styles.headerContent}>
-              <Text style={styles.title}>{property.title}</Text>
-              <View style={styles.locationRow}>
-                <MapPin color={Colors.textLight} size={16} />
-                <Text style={styles.locationText}>
-                  {property.location}, {property.lga}
-                </Text>
-              </View>
+              <ThemedView>
+                <ThemedView style={{ backgroundColor: 'transparent' }}>
+                  <Text style={styles.title}>{property.title}</Text>
+                </ThemedView>
+                <View style={styles.locationRow}>
+                  <MapPin color={themeColors.textLight} size={16} />
+                  <ThemedView style={{ backgroundColor: 'transparent' }}>
+                    <Text style={styles.locationText}>
+                      {property.location}, {property.lga}
+                    </Text>
+                  </ThemedView>
+                </View>
+              </ThemedView>
               {property.address && (
                 <TouchableOpacity style={styles.addressRow} onPress={handleDirectionsPress}>
                   <Text style={styles.addressText}>{property.address}</Text>
@@ -190,12 +320,12 @@ export default function PropertyDetailsScreen() {
               )}
             </View>
             <TouchableOpacity
-              style={styles.favoriteButton}
+              style={[styles.favoriteButton, { backgroundColor: themeColors.card }]}
               onPress={handleFavoritePress}
             >
               <Heart
                 color={
-                  isFavorite(property.id) ? Colors.primary : Colors.textLight
+                  isFavorite(property.id) ? Colors.primary : themeColors.textLight
                 }
                 fill={isFavorite(property.id) ? Colors.primary : "transparent"}
                 size={24}
@@ -203,7 +333,7 @@ export default function PropertyDetailsScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.statsRow}>
+          <Card style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{property.bedrooms || 0}</Text>
               <Text style={styles.statLabel}>Bedrooms</Text>
@@ -218,7 +348,7 @@ export default function PropertyDetailsScreen() {
               <Text style={styles.statValue}>{property.guests || 0}</Text>
               <Text style={styles.statLabel}>Guests</Text>
             </View>
-          </View>
+          </Card>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About</Text>
@@ -232,14 +362,14 @@ export default function PropertyDetailsScreen() {
                 property.amenities.map((amenity, index) => {
                   const IconComponent = amenityIcons[amenity];
                   return (
-                    <View key={index} style={styles.amenityItem}>
+                    <Card key={index} style={styles.amenityItem}>
                       {IconComponent ? (
                         <IconComponent color={Colors.primary} size={20} />
                       ) : (
                         <Text style={styles.amenityDot}>•</Text>
                       )}
                       <Text style={styles.amenityText}>{amenity}</Text>
-                    </View>
+                    </Card>
                   );
                 })}
             </View>
@@ -247,38 +377,65 @@ export default function PropertyDetailsScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Host</Text>
-            <TouchableOpacity
-              style={styles.hostCard}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                // Navigate to chat with host
-                const hostId =
-                  property.ownerId ||
-                  (property as any).owner?.id ||
-                  property.hostId;
-                if (hostId) router.push(`/messages/${hostId}` as any);
-              }}
-              activeOpacity={0.7}
-            >
-              <UserAvatar 
-                name={(property as any).owner?.name || property.hostName || "Host"} 
-                image={(property as any).owner?.profileImage || property.hostPhoto} 
-                size={50} 
-                style={styles.hostAvatar}
-              />
-              <View style={styles.hostInfo}>
-                <Text style={styles.hostName}>
-                  {(property as any).owner?.name || property.hostName || "Host"}
-                </Text>
-                <Text style={styles.hostLabel}>
-                  Property Host • Tap to view
-                </Text>
-              </View>
-              <MessageCircle color={Colors.primary} size={20} />
-            </TouchableOpacity>
+            <View style={[styles.hostCard, { backgroundColor: themeColors.card }]}>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  const hostId = property.ownerId || (property as any).owner?.id || property.hostId;
+                  if (hostId) router.push(`/host/${hostId}` as any);
+                }}
+                activeOpacity={0.7}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+              >
+                <UserAvatar 
+                  name={(property as any).owner?.name || property.hostName || "Host"} 
+                  image={(property as any).owner?.profileImage || property.hostPhoto} 
+                  size={50} 
+                  style={styles.hostAvatar}
+                />
+                <View style={styles.hostInfo}>
+                  <Text style={styles.hostName}>
+                    {(property as any).owner?.name || property.hostName || "Host"}
+                  </Text>
+                  <Text style={styles.hostLabel}>
+                    Property Host • Tap to view
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={() => {
+                  if (user) {
+                    router.push({
+                      pathname: "/messages/[userId]",
+                      params: { userId: (property as any).owner?.id || property.hostId }
+                    });
+                  } else {
+                    router.push("/auth/login");
+                  }
+                }}
+                style={styles.actionIcon}
+              >
+                <MessageCircle color={Colors.primary} size={22} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.section}>
+            <TouchableOpacity 
+              style={styles.addReviewButton}
+              onPress={() => {
+                if (!user) {
+                  router.push("/auth/login" as any);
+                  return;
+                }
+                setIsReviewModalVisible(true);
+              }}
+            >
+              <Star color={Colors.primary} size={20} />
+              <Text style={styles.addReviewText}>Write a Review</Text>
+            </TouchableOpacity>
+
             <View style={styles.reviewsHeader}>
               <Text style={styles.sectionTitle}>Reviews</Text>
               <View style={styles.ratingBadge}>
@@ -291,7 +448,7 @@ export default function PropertyDetailsScreen() {
             {reviews.length > 0 ? (
               <View style={styles.reviewsList}>
                 {reviews.map((review) => (
-                  <View key={review.id} style={styles.reviewCard}>
+                  <Card key={review.id} style={styles.reviewCard}>
                     <View style={styles.reviewHeader}>
                       <UserAvatar 
                         name={review.userName || "User"} 
@@ -299,7 +456,7 @@ export default function PropertyDetailsScreen() {
                         size={40} 
                         style={styles.reviewAvatar}
                       />
-                      <View style={styles.reviewHeaderContent}>
+                      <ThemedView style={[styles.reviewHeaderContent, { backgroundColor: 'transparent' }]}>
                         <Text style={styles.reviewerName}>
                           {review.userName || "User"}
                         </Text>
@@ -313,10 +470,10 @@ export default function PropertyDetailsScreen() {
                             />
                           ))}
                         </View>
-                      </View>
+                      </ThemedView>
                     </View>
                     <Text style={styles.reviewComment}>{review.comment}</Text>
-                  </View>
+                  </Card>
                 ))}
               </View>
             ) : (
@@ -324,9 +481,11 @@ export default function PropertyDetailsScreen() {
             )}
           </View>
         </View>
+        </ResponsiveView>
       </ScrollView>
 
       <View style={styles.footer}>
+        <ResponsiveView maxWidth={800} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={styles.priceSection}>
           <Text style={styles.priceLabel}>Price</Text>
           <Text style={styles.priceValue}>
@@ -334,33 +493,157 @@ export default function PropertyDetailsScreen() {
           </Text>
         </View>
         <TouchableOpacity style={styles.bookButton} onPress={handleBookPress}>
-          <Text style={styles.bookButtonText}>Book Now</Text>
+          <Text style={[styles.bookButtonText, { color: '#FFFFFF' }]}>Book Now</Text>
         </TouchableOpacity>
+        </ResponsiveView>
       </View>
+
+      <ReviewModal 
+        visible={isReviewModalVisible}
+        onClose={() => setIsReviewModalVisible(false)}
+        propertyId={id!}
+        onSuccess={loadData}
+      />
+
+      <Modal
+        visible={isFullscreenMediaVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeFullscreen}
+      >
+        <StatusBar style="light" />
+        <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]} />
+        <GestureDetector gesture={gesture}>
+          <Animated.View style={[styles.fullscreenContainer, animatedStyle]}>
+          <TouchableOpacity 
+            style={styles.fullscreenCloseButton}
+            onPress={closeFullscreen}
+          >
+            <X color="#FFFFFF" size={30} />
+          </TouchableOpacity>
+          <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              contentOffset={{ x: selectedMediaIndex * width, y: 0 }}
+              onMomentumScrollEnd={(e) => {
+                const index = Math.round(e.nativeEvent.contentOffset.x / width);
+                setSelectedMediaIndex(index);
+              }}
+            >
+              {images.map((media, index) => (
+                <View key={index} style={styles.fullscreenMediaWrapper}>
+                  {isVideo(media) ? (
+                    <VideoItem url={getMediaUrl(media)!} isFullscreen={true} width={width} />
+                  ) : (
+                    <Image
+                      source={{ uri: getMediaUrl(media) }}
+                      style={styles.fullscreenImage}
+                      contentFit="contain"
+                    />
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+            
+            <ThemedView style={styles.fullscreenPagination}>
+              <Text style={styles.fullscreenPaginationText}>
+                {selectedMediaIndex + 1} / {images.length}
+              </Text>
+            </ThemedView>
+          </Animated.View>
+        </GestureDetector>
+      </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any, screenWidth: number, contentWidth: number) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
+  },
+  imageCarouselContainer: {
+    position: 'relative',
+    height: 300,
   },
   imageCarousel: {
     height: 300,
   },
   propertyImage: {
-    width,
+    width: contentWidth,
     height: 300,
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  paginationDots: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  activeDot: {
+    backgroundColor: '#FFFFFF',
+    width: 20,
+  },
+  fullscreenContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  fullscreenCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  fullscreenMediaWrapper: {
+    width: screenWidth,
+    height: SCREEN_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullscreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  fullscreenVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  fullscreenPagination: {
+    position: 'absolute',
+    bottom: 50,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  fullscreenPaginationText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   content: {
     paddingBottom: 100,
@@ -369,7 +652,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    padding: 20,
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 16,
   },
   headerContent: {
     flex: 1,
@@ -377,17 +662,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: Colors.text,
     marginBottom: 8,
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    marginBottom: 4,
   },
   locationText: {
-    fontSize: 16,
-    color: Colors.textLight,
+    fontSize: 14,
+    marginLeft: 4,
   },
   addressRow: {
     marginTop: 4,
@@ -397,7 +681,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     fontSize: 14,
-    color: Colors.text,
+    color: themeColors.textLight,
   },
   directionsLink: {
     fontSize: 14,
@@ -407,13 +691,11 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     padding: 8,
-    backgroundColor: Colors.card,
     borderRadius: 20,
     marginLeft: 12,
   },
   statsRow: {
     flexDirection: "row",
-    backgroundColor: Colors.card,
     marginHorizontal: 20,
     paddingVertical: 20,
     borderRadius: 12,
@@ -431,11 +713,11 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   statDivider: {
     width: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: themeColors.border,
   },
   section: {
     paddingHorizontal: 20,
@@ -444,13 +726,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: Colors.text,
     marginBottom: 16,
   },
   description: {
     fontSize: 16,
-    color: Colors.text,
     lineHeight: 24,
+    color: themeColors.text,
   },
   amenitiesGrid: {
     flexDirection: "row",
@@ -460,7 +741,6 @@ const styles = StyleSheet.create({
   amenityItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.card,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -472,34 +752,20 @@ const styles = StyleSheet.create({
   },
   amenityText: {
     fontSize: 14,
-    color: Colors.text,
+    color: themeColors.text,
   },
   hostCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.card,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   hostAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-  },
-  hostAvatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  hostInitial: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: Colors.card,
   },
   hostInfo: {
     flex: 1,
@@ -508,12 +774,31 @@ const styles = StyleSheet.create({
   hostName: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
     marginBottom: 4,
   },
   hostLabel: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
+  },
+  actionIcon: {
+    padding: 8,
+  },
+  addReviewButton: {
+    backgroundColor: themeColors.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    marginBottom: 20,
+    gap: 8,
+  },
+  addReviewText: {
+    color: Colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   reviewsHeader: {
     flexDirection: "row",
@@ -529,17 +814,15 @@ const styles = StyleSheet.create({
   ratingValue: {
     fontSize: 18,
     fontWeight: "bold",
-    color: Colors.text,
   },
   reviewCount: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   reviewsList: {
     gap: 16,
   },
   reviewCard: {
-    backgroundColor: Colors.card,
     padding: 16,
     borderRadius: 12,
   },
@@ -553,26 +836,12 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
   },
-  reviewAvatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  reviewInitial: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.card,
-  },
   reviewHeaderContent: {
     marginLeft: 12,
   },
   reviewerName: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
     marginBottom: 4,
   },
   reviewRatingRow: {
@@ -581,12 +850,12 @@ const styles = StyleSheet.create({
   },
   reviewComment: {
     fontSize: 15,
-    color: Colors.text,
     lineHeight: 22,
+    color: themeColors.text,
   },
   noReviews: {
     fontSize: 16,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     textAlign: "center",
     paddingVertical: 20,
   },
@@ -597,45 +866,44 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.card,
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: "transparent",
     gap: 16,
   },
   priceSection: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   priceLabel: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     marginBottom: 4,
   },
   priceValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     color: Colors.primary,
   },
   bookButton: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
     borderRadius: 12,
   },
   bookButtonText: {
-    color: Colors.card,
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: "600",
   },
   errorContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.background,
   },
   errorText: {
     fontSize: 18,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     marginBottom: 20,
   },
   retryButton: {
@@ -645,7 +913,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
-    color: Colors.card,
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },

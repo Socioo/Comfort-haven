@@ -48,36 +48,37 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
           borderRadius: '20px', 
           padding: '0',
           overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          background: 'var(--bg-card)'
         }} 
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={styles.modalHeader} style={{ padding: '24px 32px', borderBottom: '1px solid #f1f5f9' }}>
+        <div className={styles.modalHeader} style={{ padding: '24px 32px', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ padding: '10px', background: '#fef3c7', borderRadius: '12px', color: '#d97706' }}>
+            <div style={{ padding: '10px', background: 'var(--warning-bg)', borderRadius: '12px', color: 'var(--warning-color)' }}>
               <Key size={24} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>Reset Password</h2>
-              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#64748b' }}>For {member.name}</p>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-color)' }}>Reset Password</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-light)' }}>For {member.name}</p>
             </div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} style={{ background: '#f1f5f9' }}>
+          <button className={styles.closeBtn} onClick={onClose} style={{ background: 'var(--bg-light)' }}>
             <X size={20} />
           </button>
         </div>
 
         <div style={{ padding: '32px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid #e2e8f0', display: 'flex', gap: '12px' }}>
-            <Shield size={20} color="#64748b" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: '1.5' }}>
+          <div style={{ background: 'var(--bg-light)', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)', display: 'flex', gap: '12px' }}>
+            <Shield size={20} color="var(--text-light)" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-light)', lineHeight: '1.5' }}>
               Resetting this password will require the user to change it immediately upon their next login for security reasons.
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#334155' }}>New Password</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--text-color)' }}>New Password</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -89,13 +90,15 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
                     width: '100%',
                     padding: '12px 16px',
                     borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-color)',
                     fontSize: '1rem',
                     transition: 'border-color 0.2s',
                     outline: 'none'
                   }}
                   onFocus={(e) => e.target.style.borderColor = 'var(--primary-color)'}
-                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
                 />
                 <button
                   type="button"
@@ -107,7 +110,7 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
                     transform: 'translateY(-50%)', 
                     background: 'none', 
                     border: 'none', 
-                    color: '#64748b', 
+                    color: 'var(--text-light)', 
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center'
@@ -119,7 +122,7 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
             </div>
 
             {error && (
-              <div style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '16px', background: '#fee2e2', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ color: 'var(--error-color)', fontSize: '0.875rem', marginBottom: '16px', background: 'var(--error-bg)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
                 {error}
               </div>
             )}

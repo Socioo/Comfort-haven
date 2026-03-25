@@ -201,8 +201,8 @@ const PayoutModal = ({ payoutId, onClose, onUpdate }: PayoutModalProps) => {
             {/* Host Info */}
             <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={20} color="#d97706" />
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--warning-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={20} color="var(--warning-color)" />
                 </div>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)' }}>Host Information</h3>
               </div>
@@ -250,18 +250,18 @@ const PayoutModal = ({ payoutId, onClose, onUpdate }: PayoutModalProps) => {
           {isPending && (
             <div style={{ display: 'flex', gap: '16px', marginTop: '8px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
               <button 
-                style={{ background: '#10b981', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: updating ? 'not-allowed' : 'pointer', flex: 1, transition: 'background 0.2s', opacity: updating ? 0.7 : 1 }}
-                onMouseOver={(e) => !updating && (e.currentTarget.style.background = '#059669')}
-                onMouseOut={(e) => !updating && (e.currentTarget.style.background = '#10b981')}
+                style={{ background: 'var(--success-color)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: updating ? 'not-allowed' : 'pointer', flex: 1, transition: 'filter 0.2s', opacity: updating ? 0.7 : 1 }}
+                onMouseOver={(e) => !updating && (e.currentTarget.style.filter = 'brightness(0.9)')}
+                onMouseOut={(e) => !updating && (e.currentTarget.style.filter = 'none')}
                 onClick={() => handleUpdateStatus('paid')}
                 disabled={updating}
               >
                 {updating ? "Processing..." : "Approve Payout"}
               </button>
               <button 
-                style={{ background: '#ef4444', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: updating ? 'not-allowed' : 'pointer', flex: 1, transition: 'background 0.2s', opacity: updating ? 0.7 : 1 }}
-                onMouseOver={(e) => !updating && (e.currentTarget.style.background = '#dc2626')}
-                onMouseOut={(e) => !updating && (e.currentTarget.style.background = '#ef4444')}
+                style={{ background: 'var(--error-color)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: updating ? 'not-allowed' : 'pointer', flex: 1, transition: 'filter 0.2s', opacity: updating ? 0.7 : 1 }}
+                onMouseOver={(e) => !updating && (e.currentTarget.style.filter = 'brightness(0.9)')}
+                onMouseOut={(e) => !updating && (e.currentTarget.style.filter = 'none')}
                 onClick={() => handleUpdateStatus('rejected')}
                 disabled={updating}
               >

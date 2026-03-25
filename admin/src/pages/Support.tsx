@@ -24,36 +24,30 @@ const Support = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const mockIssues: SupportIssue[] = [
-    // ... existing mocks as fallback
-    {
-      id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653",
-      date: "2026-03-01 7:30 AM",
-      status: "Open",
-      refundId: "#1484848",
-      issuerName: "Adam Lukot",
-      role: "Guest",
-      summary: "Sink maintenance",
-    },
-    // Add a few more mocks back for safety
-    {
-      id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1655",
-      date: "2026-03-01 8:15 AM",
-      status: "In progress",
-      refundId: "#1484849",
-      issuerName: "Adam Lukot",
-      role: "Guest",
-      summary: "Refund request",
-    },
-  ];
+  const transformTicket = (ticket: any): SupportIssue => ({
+    id: ticket.id,
+    date: ticket.createdAt
+      ? new Date(ticket.createdAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+      : ticket.date || '',
+    status: ticket.status,
+    refundId: ticket.refundId || `#${ticket.id?.slice(-6).toUpperCase()}`,
+    issuerName: ticket.user
+      ? `${ticket.user.firstName || ''} ${ticket.user.lastName || ''}`.trim() || ticket.user.email || 'Unknown'
+      : ticket.issuerName || 'Unknown',
+    role: ticket.user?.role
+      ? ticket.user.role.charAt(0).toUpperCase() + ticket.user.role.slice(1).toLowerCase()
+      : ticket.role || 'Guest',
+    summary: ticket.summary || ticket.category || '',
+  });
 
   const fetchIssues = async () => {
     try {
       const response = await api.get("/support");
-      setIssues(response.data.length > 0 ? response.data : mockIssues);
+      const data: SupportIssue[] = (response.data || []).map(transformTicket);
+      setIssues(data);
     } catch (err) {
       console.error("Failed to fetch support issues", err);
-      setIssues(mockIssues);
+      setIssues([]);
     } finally {
       setLoading(false);
     }

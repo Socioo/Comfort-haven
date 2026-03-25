@@ -88,6 +88,9 @@ export const authAPI = {
   register: (data: any) => api.post('/auth/signup', data),
 
   // OAuth Login
+  googleLogin: (data: { email: string; name: string; googleId: string; profileImage?: string; role?: string }) =>
+    api.post('/auth/google', data),
+  
   oauthLogin: (provider: string, token: string) =>
     api.post(`/auth/${provider}/login`, { token }),
   
@@ -165,6 +168,16 @@ export const bookingsAPI = {
 
   // Get host bookings
   getHostBookings: (hostId: string, params?: any) => api.get(`/bookings/host/${hostId}`, { params }),
+
+  // Initialize a Paystack payment for a booking
+  initializePayment: (data: {
+    email: string;
+    amount: number;
+    metadata: { propertyId: string; guestId: string; startDate: string; endDate: string; guests: number };
+  }) => api.post('/bookings/payment/initialize', data),
+
+  // Verify a Paystack payment and confirm booking
+  verifyPayment: (reference: string) => api.post('/bookings/payment/verify', { reference }),
 };
 
 // Favorites API
@@ -236,6 +249,8 @@ export const notificationsAPI = {
 // Settings API
 export const settingsAPI = {
   getAll: () => api.get('/settings'),
+  getByGroup: (group: string) => api.get(`/settings/group/${group}`),
+  getByKey: (key: string) => api.get(`/settings/${key}`),
 };
 
 // FAQs API

@@ -200,7 +200,7 @@ const Payouts = () => {
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{new Date(p.createdAt).toLocaleDateString()}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
                       {new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>

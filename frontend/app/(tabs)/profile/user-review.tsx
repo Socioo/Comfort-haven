@@ -15,6 +15,7 @@ import { Text, View } from "@/components/Themed";
 import { useRouter, useNavigation } from "expo-router";
 import { ChevronLeft, Star } from "lucide-react-native";
 import Colors from "@/constants/Colors";
+import { useTheme } from "@/contexts/theme";
 import { reviewsAPI } from "@/services/api";
 import * as Haptics from "expo-haptics";
 
@@ -22,6 +23,10 @@ export default function UserReviewScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { width, height } = useWindowDimensions();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  const styles = createStyles(themeColors);
+  
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,7 +93,7 @@ export default function UserReviewScreen() {
             style={styles.backButton} 
             onPress={() => router.back()}
           >
-            <ChevronLeft size={24} color={Colors.text} />
+            <ChevronLeft size={24} color={themeColors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>User review</Text>
         </View>
@@ -106,7 +111,7 @@ export default function UserReviewScreen() {
             <TextInput
               style={styles.input}
               placeholder="Write message"
-              placeholderTextColor={Colors.textLight}
+              placeholderTextColor={themeColors.textLight}
               multiline
               numberOfLines={10}
               textAlignVertical="top"
@@ -125,7 +130,7 @@ export default function UserReviewScreen() {
               >
                 <Star
                   size={starSize}
-                  color={star <= rating ? Colors.accent : Colors.border}
+                  color={star <= rating ? Colors.accent : themeColors.border}
                   fill={star <= rating ? Colors.accent : "transparent"}
                 />
               </TouchableOpacity>
@@ -152,10 +157,10 @@ export default function UserReviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: themeColors.background,
   },
   header: {
     flexDirection: "row",
@@ -163,18 +168,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === "ios" ? 60 : 40,
     paddingBottom: 20,
-    backgroundColor: Colors.card,
+    backgroundColor: themeColors.card,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.background,
+    backgroundColor: themeColors.background,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: Colors.shadow,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -184,7 +189,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 15,
-    color: Colors.text,
+    color: themeColors.text,
   },
   content: {
     paddingHorizontal: 20,
@@ -202,8 +207,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     borderRadius: 15,
     padding: 15,
-    backgroundColor: Colors.card,
-    shadowColor: Colors.shadow,
+    backgroundColor: themeColors.card,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
@@ -211,7 +216,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 14,
-    color: Colors.text,
+    color: themeColors.text,
     height: "100%",
     lineHeight: 20,
     backgroundColor: "transparent",

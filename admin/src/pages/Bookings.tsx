@@ -234,7 +234,7 @@ const Bookings = () => {
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{new Date(b.createdAt).toLocaleDateString()}</span>
-                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
                       {new Date(b.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>

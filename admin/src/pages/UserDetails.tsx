@@ -136,7 +136,7 @@ const UserDetails = () => {
                 {user.profileImage ? (
                     <img src={getImageUrl(user.profileImage)} alt={user.name} className={styles.avatarImage} />
                 ) : (
-                    <User size={40} color="#94a3b8" />
+                    <User size={40} color="var(--text-light)" />
                 )}
             </div>
             <h1 className={styles.detailName} style={{ margin: 0 }}>{user.name}</h1>
@@ -181,28 +181,28 @@ const UserDetails = () => {
 
       {user.role === 'host' && (
         <div className={styles.detailCard} style={{ marginTop: '24px' }}>
-          <h2 style={{ fontSize: '1.25rem', color: '#334155', marginTop: 0, marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', marginTop: 0, marginBottom: '24px' }}>
             Properties ({properties.length})
           </h2>
           {properties.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
                 {properties.map(property => (
                     <div key={property.id} style={{ 
-                        border: '1px solid #e2e8f0', 
+                        border: '1px solid var(--border-color)', 
                         borderRadius: '12px', 
                         overflow: 'hidden',
                         cursor: 'pointer'
                     }} onClick={() => navigate(`/properties/${property.id}`)}>
-                        <div style={{ width: '100%', height: '160px', background: '#f1f5f9' }}>
+                        <div style={{ width: '100%', height: '160px', background: 'var(--bg-color)' }}>
                             {property.images && property.images.length > 0 ? (
                                 <img src={getImageUrl(property.images[0])} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : null}
                         </div>
                         <div style={{ padding: '16px' }}>
-                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#0f172a' }}>{property.title}</h3>
-                            <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>{property.location}</p>
+                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: 'var(--text-main)' }}>{property.title}</h3>
+                            <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '0.85rem' }}>{property.location}</p>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                                <span style={{ fontWeight: 600, color: '#2f95dc' }}>₦{property.price}</span>
+                                <span style={{ fontWeight: 600, color: 'var(--primary-color)' }}>₦{property.price}</span>
                                 <span className={classNames(styles.statusBadge, styles[property.status === 'pending' ? 'suspended' : property.status])}>
                                     {property.status}
                                 </span>
@@ -212,7 +212,7 @@ const UserDetails = () => {
                 ))}
             </div>
           ) : (
-             <p style={{ color: '#64748b', margin: 0 }}>This host has no properties yet.</p>
+             <p style={{ color: 'var(--text-light)', margin: 0 }}>This host has no properties yet.</p>
           )}
         </div>
       )}
@@ -223,7 +223,7 @@ const UserDetails = () => {
                   <button 
                       className={styles.suspendBtn} 
                       onClick={handleVerify}
-                      style={{ background: '#10b981' }}
+                      style={{ background: 'var(--success-color)' }}
                   >
                       Verify Host
                   </button>
@@ -231,7 +231,7 @@ const UserDetails = () => {
               <button 
                   className={styles.suspendBtn} 
                   onClick={handleToggleSuspend}
-                  style={{ background: user.status === 'suspended' ? '#16a34a' : '#2f95dc' }}
+                  style={{ background: user.status === 'suspended' ? 'var(--success-color)' : 'var(--primary-color)' }}
                   disabled={user.status === 'banned'}
               >
                   {user.status === 'suspended' ? 'Restore account' : 'Suspend account'}
@@ -239,7 +239,7 @@ const UserDetails = () => {
               <button 
                   className={styles.suspendBtn} 
                   onClick={handleToggleBan}
-                  style={{ background: user.status === 'banned' ? '#16a34a' : '#ef4444' }}
+                  style={{ background: user.status === 'banned' ? 'var(--success-color)' : 'var(--error-color)' }}
               >
                   {user.status === 'banned' ? 'Unban account' : 'Ban account'}
               </button>

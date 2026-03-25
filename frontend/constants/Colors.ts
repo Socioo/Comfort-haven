@@ -12,6 +12,7 @@ export default {
     tint: tintColorLight,
     tabIconDefault: '#ccc',
     tabIconSelected: tintColorLight,
+    overlay: 'rgba(255, 255, 255, 0.9)',
   },
   dark: {
     text: '#FFFFFF',
@@ -23,6 +24,7 @@ export default {
     tint: tintColorDark,
     tabIconDefault: '#ccc',
     tabIconSelected: tintColorDark,
+    overlay: 'rgba(0, 0, 0, 0.7)',
   },
   primary: '#4A90E2',
   secondary: '#50E3C2',

@@ -35,7 +35,12 @@
     }
     
     .content {
-        padding: 20px;
+        padding: 16px;
+    }
+
+    .shifted {
+        /* On mobile we don't usually shift content if sidebar is an overlay */
+        transform: translateX(0); 
     }
 }
 

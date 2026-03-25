@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch, Delete } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -32,5 +32,17 @@ export class MessagesController {
     // Optionally mark them as read when fetching history
     await this.messagesService.markAsRead(otherUserId, req.user.id);
     return this.messagesService.getChatHistory(req.user.id, otherUserId);
+  }
+
+  @Patch('mark-all-read')
+  @ApiOperation({ summary: 'Mark all messages as read' })
+  async markAllRead(@Request() req) {
+    return this.messagesService.markAllAsRead(req.user.id);
+  }
+
+  @Delete('clear-all')
+  @ApiOperation({ summary: 'Clear all messages' })
+  async clearAll(@Request() req) {
+    return this.messagesService.clearAllMessages(req.user.id);
   }
 }

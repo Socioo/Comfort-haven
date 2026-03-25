@@ -87,16 +87,10 @@ const AdminSettings = () => {
       }
 
       if (user.appearance) {
-        const dbTheme = user.appearance.theme || theme;
         setAppearance({
-          theme: dbTheme,
+          theme: theme, // The UI theme is the single source of truth
           language: user.appearance.language || "en"
         });
-        
-        // Sync context and DOM to match user settings if they differ from local storage
-        if (dbTheme !== theme) {
-          setTheme(dbTheme);
-        }
       }
     } catch (error) {
       console.error("Failed to fetch user settings:", error);

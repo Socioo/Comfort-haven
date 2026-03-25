@@ -119,7 +119,7 @@ const PayoutDetails = () => {
           </div>
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>Amount:</span>
-            <span className={styles.detailValue} style={{ color: '#2f95dc', fontWeight: '700' }}>
+            <span className={styles.detailValue} style={{ color: 'var(--primary-color)', fontWeight: '700' }}>
               ₦{payout.amount.toLocaleString()}
             </span>
           </div>

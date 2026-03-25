@@ -306,7 +306,6 @@ export default function HostBookingsHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -315,9 +314,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 16,
-    backgroundColor: Colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   backButton: {
     padding: 4,
@@ -325,7 +322,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.text,
   },
   filterButton: {
     padding: 4,
@@ -334,7 +330,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
-    backgroundColor: Colors.primary + '10',
     margin: 16,
     borderRadius: 12,
     gap: 8,
@@ -342,7 +337,6 @@ const styles = StyleSheet.create({
   filterText: {
     flex: 1,
     fontSize: 14,
-    color: Colors.primary,
     fontWeight: "600",
   },
   scrollContent: {
@@ -361,21 +355,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.text,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: Colors.textLight,
     textAlign: "center",
   },
   bookingCard: {
-    backgroundColor: Colors.card,
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
     elevation: 2,
   },
   cardHeader: {
@@ -387,7 +374,6 @@ const styles = StyleSheet.create({
   propertyName: {
     fontSize: 16,
     fontWeight: "700",
-    color: Colors.text,
     flex: 1,
     marginRight: 8,
   },
@@ -413,12 +399,10 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 13,
-    color: Colors.textLight,
   },
   dateRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.background,
     padding: 12,
     borderRadius: 12,
     justifyContent: "space-between",
@@ -429,19 +413,16 @@ const styles = StyleSheet.create({
   },
   dateLabel: {
     fontSize: 10,
-    color: Colors.textLight,
     marginBottom: 2,
     fontWeight: "600",
   },
   dateValue: {
     fontSize: 13,
     fontWeight: "700",
-    color: Colors.text,
   },
   dateDivider: {
     width: 1,
     height: 20,
-    backgroundColor: Colors.border,
   },
   footerRow: {
     flexDirection: "row",
@@ -453,14 +434,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: Colors.primary + '08',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
   },
   durationText: {
     fontSize: 12,
-    color: Colors.primary,
     fontWeight: "600",
   },
   priceText: {
@@ -474,7 +453,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: Colors.card,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
@@ -489,7 +467,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.text,
   },
   modalActions: {
     flexDirection: "row",
@@ -501,13 +478,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
     alignItems: "center",
   },
   clearButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
   },
   applyButton: {
     flex: 2,

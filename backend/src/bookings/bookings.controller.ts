@@ -68,4 +68,24 @@ export class BookingsController {
     cancel(@Param('id') id: string) {
         return this.bookingsService.cancel(id);
     }
+
+    @Post('payment/initialize')
+    initializePayment(@Body() body: {
+        email: string;
+        amount: number;
+        metadata: {
+            propertyId: string;
+            guestId: string;
+            startDate: string;
+            endDate: string;
+            guests: number;
+        };
+    }) {
+        return this.bookingsService.initializePayment(body);
+    }
+
+    @Post('payment/verify')
+    verifyPayment(@Body() body: { reference: string }) {
+        return this.bookingsService.verifyPaymentAndBook(body.reference);
+    }
 }

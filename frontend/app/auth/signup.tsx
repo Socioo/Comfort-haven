@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  View,
-  Text,
   TextInput,
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
+import { Text, View, Card } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { useTheme } from '@/contexts/theme';
 import { useAuth } from '@/contexts/auth';
 import { UserRole } from '../../types';
 import * as Haptics from 'expo-haptics';
+import { ResponsiveView } from '@/components/ResponsiveView';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const { signUp, signInWithGoogle, isSigningUp } = useAuth();
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 600;
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -58,9 +64,9 @@ export default function SignupScreen() {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(selectedRole);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.back();
+      // Navigation is now handled by signInWithGoogle (e.g., to complete-profile or home)
     } catch (err) {
       console.error('Google sign in error:', err);
       Alert.alert('Error', 'Failed to sign in with Google');
@@ -73,27 +79,34 @@ export default function SignupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: isTablet ? '10%' : 20 }
+        ]}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft color={Colors.text} size={24} />
-        </TouchableOpacity>
+        <ResponsiveView maxWidth={600}>
+          <TouchableOpacity 
+            style={[styles.backButton, { backgroundColor: themeColors.card }]} 
+            onPress={() => router.back()}
+          >
+            <ArrowLeft color={themeColors.text} size={24} />
+          </TouchableOpacity>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join Comfort Haven today</Text>
-        </View>
+          <View style={[styles.header, { marginBottom: height * 0.04 }]}>
+            <Text style={[styles.title, { fontSize: isTablet ? 40 : 32 }]}>Create Account</Text>
+            <Text style={[styles.subtitle, { fontSize: isTablet ? 18 : 16 }]}>Join Comfort Haven today</Text>
+          </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Full Name *</Text>
-            <View style={styles.inputWrapper}>
-              <User color={Colors.textLight} size={20} />
+            <View style={[styles.inputWrapper, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+              <User color={themeColors.textLight} size={20} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: themeColors.text }]}
                 placeholder="Enter your full name"
-                placeholderTextColor={Colors.textLight}
+                placeholderTextColor={themeColors.textLight}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -103,12 +116,12 @@ export default function SignupScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email *</Text>
-            <View style={styles.inputWrapper}>
-              <Mail color={Colors.textLight} size={20} />
+            <View style={[styles.inputWrapper, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+              <Mail color={themeColors.textLight} size={20} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: themeColors.text }]}
                 placeholder="Enter your email"
-                placeholderTextColor={Colors.textLight}
+                placeholderTextColor={themeColors.textLight}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -120,12 +133,12 @@ export default function SignupScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
-            <View style={styles.inputWrapper}>
-              <Phone color={Colors.textLight} size={20} />
+            <View style={[styles.inputWrapper, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+              <Phone color={themeColors.textLight} size={20} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: themeColors.text }]}
                 placeholder="Enter your phone number"
-                placeholderTextColor={Colors.textLight}
+                placeholderTextColor={themeColors.textLight}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
@@ -138,18 +151,34 @@ export default function SignupScreen() {
             <Text style={styles.label}>I am a...</Text>
             <View style={styles.roleContainer}>
               <TouchableOpacity
-                style={[styles.roleChip, selectedRole === 'user' && styles.roleChipSelected]}
+                style={[
+                  styles.roleChip, 
+                  { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                  selectedRole === 'user' && styles.roleChipSelected
+                ]}
                 onPress={() => setSelectedRole('user')}
               >
-                <Text style={[styles.roleChipText, selectedRole === 'user' && styles.roleChipTextSelected]}>
+                <Text style={[
+                  styles.roleChipText, 
+                  { color: themeColors.text },
+                  selectedRole === 'user' && styles.roleChipTextSelected
+                ]}>
                   Guest
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.roleChip, selectedRole === 'host' && styles.roleChipSelected]}
+                style={[
+                  styles.roleChip, 
+                  { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                  selectedRole === 'host' && styles.roleChipSelected
+                ]}
                 onPress={() => setSelectedRole('host')}
               >
-                <Text style={[styles.roleChipText, selectedRole === 'host' && styles.roleChipTextSelected]}>
+                <Text style={[
+                  styles.roleChipText, 
+                  { color: themeColors.text },
+                  selectedRole === 'host' && styles.roleChipTextSelected
+                ]}>
                   Host
                 </Text>
               </TouchableOpacity>
@@ -158,12 +187,12 @@ export default function SignupScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password *</Text>
-            <View style={styles.inputWrapper}>
-              <Lock color={Colors.textLight} size={20} />
+            <View style={[styles.inputWrapper, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+              <Lock color={themeColors.textLight} size={20} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: themeColors.text }]}
                 placeholder="Create a password"
-                placeholderTextColor={Colors.textLight}
+                placeholderTextColor={themeColors.textLight}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -171,9 +200,9 @@ export default function SignupScreen() {
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 {showPassword ? (
-                  <EyeOff color={Colors.textLight} size={20} />
+                  <EyeOff color={themeColors.textLight} size={20} />
                 ) : (
-                  <Eye color={Colors.textLight} size={20} />
+                  <Eye color={themeColors.textLight} size={20} />
                 )}
               </TouchableOpacity>
             </View>
@@ -181,21 +210,21 @@ export default function SignupScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirm Password *</Text>
-            <View style={styles.inputWrapper}>
-              <Lock color={Colors.textLight} size={20} />
+            <View style={[styles.inputWrapper, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+              <Lock color={themeColors.textLight} size={20} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: themeColors.text }]}
                 placeholder="Confirm your password"
-                placeholderTextColor={Colors.textLight}
+                placeholderTextColor={themeColors.textLight}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
               />
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
                 {showConfirmPassword ? (
-                  <EyeOff color={Colors.textLight} size={20} />
+                  <EyeOff color={themeColors.textLight} size={20} />
                 ) : (
-                  <Eye color={Colors.textLight} size={20} />
+                  <Eye color={themeColors.textLight} size={20} />
                 )}
               </TouchableOpacity>
             </View>
@@ -218,7 +247,7 @@ export default function SignupScreen() {
           </View>
 
           <TouchableOpacity
-            style={styles.googleButton}
+            style={[styles.googleButton, { backgroundColor: themeColors.card, borderColor: themeColors.border }]}
             onPress={handleGoogleSignIn}
             disabled={isSigningUp}
           >
@@ -232,15 +261,15 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </ResponsiveView>
+    </ScrollView>
+  </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -250,9 +279,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.card,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 20,
   },
   header: {
@@ -260,13 +288,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold' as const,
-    color: Colors.text,
+    fontWeight: 'bold',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textLight,
   },
   form: {
     flex: 1,
@@ -276,38 +302,32 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600' as const,
-    color: Colors.text,
+    fontWeight: '600',
     marginBottom: 8,
   },
   inputWrapper: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    backgroundColor: Colors.card,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    color: Colors.text,
   },
   roleContainer: {
-    flexDirection: 'row' as const,
+    flexDirection: 'row',
     gap: 12,
   },
   roleChip: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: Colors.card,
     borderWidth: 2,
-    borderColor: Colors.border,
-    alignItems: 'center' as const,
+    alignItems: 'center',
   },
   roleChipSelected: {
     backgroundColor: Colors.primary,
@@ -315,66 +335,59 @@ const styles = StyleSheet.create({
   },
   roleChipText: {
     fontSize: 16,
-    fontWeight: '600' as const,
-    color: Colors.text,
+    fontWeight: '600',
   },
   roleChipTextSelected: {
-    color: Colors.card,
+    color: '#FFFFFF',
   },
   signupButton: {
     backgroundColor: Colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center' as const,
+    alignItems: 'center',
     marginTop: 12,
   },
   signupButtonText: {
-    color: Colors.card,
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600' as const,
+    fontWeight: '600',
   },
   divider: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 24,
     gap: 12,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
   },
   dividerText: {
     fontSize: 14,
-    color: Colors.textLight,
   },
   googleButton: {
-    backgroundColor: Colors.card,
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center' as const,
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   googleButtonText: {
-    color: Colors.text,
     fontSize: 16,
-    fontWeight: '600' as const,
+    fontWeight: '600',
   },
   footer: {
-    flexDirection: 'row' as const,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 24,
     marginBottom: 20,
   },
   footerText: {
     fontSize: 14,
-    color: Colors.textLight,
   },
   footerLink: {
     fontSize: 14,
     color: Colors.primary,
-    fontWeight: '600' as const,
+    fontWeight: '600',
   },
 });

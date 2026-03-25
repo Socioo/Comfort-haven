@@ -33,6 +33,9 @@ export class Booking {
     @Column({ default: 'pending' })
     status: string; // 'pending', 'confirmed', 'cancelled', 'completed'
 
+    @Column({ nullable: true })
+    paymentReference: string;
+
     @CreateDateColumn()
     createdAt: Date;
 

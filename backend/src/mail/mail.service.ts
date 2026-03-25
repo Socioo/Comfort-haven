@@ -143,4 +143,60 @@ export class MailService {
       this.logger.error(`Failed to send invitation email to ${email}: ${error.message}`);
     }
   }
+
+  async sendResetPasswordEmail(email: string, name: string, otp: string) {
+    await this.ensureTransporter();
+
+    const logoPath = path.join(process.cwd(), '..', 'frontend', 'assets', 'images', 'icon.png');
+    
+    const mailOptions = {
+      from: `"Comfort Haven" <${this.configService.get('MAIL_USER') || 'noreply@comfort-haven.com'}>`,
+      to: email,
+      subject: 'Password Reset Code - Comfort Haven',
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+          <div style="background-color: #2F95DC; padding: 30px; text-align: center;">
+            <img src="cid:logo" alt="Comfort Haven Logo" style="width: 80px; height: 80px; margin-bottom: 10px; border-radius: 15px;" />
+            <h1 style="color: white; margin: 0; font-size: 24px;">Reset Your Password</h1>
+          </div>
+          <div style="padding: 40px; color: #333;">
+            <h2 style="color: #2F95DC; margin-top: 0;">Hello, ${name}!</h2>
+            <p style="font-size: 16px; line-height: 1.6;">
+              We received a request to reset your password for your Comfort Haven account. Please use the verification code below to proceed:
+            </p>
+            
+            <div style="background-color: #f8f9fa; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+              <p style="margin: 0 0 15px 0; font-weight: bold; color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Verification Code</p>
+              <div style="font-size: 36px; font-weight: 800; letter-spacing: 10px; color: #2F95DC; font-family: monospace;">${otp}</div>
+            </div>
+
+            <p style="font-size: 14px; color: #666; line-height: 1.6;">
+              This code will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.
+            </p>
+
+            <div style="border-top: 1px solid #eee; margin-top: 30px; padding-top: 20px; font-size: 12px; color: #999; text-align: center;">
+              <p>For security, never share this code with anyone. Comfort Haven employees will never ask for your code.</p>
+            </div>
+          </div>
+          <div style="background-color: #f1f1f1; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+            <p>&copy; 2026 Comfort Haven. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: 'icon.png',
+          path: logoPath,
+          cid: 'logo'
+        }
+      ]
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Reset password email sent: ${info.messageId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send reset password email to ${email}: ${error.message}`);
+    }
+  }
 }

@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import Colors from "@/constants/Colors";
 import EditScreenInfo from "@/components/EditScreenInfo";
-import { Text, View } from "@/components/Themed";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Text, View, Card } from "@/components/Themed";
+import { useLocalSearchParams, useRouter, useNavigation } from "expo-router";
+import { useTheme } from "@/contexts/theme";
 import { useAuth } from "@/contexts/auth";
 import { useFavorites } from "@/contexts/favorites";
 import { useMemo, useState } from "react";
@@ -34,6 +35,10 @@ export default function ExploreScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user } = useAuth();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
+  const navigation = useNavigation();
+  const styles = createStyles(themeColors);
   const { toggleFavorite, isFavorite } = useFavorites();
 
   const [properties, setProperties] = useState<Property[]>([]);
@@ -114,7 +119,7 @@ export default function ExploreScreen() {
 
   const renderProperty = ({ item }: { item: Property }) => (
     <Pressable
-      style={styles.propertyCard}
+      style={[styles.propertyCard, { backgroundColor: themeColors.card }]}
       onPress={() => handlePropertyPress(item.id)}
     >
       <Image
@@ -128,7 +133,7 @@ export default function ExploreScreen() {
         contentFit="cover"
       />
       <TouchableOpacity
-        style={styles.favoriteButton}
+        style={[styles.favoriteButton, { backgroundColor: themeColors.overlay }]}
         onPress={() => handleFavoritePress(item)}
       >
         <Heart
@@ -179,10 +184,10 @@ export default function ExploreScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <View style={styles.searchSection}>
-        <View style={styles.searchBar}>
-          <Search color={Colors.textLight} size={20} />
+        <Card style={styles.searchBar}>
+          <Search color={themeColors.textLight} size={20} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search properties..."
@@ -192,12 +197,12 @@ export default function ExploreScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <X color={Colors.textLight} size={20} />
+              <X color={themeColors.textLight} size={20} />
             </TouchableOpacity>
           )}
-        </View>
+        </Card>
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterButton, { backgroundColor: themeColors.card }]}
           onPress={() => setShowFilters(true)}
         >
           <SlidersHorizontal color={Colors.primary} size={20} />
@@ -243,11 +248,11 @@ export default function ExploreScreen() {
         onRequestClose={() => setShowFilters(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <Card style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Filters</Text>
               <TouchableOpacity onPress={() => setShowFilters(false)}>
-                <X color={Colors.text} size={24} />
+                <X color={themeColors.text} size={24} />
               </TouchableOpacity>
             </View>
 
@@ -255,13 +260,13 @@ export default function ExploreScreen() {
               <View style={styles.filterSection}>
                 <Text style={styles.filterLabel}>Local Government Area</Text>
                 <TouchableOpacity
-                  style={styles.dropdownButton}
+                  style={[styles.dropdownButton, { backgroundColor: themeColors.background }]}
                   onPress={() => setShowLGADropdown(true)}
                 >
                   <Text style={styles.dropdownButtonText}>
                     {selectedLGA || "All LGAs"}
                   </Text>
-                  <Text style={styles.dropdownArrow}>▼</Text>
+                  <Text style={[styles.dropdownArrow, { color: themeColors.textLight }]}>▼</Text>
                 </TouchableOpacity>
               </View>
 
@@ -271,9 +276,9 @@ export default function ExploreScreen() {
                   <View style={styles.priceInputContainer}>
                     <Text style={styles.priceInputLabel}>Min</Text>
                     <TextInput
-                      style={styles.priceInput}
+                      style={[styles.priceInput, { backgroundColor: themeColors.background, color: themeColors.text }]}
                       placeholder="0"
-                      placeholderTextColor={Colors.textLight}
+                      placeholderTextColor={themeColors.textLight}
                       keyboardType="numeric"
                       value={minPrice}
                       onChangeText={setMinPrice}
@@ -283,9 +288,9 @@ export default function ExploreScreen() {
                   <View style={styles.priceInputContainer}>
                     <Text style={styles.priceInputLabel}>Max</Text>
                     <TextInput
-                      style={styles.priceInput}
+                      style={[styles.priceInput, { backgroundColor: themeColors.background, color: themeColors.text }]}
                       placeholder="100000"
-                      placeholderTextColor={Colors.textLight}
+                      placeholderTextColor={themeColors.textLight}
                       keyboardType="numeric"
                       value={maxPrice}
                       onChangeText={setMaxPrice}
@@ -312,7 +317,7 @@ export default function ExploreScreen() {
                 <Text style={styles.applyButtonText}>Apply Filters</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Card>
         </View>
       </Modal>
 
@@ -323,11 +328,11 @@ export default function ExploreScreen() {
         onRequestClose={() => setShowLGADropdown(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.dropdownContent}>
+          <Card style={styles.dropdownContent}>
             <View style={styles.dropdownHeader}>
               <Text style={styles.modalTitle}>Select LGA</Text>
               <TouchableOpacity onPress={() => setShowLGADropdown(false)}>
-                <X color={Colors.text} size={24} />
+                <X color={themeColors.text} size={24} />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.dropdownList}>
@@ -373,18 +378,18 @@ export default function ExploreScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </View>
+          </Card>
         </View>
       </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
+
   centerContent: {
     justifyContent: "center",
     alignItems: "center",
@@ -400,41 +405,41 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 12,
-    gap: 12,
+    gap: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: Colors.text,
+    fontSize: 15,
+    color: themeColors.text,
   },
   filterButton: {
-    backgroundColor: Colors.card,
-    padding: 12,
+    padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
+    justifyContent: "center",
+    alignItems: "center",
     position: "relative",
   },
   filterBadge: {
     position: "absolute",
-    top: -6,
-    right: -6,
+    top: -4,
+    right: -4,
     backgroundColor: Colors.primary,
     borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    minWidth: 16,
+    height: 16,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
   },
   filterBadgeText: {
-    color: Colors.card,
+    color: Colors.white,
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -447,7 +452,7 @@ const styles = StyleSheet.create({
   },
   activeFiltersText: {
     fontSize: 14,
-    color: Colors.text,
+    color: themeColors.text,
   },
   clearFilters: {
     fontSize: 14,
@@ -459,11 +464,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   propertyCard: {
-    backgroundColor: Colors.card,
     borderRadius: 16,
     overflow: "hidden",
     elevation: 2,
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+    borderWidth: 1,
+    borderColor: themeColors.border,
   },
   propertyImage: {
     width: "100%",
@@ -473,7 +478,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 12,
     right: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 20,
     padding: 8,
   },
@@ -483,7 +487,7 @@ const styles = StyleSheet.create({
   propertyTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
+    color: themeColors.text,
     marginBottom: 6,
   },
   locationRow: {
@@ -494,7 +498,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     flex: 1,
   },
   propertyDetails: {
@@ -502,7 +506,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 13,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   propertyFooter: {
     flexDirection: "row",
@@ -517,11 +521,11 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.text,
+    color: themeColors.text,
   },
   reviewCount: {
     fontSize: 12,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   price: {
     fontSize: 16,
@@ -536,12 +540,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: Colors.text,
+    color: themeColors.text,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 16,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     textAlign: "center",
   },
   modalOverlay: {
@@ -550,7 +554,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: Colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "80%",
@@ -561,12 +564,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: Colors.text,
+    color: themeColors.text,
   },
   modalBody: {
     padding: 20,
@@ -577,30 +580,28 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
+    color: themeColors.text,
     marginBottom: 12,
   },
   dropdownButton: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: Colors.lightGray,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   dropdownButtonText: {
     fontSize: 16,
-    color: Colors.text,
+    color: themeColors.text,
   },
   dropdownArrow: {
     fontSize: 12,
-    color: Colors.textLight,
+    color: themeColors.textLight,
   },
   dropdownContent: {
-    backgroundColor: Colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "70%",
@@ -611,7 +612,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   dropdownList: {
     maxHeight: "100%",
@@ -620,14 +621,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: themeColors.border,
   },
   dropdownItemSelected: {
     backgroundColor: `${Colors.primary}15`,
   },
   dropdownItemText: {
     fontSize: 16,
-    color: Colors.text,
+    color: themeColors.text,
   },
   dropdownItemTextSelected: {
     color: Colors.primary,
@@ -643,22 +644,20 @@ const styles = StyleSheet.create({
   },
   priceInputLabel: {
     fontSize: 14,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     marginBottom: 8,
   },
   priceInput: {
-    backgroundColor: Colors.lightGray,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: Colors.text,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: themeColors.border,
   },
   priceSeparator: {
     fontSize: 16,
-    color: Colors.textLight,
+    color: themeColors.textLight,
     marginTop: 20,
   },
   modalFooter: {
@@ -666,7 +665,7 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: themeColors.border,
   },
   clearButton: {
     flex: 1,

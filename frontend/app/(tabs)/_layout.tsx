@@ -37,10 +37,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textLight,
+        tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].textLight,
         tabBarStyle: {
-          backgroundColor: Colors.card,
-          borderTopColor: Colors.border,
+          backgroundColor: Colors[colorScheme ?? 'light'].card,
+          borderTopColor: Colors[colorScheme ?? 'light'].border,
         },
         tabBarLabelStyle: {
           fontSize: 12,

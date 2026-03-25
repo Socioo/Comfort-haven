@@ -4,21 +4,28 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
+  useWindowDimensions,
+  TouchableOpacity,
+  TextInput,
+  RefreshControl,
 } from "react-native";
 import Colors from "@/constants/Colors";
 import { Image } from "expo-image";
 import { Heart, MapPin, Search, Star } from "lucide-react-native";
-import { Text, View } from "@/components/Themed";
-import { useRouter } from "expo-router";
+import { Text, View, Card } from "@/components/Themed";
+import { useRouter, Redirect } from "expo-router";
+import { useTheme } from "@/contexts/theme";
 import { useAuth } from "@/contexts/auth";
 import { useFavorites } from "@/contexts/favorites";
 import { Property } from "@/types";
 import { propertiesAPI, API_BASE_URL } from "@/services/api";
 import * as Haptics from "expo-haptics";
+import { ResponsiveView } from "@/components/ResponsiveView";
 
-const { width } = Dimensions.get("window");
+const screen = Dimensions.get("window");
+const SCREEN_WIDTH = screen?.width || 375;
+const SCREEN_HEIGHT = screen?.height || 667;
 
 const getImageUrl = (url: string | undefined) => {
   if (!url) return undefined;
@@ -36,33 +43,44 @@ const getImageUrl = (url: string | undefined) => {
 export default function TabOneScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colorScheme } = useTheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
   const { toggleFavorite, isFavorite } = useFavorites();
-  const [properties, setProperties] = useState<Property[]>([]);
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 600;
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!loading && user) {
-      if (user.role === "host") {
-        router.replace("/(tabs)/(host)" as any);
-      }
-      // Guest redirect removed - they can see Home now
+    if (!user || (user.role !== "host" && user.role !== "admin")) {
+      fetchProperties();
+    } else {
+      setLoading(false);
     }
-  }, [user, loading]);
+  }, [user]);
 
-  useEffect(() => {
-    fetchProperties();
-  }, []);
+  if (user?.role === "host" || user?.role === "admin") {
+    return <Redirect href="/(tabs)/(host)" />;
+  }
 
-  const fetchProperties = async () => {
+  const fetchProperties = async (isRefresh = false) => {
     try {
+      if (isRefresh) setRefreshing(true);
       const response = await propertiesAPI.getAll({ status: "active" });
-      setProperties(response.data.slice(0, 6)); // Get first 6 for featured
+      setAllProperties(response.data);
     } catch (error) {
       console.error("Failed to fetch properties:", error);
     } finally {
+      if (isRefresh) setRefreshing(false);
       setLoading(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    fetchProperties(true);
+  }, []);
 
   const handlePropertyPress = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -78,31 +96,107 @@ export default function TabOneScreen() {
     toggleFavorite(property.id, property);
   };
 
+  const featuredProperties = allProperties.slice(0, 6);
+
+  const searchResults = allProperties.filter((property) => {
+    if (!searchQuery) return true;
+    return (
+      property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (property.lga && property.lga.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]} // Android
+            tintColor={Colors.primary} // iOS
+          />
+        }
       >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>
-              Hello{user ? `, ${user.name.split(" ")[0]}` : ""}! 👋
-            </Text>
-            <Text style={styles.subtitle}>Find your perfect stay in Kano</Text>
+        <ResponsiveView maxWidth={1200} style={{ paddingHorizontal: isTablet ? 20 : 0 }}>
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.greeting}>
+                Hello{user ? `, ${user.name.split(" ")[0]}` : ""}! 👋
+              </Text>
+              <Text style={styles.subtitle}>Find your perfect stay in Kano</Text>
+            </View>
           </View>
+
+          <View style={[styles.searchBar, { backgroundColor: themeColors.card }]}>
+          <Search color={Colors.textLight} size={20} />
+          <TextInput
+            style={[styles.searchInput, { color: themeColors.text }]}
+            placeholder="Search location, LGA..."
+            placeholderTextColor={Colors.textLight}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
 
-        <TouchableOpacity
-          style={styles.searchBar}
-          // onPress={() => router.push('/explore')}
-        >
-          <Search color={Colors.textLight} size={20} />
-          <Text style={styles.searchPlaceholder}>Search location, LGA...</Text>
-        </TouchableOpacity>
-
-        <View style={styles.section}>
+        {searchQuery.trim().length > 0 ? (
+          <View style={styles.searchResultsContainer}>
+            <Text style={styles.sectionTitle}>
+              {searchResults.length} Result{searchResults.length !== 1 ? 's' : ''}
+            </Text>
+            {searchResults.map((property) => (
+              <Pressable
+                key={property.id}
+                style={[styles.resultCard, { backgroundColor: themeColors.card }]}
+                onPress={() => handlePropertyPress(property.id)}
+              >
+                <Image
+                  source={{ uri: property.images && property.images.length > 0 ? property.images[0] : "https://placehold.co/600x400" }}
+                  style={styles.resultImage}
+                  contentFit="cover"
+                />
+                <TouchableOpacity
+                  style={styles.favoriteButton}
+                  onPress={() => handleFavoritePress(property)}
+                >
+                  <Heart
+                    color={isFavorite(property.id) ? Colors.primary : Colors.textLight}
+                    fill={isFavorite(property.id) ? Colors.primary : "transparent"}
+                    size={20}
+                  />
+                </TouchableOpacity>
+                <View style={styles.resultInfo}>
+                  <Text style={styles.resultTitle} numberOfLines={1}>
+                    {property.title}
+                  </Text>
+                  <View style={styles.locationRow}>
+                    <MapPin color={Colors.textLight} size={14} />
+                    <Text style={styles.locationText} numberOfLines={1}>
+                      {property.location}, {property.lga}
+                    </Text>
+                  </View>
+                  <View style={styles.featuredFooter}>
+                    <View style={styles.ratingRow}>
+                      <Star color={Colors.accent} fill={Colors.accent} size={14} />
+                      <Text style={styles.ratingText}>
+                        {property.rating?.toFixed(1) || "4.5"}
+                      </Text>
+                    </View>
+                    <Text style={styles.price}>
+                      ₦{property.price.toLocaleString()}/night
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <>
+            <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Featured Properties</Text>
             <TouchableOpacity onPress={() => router.push("../explore")}>
@@ -120,14 +214,14 @@ export default function TabOneScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.featuredList}
             >
-              {properties.map((property) => (
+              {featuredProperties.map((property) => (
                 <Pressable
                   key={property.id}
-                  style={styles.featuredCard}
+                  style={[styles.featuredCard, { backgroundColor: themeColors.card }]}
                   onPress={() => handlePropertyPress(property.id)}
                 >
                   <Image
-                    source={{ uri: property.images[0] }}
+                    source={{ uri: property.images && property.images.length > 0 ? property.images[0] : "https://placehold.co/600x400" }}
                     style={styles.featuredImage}
                     contentFit="cover"
                   />
@@ -189,7 +283,7 @@ export default function TabOneScreen() {
               (location) => (
                 <TouchableOpacity
                   key={location}
-                  style={styles.locationCard}
+                  style={[styles.locationCard, { backgroundColor: themeColors.card }]}
                   onPress={() => router.push(`../explore?location=${location}`)}
                 >
                   <MapPin color={Colors.primary} size={20} />
@@ -199,6 +293,9 @@ export default function TabOneScreen() {
             )}
           </View>
         </View>
+        </>
+        )}
+        </ResponsiveView>
       </ScrollView>
     </View>
   );
@@ -207,7 +304,6 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -229,17 +325,14 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 34,
     fontWeight: "bold",
-    color: Colors.text,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textLight,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.card,
     marginHorizontal: 20,
     marginTop: 16,
     paddingHorizontal: 16,
@@ -247,11 +340,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'transparent',
   },
-  searchPlaceholder: {
+  searchInput: {
+    flex: 1,
     fontSize: 16,
-    color: Colors.textLight,
   },
   section: {
     marginTop: 24,
@@ -267,7 +360,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 25,
     fontWeight: "bold",
-    color: Colors.text,
     marginBottom: 16,
   },
   seeAll: {
@@ -277,18 +369,18 @@ const styles = StyleSheet.create({
   },
   featuredList: {
     paddingRight: 20,
+    paddingVertical: 12,
     gap: 16,
   },
   featuredCard: {
-    width: width * 0.7,
-    backgroundColor: Colors.card,
+    width: Dimensions.get("window").width >= 600 ? 350 : Dimensions.get("window").width * 0.7,
     borderRadius: 16,
     overflow: "hidden",
-    elevation: 2,
-    shadowColor: Colors.shadow,
+    elevation: 4,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 4,
   },
   featuredImage: {
     width: "100%",
@@ -308,7 +400,6 @@ const styles = StyleSheet.create({
   featuredTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.text,
     marginBottom: 6,
   },
   locationRow: {
@@ -319,7 +410,6 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: Colors.textLight,
     flex: 1,
   },
   featuredFooter: {
@@ -335,11 +425,9 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.text,
   },
   reviewCount: {
     fontSize: 12,
-    color: Colors.textLight,
   },
   price: {
     fontSize: 16,
@@ -355,17 +443,42 @@ const styles = StyleSheet.create({
   locationCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.card,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   locationName: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.text,
   },
+  searchResultsContainer: {
+    padding: 20,
+    marginTop: 10,
+    gap: 16,
+  },
+  resultCard: {
+    borderRadius: 16,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  resultImage: {
+    width: "100%",
+    height: 200,
+  },
+  resultInfo: {
+    padding: 12,
+  },
+  resultTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 6,
+  }
 });

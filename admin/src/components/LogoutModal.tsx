@@ -28,7 +28,7 @@ const LogoutModal = ({ onConfirm, onCancel }: LogoutModalProps) => {
             border: "1px solid var(--border-color)"
           }}
         >
-          <LogOut size={32} color="#dc2626" />
+          <LogOut size={32} color="var(--error-color)" />
         </div>
         
         <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "var(--text-main)", marginBottom: "12px" }}>
@@ -63,7 +63,7 @@ const LogoutModal = ({ onConfirm, onCancel }: LogoutModalProps) => {
             onClick={onConfirm}
             style={{
               padding: "12px 24px",
-              background: "#dc2626",
+              background: "var(--error-color)",
               color: "white",
               border: "none",
               borderRadius: "10px",

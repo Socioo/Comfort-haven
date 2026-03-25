@@ -116,11 +116,11 @@ const RefundDetails = () => {
           </div>
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>Refund reason:</span>
-            <span className={styles.detailValue} style={{ color: '#2f95dc', fontWeight: '500' }}>{refund.reason || "N/A"}</span>
+            <span className={styles.detailValue} style={{ color: 'var(--primary-color)', fontWeight: '500' }}>{refund.reason || "N/A"}</span>
           </div>
           <div className={styles.detailRow}>
             <span className={styles.detailLabel}>Total amount requested:</span>
-            <span className={styles.detailValue} style={{ color: '#2f95dc', fontWeight: '700' }}>
+            <span className={styles.detailValue} style={{ color: 'var(--primary-color)', fontWeight: '700' }}>
               ₦{refund.amount.toLocaleString()}
             </span>
           </div>

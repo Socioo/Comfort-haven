@@ -34,30 +34,50 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
+          {/* Protected Routes - All Admins */}
+          <Route element={<ProtectedRoute allowedRoles={['super-admin', 'manager', 'finance', 'support']} />}>
             <Route path="/" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
-              <Route path="guests" element={<Guests />} />
-              <Route path="hosts" element={<Hosts />} />
-              <Route path="properties" element={<Properties />} />
-              <Route path="properties/:id" element={<PropertyDetails />} />
-              <Route path="bookings" element={<Bookings />} />
-              <Route path="bookings/:id" element={<BookingDetails />} />
-              <Route path="guests/:id" element={<UserDetails />} />
-              <Route path="hosts/:id" element={<UserDetails />} />
-              <Route path="team" element={<Team />} />
-              <Route path="settings" element={<AppSettings />} />
-              <Route path="admin-settings" element={<AdminSettings />} />
-              <Route path="support" element={<Support />} />
-              <Route path="faqs" element={<Faqs />} />
-              <Route path="payouts" element={<Payouts />} />
-              <Route path="payouts/:id" element={<PayoutDetails />} />
-              <Route path="refunds" element={<Refunds />} />
-              <Route path="refunds/:id" element={<RefundDetails />} />
-              <Route path="payment-settings" element={<PaymentSettings />} />
               <Route path="notifications" element={<Notifications />} />
-              <Route path="contact-info" element={<ContactSocialInfo />} />
+              <Route path="admin-settings" element={<AdminSettings />} />
+              
+              {/* Management - Super Admin & Manager only */}
+              <Route element={<ProtectedRoute allowedRoles={['super-admin', 'manager']} />}>
+                <Route path="guests" element={<Guests />} />
+                <Route path="hosts" element={<Hosts />} />
+                <Route path="properties" element={<Properties />} />
+                <Route path="properties/:id" element={<PropertyDetails />} />
+                <Route path="guests/:id" element={<UserDetails />} />
+                <Route path="hosts/:id" element={<UserDetails />} />
+              </Route>
+
+              {/* Team - Super Admin only */}
+              <Route element={<ProtectedRoute allowedRoles={['super-admin']} />}>
+                <Route path="team" element={<Team />} />
+              </Route>
+
+              {/* Finance - Super Admin & Finance only */}
+              <Route element={<ProtectedRoute allowedRoles={['super-admin', 'finance']} />}>
+                <Route path="bookings" element={<Bookings />} />
+                <Route path="bookings/:id" element={<BookingDetails />} />
+                <Route path="payouts" element={<Payouts />} />
+                <Route path="payouts/:id" element={<PayoutDetails />} />
+                <Route path="refunds" element={<Refunds />} />
+                <Route path="refunds/:id" element={<RefundDetails />} />
+              </Route>
+
+              {/* Support & Content - Super Admin & Support only */}
+              <Route element={<ProtectedRoute allowedRoles={['super-admin', 'support']} />}>
+                <Route path="support" element={<Support />} />
+                <Route path="faqs" element={<Faqs />} />
+                <Route path="contact-info" element={<ContactSocialInfo />} />
+              </Route>
+
+              {/* Global Configuration - Super Admin only */}
+              <Route element={<ProtectedRoute allowedRoles={['super-admin']} />}>
+                <Route path="settings" element={<AppSettings />} />
+                <Route path="payment-settings" element={<PaymentSettings />} />
+              </Route>
             </Route>
           </Route>
 

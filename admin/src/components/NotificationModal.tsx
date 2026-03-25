@@ -15,9 +15,9 @@ const NotificationModal = ({ type, title, message, onClose }: NotificationModalP
   const getIcon = () => {
     switch (type) {
       case "success":
-        return <CheckCircle2 size={40} color="#10b981" />;
+        return <CheckCircle2 size={40} color="var(--success-color)" />;
       case "error":
-        return <AlertCircle size={40} color="#ef4444" />;
+        return <AlertCircle size={40} color="var(--error-color)" />;
       case "info":
         return <Info size={40} color="var(--primary-color)" />;
     }
@@ -26,22 +26,24 @@ const NotificationModal = ({ type, title, message, onClose }: NotificationModalP
   const getIconBg = () => {
     switch (type) {
       case "success":
-        return "rgba(16, 185, 129, 0.1)";
+        return "var(--success-bg)";
       case "error":
-        return "rgba(239, 68, 68, 0.1)";
+        return "var(--error-bg)";
       case "info":
-        return "rgba(47, 149, 220, 0.1)";
+        return "rgba(47, 149, 220, 0.2)"; // Increased from 0.1
+
     }
   };
 
   const getBorderColor = () => {
     switch (type) {
       case "success":
-        return "rgba(16, 185, 129, 0.2)";
+        return "rgba(76, 175, 80, 0.4)"; // Increased from 0.2
       case "error":
-        return "rgba(239, 68, 68, 0.2)";
+        return "rgba(211, 47, 47, 0.4)"; // Increased from 0.2
       case "info":
-        return "rgba(47, 149, 220, 0.2)";
+        return "rgba(47, 149, 220, 0.4)"; // Increased from 0.2
+
     }
   };
 

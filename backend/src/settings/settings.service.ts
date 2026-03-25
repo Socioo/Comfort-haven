@@ -10,6 +10,25 @@ const DEFAULT_SETTINGS = [
   { key: 'instagram', value: '', group: 'social' },
   { key: 'tiktok', value: '', group: 'social' },
   { key: 'x', value: '', group: 'social' },
+  // App Settings
+  { key: 'app_name', value: 'Comfort Haven', group: 'app' },
+  { key: 'support_email', value: 'support@comforthaven.com', group: 'app' },
+  { key: 'maintenance_mode', value: 'false', group: 'app' },
+  { key: 'bookingTimeout', value: 'true', group: 'app' },
+  { key: 'autoApproveHosts', value: 'false', group: 'app' },
+  { key: 'autoApproveProperties', value: 'true', group: 'app' },
+  { key: 'serviceAvailability', value: 'false', group: 'app' },
+  { key: 'emailNotifications', value: 'true', group: 'app' },
+  { key: 'smsAlerts', value: 'false', group: 'app' },
+  { key: 'pushMessages', value: 'true', group: 'app' },
+  // Payment Settings
+  { key: 'currency', value: 'NGN', group: 'payment' },
+  { key: 'tax_rate', value: '7.5', group: 'payment' },
+  { key: 'platform_fee', value: '5', group: 'payment' },
+  { key: 'supportedGateways', value: 'true', group: 'payment' },
+  { key: 'enableMethods', value: 'false', group: 'payment' },
+  { key: 'minOrderPrice', value: 'true', group: 'payment' },
+  { key: 'commissionSetup', value: 'false', group: 'payment' },
 ];
 
 @Injectable()

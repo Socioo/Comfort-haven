@@ -38,7 +38,7 @@
 .pageTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2f95dc; /* Changed from red to blue */
+  color: var(--primary-color);
   margin: 0;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .statCardSolid {
-  background: #2f95dc; /* Changed to blue */
+  background: var(--primary-color);
   color: white;
   padding: 24px;
   border-radius: 12px;
@@ -118,7 +118,7 @@
 }
 
 .customTable thead tr {
-  background: #2f95dc; /* Changed to blue */
+  background: var(--primary-color);
   color: white;
 }
 
@@ -166,22 +166,22 @@
 }
 
 .active {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--success-bg);
+  color: var(--success-color);
 }
 
 .suspended {
-  background: #fef3c7;
-  color: #d97706;
+  background: var(--warning-bg);
+  color: var(--warning-color);
 }
 
 .failed {
-  background: #fee2e2;
-  color: #ef4444;
+  background: var(--error-bg);
+  color: var(--error-color);
 }
 
 .viewBtn {
-  background: #2f95dc; /* Changed to blue */
+  background: var(--primary-color);
   color: white;
   padding: 6px 24px;
   border-radius: 100px;
@@ -209,7 +209,7 @@
 .detailCardTitle {
   font-size: 1.1rem; /* Reduced from 1.5rem */
   font-weight: 700;
-  color: #2f95dc;
+  color: var(--primary-color);
   margin-top: 0;
   margin-bottom: 16px;
 }
@@ -256,7 +256,7 @@
 }
 
 .approveBtn {
-  background: #2f95dc;
+  background: var(--primary-color);
   color: white;
   border: none;
   padding: 12px 24px; /* Reduced */

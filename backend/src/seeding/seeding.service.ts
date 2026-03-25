@@ -27,8 +27,8 @@ export class SeedingService implements OnApplicationBootstrap {
     ) { }
 
     async onApplicationBootstrap() {
-        // We can call seed here or wait for manual call
-        // await this.seed();
+        // Automatically ensure default admins exist on startup
+        await this.createDefaultAdmins();
     }
 
     async seed() {
@@ -45,6 +45,65 @@ export class SeedingService implements OnApplicationBootstrap {
         await this.seedFaqs();
 
         this.logger.log('Seeding completed successfully!');
+    }
+
+    async createDefaultAdmins() {
+        this.logger.log('Synchronizing default administrative accounts...');
+        const password = await bcrypt.hash('Admin@123', 10);
+        
+        const adminAccounts = [
+            {
+                email: 'superadmin@comfort-haven.com',
+                name: 'Super Admin',
+                role: UserRole.SUPER_ADMIN,
+                profileImage: 'https://i.pravatar.cc/150?u=super-admin',
+            },
+            {
+                email: 'manager@comfort-haven.com',
+                name: 'Comfort Manager',
+                role: UserRole.MANAGER,
+                profileImage: 'https://i.pravatar.cc/150?u=manager',
+            },
+            {
+                email: 'finance@comfort-haven.com',
+                name: 'Finance Officer',
+                role: UserRole.FINANCE,
+                profileImage: 'https://i.pravatar.cc/150?u=finance',
+            },
+            {
+                email: 'support@comfort-haven.com',
+                name: 'Support Agent',
+                role: UserRole.SUPPORT,
+                profileImage: 'https://i.pravatar.cc/150?u=support',
+            },
+        ];
+
+        for (const account of adminAccounts) {
+            const existing = await this.usersRepository.findOne({ where: { email: account.email } });
+            if (!existing) {
+                this.logger.log(`Creating ${account.role} account: ${account.email}`);
+                const user = this.usersRepository.create({
+                    ...account,
+                    password,
+                    isVerified: true,
+                    status: 'active',
+                });
+                await this.usersRepository.save(user);
+            } else {
+                this.logger.log(`Synchronizing credentials for ${account.email}`);
+                await this.usersRepository.update(existing.id, { 
+                    role: account.role,
+                    password: password, // Always sync the password
+                    isVerified: true,
+                    status: 'active'
+                });
+            }
+        }
+
+        // Migrate any remaining legacy roles to new defaults
+        await this.usersRepository.update({ role: 'admin' as any }, { role: UserRole.SUPER_ADMIN });
+        await this.usersRepository.update({ role: 'sub-admin' as any }, { role: UserRole.MANAGER });
+        this.logger.log('Legacy role migration complete.');
     }
 
     private async clearDatabase() {
@@ -75,18 +134,18 @@ export class SeedingService implements OnApplicationBootstrap {
             email: 'superadmin@comfort-haven.com',
             password,
             name: 'Super Admin',
-            role: UserRole.ADMIN,
+            role: UserRole.SUPER_ADMIN,
             isVerified: true,
             status: 'active',
             profileImage: 'https://images.unsplash.com/photo-1519085185750-74071747e99c?auto=format&fit=crop&w=256&q=80',
         });
 
-        // 2. Sub Admin
+        // 2. Manager
         usersData.push({
-            email: 'subadmin@comfort-haven.com',
+            email: 'manager@comfort-haven.com',
             password,
-            name: 'Sub Admin',
-            role: UserRole.SUB_ADMIN,
+            name: 'Comfort Manager',
+            role: UserRole.MANAGER,
             isVerified: true,
             status: 'active',
             profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80',

@@ -16,14 +16,19 @@ export class ReviewsService {
   ) {}
 
   async create(userId: string, createReviewDto: CreateReviewDto) {
-    if (createReviewDto.propertyId) {
-      const property = await this.propertyRepository.findOne({
-        where: { id: createReviewDto.propertyId },
-      });
+    const propertyId = createReviewDto.propertyId;
+    
+    if (!propertyId) {
+      throw new NotFoundException('Property ID is required');
+    }
 
-      if (!property) {
-        throw new NotFoundException('Property not found');
-      }
+    const property = await this.propertyRepository.findOne({
+      where: { id: propertyId },
+      relations: ['reviews'],
+    });
+
+    if (!property) {
+      throw new NotFoundException('Property not found');
     }
 
     const review = this.reviewsRepository.create({
@@ -31,7 +36,17 @@ export class ReviewsService {
       userId,
     });
 
-    return this.reviewsRepository.save(review);
+    const savedReview = await this.reviewsRepository.save(review);
+
+    // Recalculate property stats
+    const allReviews = await this.reviewsRepository.find({ where: { propertyId } });
+    const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
+    property.reviewCount = allReviews.length;
+    property.rating = totalRating / allReviews.length;
+
+    await this.propertyRepository.save(property);
+
+    return savedReview;
   }
 
   async findAllByProperty(propertyId: string) {

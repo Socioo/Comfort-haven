@@ -17,6 +17,7 @@ interface FavoritesContextType {
   favoriteProperties: Property[];
   toggleFavorite: (propertyId: string, property?: Property) => Promise<void>;
   isFavorite: (propertyId: string) => boolean;
+  loadFavorites: () => Promise<void>;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(
@@ -113,6 +114,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({
         favoriteProperties,
         toggleFavorite,
         isFavorite,
+        loadFavorites,
       }}
     >
       {children}

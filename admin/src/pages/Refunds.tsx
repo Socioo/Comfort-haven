@@ -240,7 +240,7 @@ const Refunds = () => {
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{new Date(r.createdAt).toLocaleDateString()}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
                       {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>

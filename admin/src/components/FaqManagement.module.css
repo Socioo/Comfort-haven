@@ -214,3 +214,44 @@
         min-height: auto;
     }
 }
+
+.viewMode {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.viewField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.viewField label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.viewField p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.answerBox {
+    background: var(--bg-color);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-main);
+    white-space: pre-wrap;
+    min-height: 150px;
+}

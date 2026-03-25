@@ -99,99 +99,119 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </NavLink>
         
         {/* Management Group */}
-        <div 
-          className={`${styles.menuHeader} ${isManagementActive ? styles.active : ''}`} 
-          onClick={() => toggleMenu('management')}
-        >
-          <div className={styles.headerLeft}>
-            <ClipboardList size={20} />
-            <span>Management</span>
-          </div>
-          {openMenus.management ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </div>
-        
-        {openMenus.management && (
-          <div className={styles.subMenu}>
-            <NavLink to="/guests" className={styles.subLink} onClick={onClose}>Guests</NavLink>
-            <NavLink to="/hosts" className={styles.subLink} onClick={onClose}>Hosts</NavLink>
-            <NavLink to="/properties" className={styles.subLink} onClick={onClose}>Properties</NavLink>
-            {(user?.role === 'admin' || user?.role === 'superadmin') && (
-              <NavLink to="/team" className={styles.subLink} onClick={onClose}>Team</NavLink>
+        {(user?.role === 'super-admin' || user?.role === 'manager') && (
+          <>
+            <div 
+              className={`${styles.menuHeader} ${isManagementActive ? styles.active : ''}`} 
+              onClick={() => toggleMenu('management')}
+            >
+              <div className={styles.headerLeft}>
+                <ClipboardList size={20} />
+                <span>Management</span>
+              </div>
+              {openMenus.management ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </div>
+            
+            {openMenus.management && (
+              <div className={styles.subMenu}>
+                <NavLink to="/guests" className={styles.subLink} onClick={onClose}>Guests</NavLink>
+                <NavLink to="/hosts" className={styles.subLink} onClick={onClose}>Hosts</NavLink>
+                <NavLink to="/properties" className={styles.subLink} onClick={onClose}>Properties</NavLink>
+                {user?.role === 'super-admin' && (
+                  <NavLink to="/team" className={styles.subLink} onClick={onClose}>Team</NavLink>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Finance Group */}
-        <div 
-          className={`${styles.menuHeader} ${isFinanceActive ? styles.active : ''}`} 
-          onClick={() => toggleMenu('finance')}
-        >
-          <div className={styles.headerLeft}>
-            <BarChart3 size={20} />
-            <span>Finance</span>
-          </div>
-          {openMenus.finance ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </div>
-        
-        {openMenus.finance && (
-          <div className={styles.subMenu}>
-            <NavLink to="/bookings" className={styles.subLink} onClick={onClose}>Bookings</NavLink>
-            <NavLink to="/payouts" className={styles.subLink} onClick={onClose}>Payouts</NavLink>
-            <NavLink to="/refunds" className={styles.subLink} onClick={onClose}>Refunds</NavLink>
-          </div>
+        {(user?.role === 'super-admin' || user?.role === 'finance') && (
+          <>
+            <div 
+              className={`${styles.menuHeader} ${isFinanceActive ? styles.active : ''}`} 
+              onClick={() => toggleMenu('finance')}
+            >
+              <div className={styles.headerLeft}>
+                <BarChart3 size={20} />
+                <span>Finance</span>
+              </div>
+              {openMenus.finance ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </div>
+            
+            {openMenus.finance && (
+              <div className={styles.subMenu}>
+                <NavLink to="/bookings" className={styles.subLink} onClick={onClose}>Bookings</NavLink>
+                <NavLink to="/payouts" className={styles.subLink} onClick={onClose}>Payouts</NavLink>
+                <NavLink to="/refunds" className={styles.subLink} onClick={onClose}>Refunds</NavLink>
+              </div>
+            )}
+          </>
         )}
 
-        <NavLink
-          to="/support"
-          onClick={onClose}
-          className={({ isActive }: any) =>
-            isActive ? `${styles.link} ${styles.active}` : styles.link
-          }
-        >
-          <MessageSquare size={20} />
-          <span>Support</span>
-        </NavLink>
+        {(user?.role === 'super-admin' || user?.role === 'support') && (
+          <>
+            <NavLink
+              to="/support"
+              onClick={onClose}
+              className={({ isActive }: any) =>
+                isActive ? `${styles.link} ${styles.active}` : styles.link
+              }
+            >
+              <MessageSquare size={20} />
+              <span>Support</span>
+            </NavLink>
 
-        <NavLink
-          to="/faqs"
-          onClick={onClose}
-          className={({ isActive }: any) =>
-            isActive ? `${styles.link} ${styles.active}` : styles.link
-          }
-        >
-          <HelpCircle size={20} />
-          <span>FAQs</span>
-        </NavLink>
+            <NavLink
+              to="/faqs"
+              onClick={onClose}
+              className={({ isActive }: any) =>
+                isActive ? `${styles.link} ${styles.active}` : styles.link
+              }
+            >
+              <HelpCircle size={20} />
+              <span>FAQs</span>
+            </NavLink>
 
-        <NavLink
-          to="/contact-info"
-          onClick={onClose}
-          className={({ isActive }: any) =>
-            isActive ? `${styles.link} ${styles.active}` : styles.link
-          }
-        >
-          <Contact size={20} />
-          <span>Contact & Social Info</span>
-        </NavLink>
+            <NavLink
+              to="/contact-info"
+              onClick={onClose}
+              className={({ isActive }: any) =>
+                isActive ? `${styles.link} ${styles.active}` : styles.link
+              }
+            >
+              <Contact size={20} />
+              <span>Contact & Social Info</span>
+            </NavLink>
+          </>
+        )}
 
         {/* Configuration Group */}
-        <div 
-          className={`${styles.menuHeader} ${isConfigurationActive ? styles.active : ''}`} 
-          onClick={() => toggleMenu('configuration')}
-        >
-          <div className={styles.headerLeft}>
-            <Settings size={20} />
-            <span>Configuration</span>
-          </div>
-          {openMenus.configuration ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </div>
-        
-        {openMenus.configuration && (
-          <div className={styles.subMenu}>
-            <NavLink to="/settings" className={styles.subLink} onClick={onClose}>App settings</NavLink>
-            <NavLink to="/admin-settings" className={styles.subLink} onClick={onClose}>Admin settings</NavLink>
-            <NavLink to="/payment-settings" className={styles.subLink} onClick={onClose}>Payment settings</NavLink>
-          </div>
+        {(user?.role === 'super-admin' || user?.role === 'manager' || user?.role === 'support' || user?.role === 'finance') && (
+          <>
+            <div 
+              className={`${styles.menuHeader} ${isConfigurationActive ? styles.active : ''}`} 
+              onClick={() => toggleMenu('configuration')}
+            >
+              <div className={styles.headerLeft}>
+                <Settings size={20} />
+                <span>Configuration</span>
+              </div>
+              {openMenus.configuration ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </div>
+            
+            {openMenus.configuration && (
+              <div className={styles.subMenu}>
+                {user?.role === 'super-admin' && (
+                  <NavLink to="/settings" className={styles.subLink} onClick={onClose}>App settings</NavLink>
+                )}
+                <NavLink to="/admin-settings" className={styles.subLink} onClick={onClose}>Admin settings</NavLink>
+                {user?.role === 'super-admin' && (
+                  <NavLink to="/payment-settings" className={styles.subLink} onClick={onClose}>Payment settings</NavLink>
+                )}
+              </div>
+            )}
+          </>
         )}
       </nav>
 

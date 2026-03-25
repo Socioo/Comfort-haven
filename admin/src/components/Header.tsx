@@ -75,6 +75,46 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         }
     };
 
+    const handleMarkAllNotificationsRead = async () => {
+        try {
+            await adminAPI.markAllNotificationsAsRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            setUnreadNotifications(0);
+        } catch (error) {
+            console.error("Failed to mark all notifications as read", error);
+        }
+    };
+
+    const handleClearNotifications = async () => {
+        try {
+            await adminAPI.clearAllNotifications();
+            setNotifications([]);
+            setUnreadNotifications(0);
+        } catch (error) {
+            console.error("Failed to clear notifications", error);
+        }
+    };
+
+    const handleMarkAllMessagesRead = async () => {
+        try {
+            await adminAPI.markAllMessagesAsRead();
+            setMessages(prev => prev.map(m => ({ ...m, unreadCount: 0 })));
+            setUnreadMessages(0);
+        } catch (error) {
+            console.error("Failed to mark all messages as read", error);
+        }
+    };
+
+    const handleClearMessages = async () => {
+        try {
+            await adminAPI.clearAllMessages();
+            setMessages([]);
+            setUnreadMessages(0);
+        } catch (error) {
+            console.error("Failed to clear messages", error);
+        }
+    };
+
     return (
         <header className={styles.header}>
             <div className={styles.headerLeft}>
@@ -100,7 +140,10 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                         <div className={styles.dropdown}>
                             <div className={styles.dropdownHeader}>
                                 <h3>Messages</h3>
-                                <Link to="/support" className={styles.markAllRead} onClick={() => setShowMessages(false)}>Support Page</Link>
+                                <div className={styles.headerActions}>
+                                    <span className={styles.markAllRead} onClick={handleMarkAllMessagesRead}>Mark all read</span>
+                                    <span className={styles.clearAll} onClick={handleClearMessages}>Clear all</span>
+                                </div>
                             </div>
                             <div className={styles.notificationList}>
                                 {messages.length > 0 ? (
@@ -150,7 +193,10 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                         <div className={styles.dropdown}>
                             <div className={styles.dropdownHeader}>
                                 <h3>Notifications</h3>
-                                <span className={styles.markAllRead}>Mark all read</span>
+                                <div className={styles.headerActions}>
+                                    <span className={styles.markAllRead} onClick={handleMarkAllNotificationsRead}>Mark all read</span>
+                                    <span className={styles.clearAll} onClick={handleClearNotifications}>Clear all</span>
+                                </div>
                             </div>
                             <div className={styles.notificationList}>
                                 {notifications.length > 0 ? (

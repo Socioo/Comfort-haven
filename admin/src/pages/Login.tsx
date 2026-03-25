@@ -30,8 +30,9 @@ const Login = () => {
 
       const { accessToken, refreshToken, user } = response.data;
 
-      // Basic check to ensure the user is an admin or host
-      if (user.role !== "admin" && user.role !== "host") {
+      // Basic check to ensure the user is an admin
+      const adminRoles = ['super-admin', 'manager', 'finance', 'support'];
+      if (!adminRoles.includes(user.role)) {
         setError(
           "Unauthorized: You must be an admin to access this dashboard.",
         );

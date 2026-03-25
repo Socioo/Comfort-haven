@@ -59,7 +59,7 @@ async function bootstrap() {
   );
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`📜 Swagger docs on http://localhost:${port}/api/docs`);
   console.log(`✨ tRPC running on http://localhost:${port}/trpc`);

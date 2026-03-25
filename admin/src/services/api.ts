@@ -24,7 +24,17 @@ export const adminAPI = {
   getUnreadNotifications: () => api.get('/notifications/unread-count'),
   getNotifications: () => api.get('/notifications'),
   markNotificationAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllNotificationsAsRead: () => api.post('/notifications/read-all'),
+  clearAllNotifications: () => api.delete('/notifications/clear-all'),
   getInboxSummary: () => api.get('/messages/inbox'),
+  markAllMessagesAsRead: () => api.patch('/messages/mark-all-read'),
+  clearAllMessages: () => api.delete('/messages/clear-all'),
+};
+
+export const settingsAPI = {
+  getAll: () => api.get('/settings'),
+  getByGroup: (group: string) => api.get(`/settings/group/${group}`),
+  updateMany: (settings: { key: string; value: string }[]) => api.patch('/settings', { settings }),
 };
 
 export const faqAPI = {

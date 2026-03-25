@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcryptjs';
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
 import { UserRole } from '../common/constants';
 import * as crypto from 'crypto';
@@ -25,7 +25,19 @@ export class UsersService {
   async create(createUserDto: any): Promise<User> {
     console.log('UsersService.create received:', createUserDto);
     createUserDto.email = createUserDto.email.toLowerCase().trim();
-    const isInvitation = createUserDto.role === UserRole.ADMIN || createUserDto.role === UserRole.SUB_ADMIN;
+
+    // Prevent duplicate emails
+    const existingUser = await this.findOneByEmail(createUserDto.email);
+    if (existingUser) {
+      throw new ConflictException(`A user with the email ${createUserDto.email} already exists.`);
+    }
+
+    const isInvitation = [
+      UserRole.SUPER_ADMIN,
+      UserRole.MANAGER,
+      UserRole.FINANCE,
+      UserRole.SUPPORT
+    ].includes(createUserDto.role);
     console.log('isInvitation detected:', isInvitation);
     let password = createUserDto.password;
 
@@ -61,13 +73,13 @@ export class UsersService {
 
     if (isInvitation) {
       console.log('Triggering invitation email for:', savedUser.email);
-      // Send invitation email
-      await this.mailService.sendInvitationEmail(
+      // Send invitation email without blocking the API response
+      this.mailService.sendInvitationEmail(
         savedUser.email, 
         savedUser.name, 
         password,
         createUserDto.message
-      );
+      ).catch(err => console.error('Failed to send invitation email asynchronously:', err));
     }
 
     return savedUser as any;
