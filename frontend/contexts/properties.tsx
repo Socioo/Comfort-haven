@@ -7,7 +7,8 @@ interface PropertiesContextType {
   properties: Property[];
   isAddingProperty: boolean;
   setIsAddingProperty: (value: boolean) => void;
-  addProperty: (property: Omit<Property, 'id' | 'rating' | 'reviewCount'>) => Promise<void>;
+  addProperty: (property: Omit<Property, 'id' | 'rating' | 'reviewCount'>) => Promise<Property>;
+  updateProperty: (id: string, updates: Partial<Property>) => Promise<Property>;
   deleteProperty: (id: string) => Promise<void>;
   getHostProperties: (hostId: string) => Property[];
 }
@@ -25,7 +26,11 @@ export const PropertiesProvider: React.FC<{ children: ReactNode }> = ({ children
   const fetchProperties = async () => {
     try {
       const response = await propertiesAPI.getAll();
-      setProperties(response.data);
+      const normalizedData = response.data.map((prop: any) => ({
+        ...prop,
+        hostId: prop.hostId || prop.ownerId // Normalize for frontend
+      }));
+      setProperties(normalizedData);
     } catch (error) {
       console.error('Error fetching properties:', error);
       setProperties(mockProperties); // Fallback
@@ -35,18 +40,56 @@ export const PropertiesProvider: React.FC<{ children: ReactNode }> = ({ children
   const addProperty = async (propertyData: any) => {
     setIsAddingProperty(true);
     try {
-      // Handle the hostId/ownerId mapping if needed
-      const apiData = {
-        ...propertyData,
-        ownerId: propertyData.hostId // Backend expects ownerId
+      // Build a strict whitelist payload matching CreatePropertyDto
+      const apiData: Record<string, any> = {
+        title: propertyData.title,
+        description: propertyData.description,
+        price: propertyData.price,
+        location: propertyData.location,
+        ownerId: propertyData.hostId,
       };
+      // Optional fields
+      if (propertyData.address !== undefined) apiData.address = propertyData.address;
+      if (propertyData.images !== undefined) apiData.images = propertyData.images;
+      if (propertyData.amenities !== undefined) apiData.amenities = propertyData.amenities;
+      if (propertyData.lga !== undefined) apiData.lga = propertyData.lga;
+      if (propertyData.bedrooms !== undefined) apiData.bedrooms = propertyData.bedrooms;
+      if (propertyData.bathrooms !== undefined) apiData.bathrooms = propertyData.bathrooms;
+      if (propertyData.guests !== undefined) apiData.guests = propertyData.guests;
+      if (propertyData.latitude !== undefined) apiData.latitude = propertyData.latitude;
+      if (propertyData.longitude !== undefined) apiData.longitude = propertyData.longitude;
+      if (propertyData.availableDates !== undefined) apiData.availableDates = propertyData.availableDates;
+      
+      console.log('[addProperty] API payload:', JSON.stringify(apiData, null, 2));
       const response = await propertiesAPI.create(apiData);
-      setProperties((prev: Property[]) => [response.data, ...prev]);
+      const newProperty = {
+        ...response.data,
+        hostId: response.data.hostId || response.data.ownerId
+      };
+      setProperties((prev: Property[]) => [newProperty, ...prev]);
+      return newProperty;
     } catch (error) {
       console.error('Error adding property to API:', error);
       throw error;
     } finally {
       setIsAddingProperty(false);
+    }
+  };
+  
+  const updateProperty = async (id: string, updates: any) => {
+    try {
+      const response = await propertiesAPI.update(id, updates);
+      const updatedProp = {
+        ...response.data,
+        hostId: response.data.hostId || response.data.ownerId
+      };
+      setProperties((prev: Property[]) => 
+        prev.map((p: Property) => p.id === id ? updatedProp : p)
+      );
+      return updatedProp;
+    } catch (error) {
+      console.error('Error updating property in API:', error);
+      throw error;
     }
   };
 
@@ -61,7 +104,9 @@ export const PropertiesProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const getHostProperties = (hostId: string) => {
-    return properties.filter((property: Property) => property.hostId === hostId);
+    return properties.filter((property: Property) => 
+      property.hostId === hostId || property.ownerId === hostId
+    );
   };
 
   return (
@@ -71,6 +116,7 @@ export const PropertiesProvider: React.FC<{ children: ReactNode }> = ({ children
         isAddingProperty,
         setIsAddingProperty,
         addProperty,
+        updateProperty,
         deleteProperty,
         getHostProperties,
       }}

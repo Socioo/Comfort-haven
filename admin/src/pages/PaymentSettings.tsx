@@ -1,13 +1,29 @@
 import { useState, useEffect } from "react";
 import { Search, Loader2, Save, BadgePercent, Coins, Bell } from "lucide-react";
-import api, { settingsAPI } from "../services/api";
+import { settingsAPI } from "../services/api";
 import listStyles from "../styles/Guests.module.css";
 import styles from "./PaymentSettings.module.css";
+
+const FEATURE_KEYS = [
+  "supportedGateways",
+  "enableMethods",
+  "minOrderPrice",
+  "commissionSetup",
+];
+
+const FEATURE_LABELS: Record<string, string> = {
+  supportedGateways: "Supported payment gateways (Stripe, Paystack, etc.)",
+  enableMethods: "Enable/disable methods (Card / Wallet / Bank Transfer)",
+  minOrderPrice: "Minimum order price or payout threshold",
+  commissionSetup: "Commission percentage setup for each transaction",
+};
 
 const PaymentSettings = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [settings, setSettings] = useState<any>({
     // Transaction feature toggles
     supportedGateways: true,
@@ -27,6 +43,7 @@ const PaymentSettings = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await settingsAPI.getByGroup("payment");
       const data = response.data;
       
@@ -39,8 +56,9 @@ const PaymentSettings = () => {
         }
       });
       setSettings(newSettings);
-    } catch (error) {
-      console.error("Failed to fetch payment settings", error);
+    } catch (err) {
+      console.error("Failed to fetch payment settings", err);
+      setError("Failed to load settings.");
     } finally {
       setLoading(false);
     }
@@ -52,10 +70,12 @@ const PaymentSettings = () => {
     
     try {
       setSaving(true);
-      await api.patch(`/settings/${key}`, { value: newValue.toString() });
-    } catch (error) {
-      console.error(`Failed to update setting ${key}`, error);
+      setError(null);
+      await settingsAPI.updateMany([{ key, value: newValue.toString() }]);
+    } catch (err) {
+      console.error(`Failed to update setting ${key}`, err);
       setSettings((prev: any) => ({ ...prev, [key]: !newValue }));
+      setError("Failed to update setting. Check your permissions.");
     } finally {
       setSaving(false);
     }
@@ -64,20 +84,27 @@ const PaymentSettings = () => {
   const handleGlobalSave = async () => {
     try {
       setSaving(true);
+      setError(null);
+      setSuccess(false);
       const settingsToUpdate = [
         { key: 'currency', value: settings.currency },
         { key: 'tax_rate', value: settings.tax_rate },
         { key: 'platform_fee', value: settings.platform_fee },
       ];
       await settingsAPI.updateMany(settingsToUpdate);
-      alert("Success: Payment configurations updated!");
-    } catch (error) {
-      console.error("Failed to save global settings", error);
-      alert("Error: Failed to save changes.");
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error("Failed to save global settings", err);
+      setError("Failed to save changes. Check your permissions.");
     } finally {
       setSaving(false);
     }
   };
+
+  const filteredFeatures = FEATURE_KEYS.filter((key) =>
+    FEATURE_LABELS[key].toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className={listStyles.container}>
@@ -85,7 +112,7 @@ const PaymentSettings = () => {
         <div className={listStyles.headerLeft}>
           <h1 className={listStyles.pageTitle}>Payment Configuration</h1>
           <div className={listStyles.searchBar}>
-            <Search size={18} color="var(--text-light)" />
+            <Search size={18} color="#94a3b8" />
             <input
               type="text"
               placeholder="Search features..."
@@ -96,8 +123,7 @@ const PaymentSettings = () => {
           </div>
         </div>
         <button 
-          className={listStyles.viewBtn} 
-          style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
+          className={styles.saveBtn}
           onClick={handleGlobalSave}
           disabled={saving}
         >
@@ -106,9 +132,21 @@ const PaymentSettings = () => {
         </button>
       </div>
 
-      <div className={listStyles.tableContainer} style={{ padding: '0', position: 'relative' }}>
+      {/* Status banners */}
+      {error && (
+        <div className={styles.errorBanner}>
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className={styles.successBanner}>
+          ✓ Payment configurations saved successfully!
+        </div>
+      )}
+
+      <div style={{ position: 'relative', marginTop: '24px' }}>
         {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '100px', color: 'var(--text-light)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '100px', color: 'var(--text-light)', background: 'var(--card-bg)', borderRadius: '16px' }}>
             <Loader2 className={styles.spinner} size={40} />
             <p style={{ marginTop: '16px', fontSize: '18px' }}>Loading payment configurations...</p>
           </div>
@@ -170,49 +208,26 @@ const PaymentSettings = () => {
               </div>
             </div>
 
-            <div className={styles.divider} style={{ margin: '20px 0 30px 0', height: '1.5px', background: 'var(--border-color)' }}></div>
-
             {/* Feature Toggles Section */}
-            <h3 style={{ marginBottom: '20px' }}>Transaction Controls</h3>
-            
-            <div className={styles.settingItem}>
-              <p className={styles.settingLabel}>Supported payment gateways (Stripe, Paystack, etc.)</p>
-              <div 
-                className={`${styles.customToggle} ${settings.supportedGateways ? styles.active : ""}`}
-                onClick={() => handleToggle("supportedGateways")}
-              >
-                <div className={styles.innerDot} />
-              </div>
-            </div>
-
-            <div className={styles.settingItem}>
-              <p className={styles.settingLabel}>Enable/disable methods (Card / Wallet / Bank Transfer)</p>
-              <div 
-                className={`${styles.customToggle} ${settings.enableMethods ? styles.active : ""}`}
-                onClick={() => handleToggle("enableMethods")}
-              >
-                <div className={styles.innerDot} />
-              </div>
-            </div>
-
-            <div className={styles.settingItem}>
-              <p className={styles.settingLabel}>Minimum order price or payout threshold</p>
-              <div 
-                className={`${styles.customToggle} ${settings.minOrderPrice ? styles.active : ""}`}
-                onClick={() => handleToggle("minOrderPrice")}
-              >
-                <div className={styles.innerDot} />
-              </div>
-            </div>
-
-            <div className={styles.settingItem}>
-              <p className={styles.settingLabel}>Commission percentage setup for each transaction</p>
-              <div 
-                className={`${styles.customToggle} ${settings.commissionSetup ? styles.active : ""}`}
-                onClick={() => handleToggle("commissionSetup")}
-              >
-                <div className={styles.innerDot} />
-              </div>
+            <div className={styles.settingsSection}>
+              <h3>Transaction Controls</h3>
+              {filteredFeatures.length === 0 ? (
+                <p className={styles.noResults}>No features match your search.</p>
+              ) : (
+                filteredFeatures.map((key) => (
+                  <div className={styles.settingItem} key={key}>
+                    <div className={styles.settingInfo}>
+                      <p className={styles.settingLabel}>{FEATURE_LABELS[key]}</p>
+                    </div>
+                    <div
+                      className={`${styles.toggleSwitch} ${settings[key] ? styles.toggleActive : ""}`}
+                      onClick={() => handleToggle(key)}
+                    >
+                      <div className={styles.toggleThumb} />
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

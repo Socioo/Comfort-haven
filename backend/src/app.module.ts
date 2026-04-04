@@ -20,6 +20,7 @@ import { ConfigurationModule } from './config/config.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SettingsModule } from './settings/settings.module';
 import { FaqsModule } from './faqs/faqs.module';
+import { AiModule } from './ai/ai.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -63,6 +64,7 @@ import typeormConfig from './config/typeorm.config';
     NotificationsModule,
     SettingsModule,
     FaqsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

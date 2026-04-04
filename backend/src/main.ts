@@ -22,9 +22,13 @@ async function bootstrap() {
   // Security middleware
   app.use(helmet());
 
-  // CORS configuration
+  // Configure CORS
+  const corsOrigin = process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',') 
+    : true; // fallback to true if not defined to prevent breaking dev 
+
   app.enableCors({
-    origin: true, // Allow all origins during development
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

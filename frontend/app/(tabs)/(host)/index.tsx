@@ -10,6 +10,7 @@ import {
   Image,
   Platform,
   RefreshControl,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { 
@@ -35,6 +36,9 @@ import { propertiesAPI, bookingsAPI, reviewsAPI } from '@/services/api';
 import { useProperties } from '@/contexts/properties';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import { rf, ms, s, vs, isTablet } from '@/utils/responsive';
 
 export default function HostDashboardScreen() {
   const router = useRouter();
@@ -128,6 +132,22 @@ export default function HostDashboardScreen() {
       return;
     }
     try {
+      // 0. Ensure host has set up payout settings (subaccount)
+      if (!user.paystackSubaccountCode) {
+        Alert.alert(
+          "Payout Setup Required",
+          "Please set up your bank account for payouts in Profile > Payout Settings before listing a property. This ensures you receive your 90% share automatically.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Set Up Now", onPress: () => {
+              setShowAddModal(false);
+              router.push("/host/payout-settings");
+            }}
+          ]
+        );
+        return;
+      }
+
       setIsUploading(true);
       let imageUrls: string[] = [];
       if (selectedMedia.length > 0) {
@@ -147,8 +167,10 @@ export default function HostDashboardScreen() {
       } else {
         imageUrls = ["https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"];
       }
+      
       const amenitiesList = formData.amenities.split(",").map((a: string) => a.trim()).filter((a: string) => a.length > 0);
-      await addProperty({
+      
+      const newProperty = await addProperty({
         title: formData.title,
         description: formData.description || "Beautiful property available for rent",
         location: formData.location,
@@ -161,23 +183,62 @@ export default function HostDashboardScreen() {
         images: imageUrls,
         amenities: amenitiesList.length > 0 ? amenitiesList : ["WiFi", "AC"],
         hostId: user.id,
-        hostName: user.name,
-        hostPhoto: user.photoUrl,
         latitude: 12.0022, 
         longitude: 8.5919,
         availableDates: [],
       });
+
+      // --- New Listing Fee Payment Flow ---
+      Alert.alert(
+        "Activate Property",
+        "Your property has been submitted! To make it visible to guests, a one-time listing fee of ₦5,000 is required.",
+        [
+          {
+            text: "Pay Now",
+            onPress: async () => {
+              try {
+                const payResponse = await propertiesAPI.initializeListingPayment(newProperty.id);
+                const { authorization_url, reference } = payResponse.data;
+
+                // Open Paystack in browser
+                const result = await WebBrowser.openAuthSessionAsync(
+                  authorization_url,
+                  Linking.createURL('listing-payment-callback')
+                );
+
+                // Verify payment
+                const verifyRes = await propertiesAPI.verifyListingPayment(reference);
+                if (verifyRes.data.paymentStatus === 'paid') {
+                  Alert.alert("Success", "Listing fee paid! Your property is now active.");
+                  fetchDashboardData();
+                }
+              } catch (e: any) {
+                Alert.alert("Payment Info", "Listing is pending payment. You can pay later to activate it.");
+                console.error("Listing payment error:", e);
+              }
+            }
+          },
+          { 
+            text: "Pay Later", 
+            style: "cancel",
+            onPress: () => {
+              Alert.alert("Pending", "Your property will remain hidden until the listing fee is paid.");
+            }
+          }
+        ]
+      );
+
       setFormData({
         title: "", description: "", location: "", address: "", lga: "", price: "",
         bedrooms: "", bathrooms: "", guests: "", amenities: "",
       });
       setSelectedMedia([]);
       setShowAddModal(false);
-      Alert.alert("Success", "Property added successfully!");
       fetchDashboardData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding property:", error);
-      Alert.alert("Error", "Failed to add property");
+      const errorMessage = error.response?.data?.message || error.message || "Failed to add property";
+      Alert.alert("Error", typeof errorMessage === 'string' ? errorMessage : "Failed to add property. Please check all fields.");
     } finally {
       setIsUploading(false);
     }
@@ -308,7 +369,11 @@ export default function HostDashboardScreen() {
             <Text style={styles.modalTitle}>Add New Property</Text>
             <TouchableOpacity onPress={() => setShowAddModal(false)}><X color={themeColors.text} size={24} /></TouchableOpacity>
           </View>
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+          >
+            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
             <View style={styles.formGroup}>
               <Text style={styles.label}>Title *</Text>
               <TextInput style={[styles.input, { backgroundColor: themeColors.card, borderColor: themeColors.border, color: themeColors.text }]} value={formData.title} onChangeText={(text) => setFormData({ ...formData, title: text })} placeholder="e.g., Luxury 3BR Apartment" placeholderTextColor={themeColors.textLight} />
@@ -368,6 +433,7 @@ export default function HostDashboardScreen() {
             </View>
             <TouchableOpacity style={[styles.submitButton, isUploading && styles.submitButtonDisabled]} onPress={handleAddProperty} disabled={isUploading}><Text style={styles.submitButtonText}>{isUploading ? "Processing..." : "Add Property"}</Text></TouchableOpacity>
           </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
     </ScrollView>
@@ -376,58 +442,58 @@ export default function HostDashboardScreen() {
 
 const createStyles = (themeColors: any) => StyleSheet.create({
   container: { flex: 1 },
-  header: { padding: 20, paddingTop: 40 },
-  title: { fontSize: 32, fontWeight: 'bold', marginBottom: 4 },
-  subtitle: { fontSize: 16 },
-  errorText: { fontSize: 18, textAlign: 'center', marginTop: 100, marginBottom: 20 },
-  backButton: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, alignSelf: 'center' },
-  backButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 16, marginTop: 12 },
-  statCard: { flex: 1, minWidth: '45%', borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1 },
-  statIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  statValue: { fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
-  statLabel: { fontSize: 12, textAlign: 'center' },
-  section: { padding: 20, marginVertical: 8 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  sectionTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  seeAllText: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
-  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  actionWrapper: { width: '47.5%' },
-  actionButton: { borderRadius: 16, padding: 24, alignItems: 'center', borderWidth: 1, width: '100%' },
-  actionText: { fontSize: 15, marginTop: 10, fontWeight: '500' },
-  bookingCard: { borderRadius: 12, padding: 16, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1 },
-  bookingInfo: { flex: 1, marginRight: 8 },
-  bookingProperty: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  bookingGuest: { fontSize: 14, marginBottom: 4 },
-  bookingDates: { fontSize: 12 },
+  header: { padding: ms(20), paddingTop: vs(40) },
+  title: { fontSize: rf(30), fontWeight: 'bold', marginBottom: vs(4) },
+  subtitle: { fontSize: rf(15) },
+  errorText: { fontSize: rf(18), textAlign: 'center', marginTop: vs(100), marginBottom: vs(20) },
+  backButton: { backgroundColor: Colors.primary, paddingHorizontal: ms(20), paddingVertical: vs(12), borderRadius: ms(8), alignSelf: 'center' },
+  backButtonText: { color: '#fff', fontSize: rf(16), fontWeight: '600' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: ms(20), gap: ms(16), marginTop: vs(12) },
+  statCard: { flex: 1, minWidth: isTablet ? '22%' : '44%', borderRadius: ms(16), padding: ms(16), alignItems: 'center', borderWidth: 1 },
+  statIcon: { width: ms(44), height: ms(44), borderRadius: ms(22), alignItems: 'center', justifyContent: 'center', marginBottom: vs(10) },
+  statValue: { fontSize: rf(18), fontWeight: 'bold', marginBottom: vs(4) },
+  statLabel: { fontSize: rf(11), textAlign: 'center' },
+  section: { padding: ms(20), marginVertical: vs(8) },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: vs(16) },
+  sectionTitle: { fontSize: rf(20), fontWeight: 'bold', marginBottom: vs(16) },
+  seeAllText: { fontSize: rf(14), color: Colors.primary, fontWeight: '600' },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: ms(16) },
+  actionWrapper: { width: isTablet ? '22.5%' : '47.5%' },
+  actionButton: { borderRadius: ms(16), padding: vs(20), alignItems: 'center', borderWidth: 1, width: '100%' },
+  actionText: { fontSize: rf(14), marginTop: vs(10), fontWeight: '500' },
+  bookingCard: { borderRadius: ms(12), padding: ms(16), marginBottom: vs(12), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1 },
+  bookingInfo: { flex: 1, marginRight: ms(8) },
+  bookingProperty: { fontSize: rf(15), fontWeight: '600', marginBottom: vs(4) },
+  bookingGuest: { fontSize: rf(13), marginBottom: vs(4) },
+  bookingDates: { fontSize: rf(11) },
   bookingRight: { alignItems: 'flex-end' },
-  bookingPrice: { fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  bookingPrice: { fontSize: rf(15), fontWeight: 'bold', marginBottom: vs(8) },
+  statusBadge: { paddingHorizontal: ms(8), paddingVertical: vs(4), borderRadius: ms(12) },
   statusConfirmed: { backgroundColor: Colors.success + '20' },
   statusPending: { backgroundColor: Colors.warning + '20' },
   statusCancelled: { backgroundColor: Colors.error + '20' },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  emptyText: { fontSize: 14, textAlign: 'center', padding: 20 },
-  loadingText: { fontSize: 16, textAlign: 'center', marginTop: 16 },
+  statusText: { fontSize: rf(11), fontWeight: '600' },
+  emptyText: { fontSize: rf(14), textAlign: 'center', padding: ms(20) },
+  loadingText: { fontSize: rf(16), textAlign: 'center', marginTop: vs(16) },
   modalScrollContainer: { flex: 1, backgroundColor: themeColors.background },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold' },
-  modalContent: { flex: 1, padding: 20 },
-  formGroup: { marginBottom: 20 },
-  formRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: ms(20), borderBottomWidth: 1 },
+  modalTitle: { fontSize: rf(20), fontWeight: 'bold' },
+  modalContent: { flex: 1, padding: ms(20) },
+  formGroup: { marginBottom: vs(20) },
+  formRow: { flexDirection: 'row', gap: ms(12), marginBottom: vs(20) },
   formGroupHalf: { flex: 1 },
   formGroupThird: { flex: 1 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  input: { borderRadius: 12, padding: 14, fontSize: 16, borderWidth: 1 },
-  textArea: { minHeight: 100, textAlignVertical: 'top' },
-  mediaPicker: { borderRadius: 12, padding: 24, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  mediaPickerText: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
-  mediaPreviewList: { marginTop: 12 },
-  mediaPreviewContainer: { position: 'relative', marginRight: 10 },
-  mediaPreview: { width: 80, height: 80, borderRadius: 8 },
-  removeMedia: { position: 'absolute', top: -5, right: -5, backgroundColor: Colors.error, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'white' },
-  videoBadge: { position: 'absolute', bottom: 5, right: 5, backgroundColor: 'rgba(0,0,0,0.6)', width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  submitButton: { backgroundColor: Colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 10, marginBottom: 40 },
+  label: { fontSize: rf(14), fontWeight: '600', marginBottom: vs(8) },
+  input: { borderRadius: ms(12), padding: ms(14), fontSize: rf(16), borderWidth: 1 },
+  textArea: { minHeight: vs(100), textAlignVertical: 'top' },
+  mediaPicker: { borderRadius: ms(12), padding: vs(24), borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: ms(8) },
+  mediaPickerText: { fontSize: rf(14), color: Colors.primary, fontWeight: '600' },
+  mediaPreviewList: { marginTop: vs(12) },
+  mediaPreviewContainer: { position: 'relative', marginRight: ms(10) },
+  mediaPreview: { width: ms(80), height: ms(80), borderRadius: ms(8) },
+  removeMedia: { position: 'absolute', top: vs(-5), right: ms(-5), backgroundColor: Colors.error, width: ms(20), height: ms(20), borderRadius: ms(10), justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'white' },
+  videoBadge: { position: 'absolute', bottom: vs(5), right: ms(5), backgroundColor: 'rgba(0,0,0,0.6)', width: ms(20), height: ms(20), borderRadius: ms(10), justifyContent: 'center', alignItems: 'center' },
+  submitButton: { backgroundColor: Colors.primary, borderRadius: ms(12), padding: vs(16), alignItems: 'center', marginTop: vs(10), marginBottom: vs(40) },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+  submitButtonText: { fontSize: rf(16), fontWeight: 'bold', color: '#fff' },
 });

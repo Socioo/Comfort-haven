@@ -157,9 +157,9 @@ const AppSettings = () => {
         </div>
       )}
 
-      <div className={listStyles.tableContainer} style={{ padding: "0", position: "relative" }}>
+      <div style={{ position: "relative", marginTop: "24px" }}>
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "100px", color: "var(--text-light)" }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "100px", color: "var(--text-light)", background: "var(--card-bg)", borderRadius: "16px" }}>
             <Loader2 className={styles.spinner} size={40} />
             <p style={{ marginTop: "16px", fontSize: "18px" }}>Loading application configurations...</p>
           </div>

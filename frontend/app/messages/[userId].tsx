@@ -17,6 +17,8 @@ import { Send, ArrowLeft } from "lucide-react-native";
 import { Text, View, Card } from "@/components/Themed";
 import Colors from "@/constants/Colors";
 import { useTheme } from "@/contexts/theme";
+import { ResponsiveView } from "@/components/ResponsiveView";
+import { rf, ms, s, vs, isTablet } from "@/utils/responsive";
 
 interface Message {
   id: string;
@@ -41,6 +43,7 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  // isTablet is imported from responsive utils
 
   useEffect(() => {
     if (userId && user) {
@@ -102,6 +105,7 @@ export default function ChatScreen() {
           style={[
             styles.messageBubble,
             isMe ? styles.messageBubbleRight : styles.messageBubbleLeft,
+            { maxWidth: isTablet ? '65%' : '80%' }
           ]}
         >
           <Text
@@ -113,7 +117,7 @@ export default function ChatScreen() {
             {item.content}
           </Text>
         </View>
-        <Text style={styles.messageTime}>
+        <Text style={[styles.messageTime, { color: themeColors.textLight }]}>
           {new Date(item.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -133,9 +137,9 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
-      behavior="padding"
-      keyboardVerticalOffset={headerHeight}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
     >
       <Stack.Screen 
         options={{ 
@@ -144,47 +148,64 @@ export default function ChatScreen() {
         }} 
       />
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={styles.messagesList}
-        onContentSizeChange={() =>
-          flatListRef.current?.scrollToEnd({ animated: false })
-        }
-        showsVerticalScrollIndicator={false}
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-      />
+      <ResponsiveView maxWidth={800} style={{ flex: 1 }}>
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={styles.messagesList}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: false })
+          }
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        />
 
-      <View style={{ backgroundColor: themeColors.card, paddingBottom: Math.max(insets.bottom, 8) }}>
-        <Card style={styles.inputContainer}>
-          <TextInput
-            style={[styles.input, { backgroundColor: themeColors.background, color: themeColors.text }]}
-            placeholder="Type a message..."
-            placeholderTextColor={themeColors.textLight}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-          />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !inputText.trim() && styles.sendButtonDisabled,
-            ]}
-            onPress={sendMessage}
-            disabled={!inputText.trim() || sending}
-          >
-            {sending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Send color="#FFFFFF" size={20} />
-            )}
-          </TouchableOpacity>
-        </Card>
-      </View>
+        <View style={{ 
+          backgroundColor: themeColors.card, 
+          paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 16) : 16,
+          borderTopWidth: 1,
+          borderTopColor: themeColors.border,
+        }}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[
+                styles.input, 
+                { 
+                  backgroundColor: themeColors.background, 
+                  color: themeColors.text,
+                  borderColor: themeColors.border
+                }
+              ]}
+              placeholder="Type a message..."
+              placeholderTextColor={themeColors.textLight}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={1000}
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                !inputText.trim() 
+                  ? [styles.sendButtonDisabled, { backgroundColor: themeColors.border }] 
+                  : { backgroundColor: Colors.primary },
+              ]}
+              onPress={sendMessage}
+              disabled={!inputText.trim() || sending}
+              activeOpacity={0.7}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Send color={!inputText.trim() ? themeColors.textLight : "#fff"} size={rf(20)} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ResponsiveView>
     </KeyboardAvoidingView>
   );
 }
@@ -198,49 +219,43 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
   messagesList: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: ms(16),
+    paddingBottom: vs(32),
   },
   messageWrapper: {
-    marginBottom: 16,
-    maxWidth: "80%",
+    marginBottom: vs(16),
+    width: "100%",
   },
   messageWrapperLeft: {
-    alignSelf: "flex-start",
+    alignItems: "flex-start",
   },
   messageWrapperRight: {
-    alignSelf: "flex-end",
+    alignItems: "flex-end",
   },
   messageBubble: {
-    padding: 12,
-    borderRadius: 20,
-    marginBottom: 4,
+    paddingHorizontal: ms(16),
+    paddingVertical: vs(10),
+    borderRadius: ms(20),
+    marginBottom: vs(4),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   messageBubbleLeft: {
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: ms(4),
     borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   messageBubbleRight: {
     backgroundColor: Colors.primary,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: ms(4),
   },
   messageText: {
-    fontSize: 16,
+    fontSize: rf(15),
+    lineHeight: rf(22),
   },
   messageTextLeft: {
   },
@@ -248,37 +263,41 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   messageTime: {
-    fontSize: 11,
-    alignSelf: "flex-end",
-    marginTop: 2,
+    fontSize: rf(10),
+    marginTop: vs(2),
+    marginHorizontal: ms(4),
   },
   inputContainer: {
     flexDirection: "row",
-    padding: 12,
-    borderTopWidth: 1,
+    padding: ms(16),
     alignItems: "flex-end",
   },
   input: {
     flex: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    fontSize: 16,
-    maxHeight: 100,
-    minHeight: 40,
+    borderRadius: ms(24),
+    paddingHorizontal: ms(18),
+    paddingTop: vs(12),
+    paddingBottom: vs(12),
+    fontSize: rf(16),
+    maxHeight: vs(120),
+    minHeight: vs(48),
     borderWidth: 1,
   },
   sendButton: {
-    backgroundColor: Colors.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: ms(48),
+    height: ms(48),
+    borderRadius: ms(24),
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 12,
+    marginLeft: ms(12),
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: ms(8),
+    elevation: 4,
   },
   sendButtonDisabled: {
-    opacity: 0.5,
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });

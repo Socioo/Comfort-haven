@@ -31,7 +31,7 @@ export class StatsController {
         else days = parseInt(period) || 7;
 
         const users = await this.usersService.findAll();
-        const properties = await this.propertiesService.findAll();
+        const properties = await this.propertiesService.findAll(undefined, undefined, true);
         const bookings = await this.bookingsService.findAll();
 
         const totalGuests = users.filter(u => u.role === UserRole.USER).length;

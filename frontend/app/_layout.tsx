@@ -14,6 +14,7 @@ import { FavoritesProvider } from '@/contexts/favorites';
 import { PropertiesProvider } from '@/contexts/properties';
 import { BookingsProvider } from '@/contexts/bookings';
 import { AppThemeProvider } from '@/contexts/theme';
+import { NotificationsProvider } from '@/contexts/notifications';
 import Colors from '@/constants/Colors';
 import { settingsAPI } from '@/services/api';
 
@@ -70,6 +71,7 @@ function RootLayoutNav() {
               <FavoritesProvider>
                 <PropertiesProvider>
                   <BookingsProvider>
+                  <NotificationsProvider>
                   <Stack
                     screenOptions={{
                       headerStyle: {
@@ -123,7 +125,12 @@ function RootLayoutNav() {
                         headerBackTitle: "",
                       }}
                     />
+                    <Stack.Screen
+                      name="ai-chat"
+                      options={{ presentation: 'modal', title: 'AI Assistant' }}
+                    />
                   </Stack>
+                </NotificationsProvider>
                 </BookingsProvider>
               </PropertiesProvider>
             </FavoritesProvider>

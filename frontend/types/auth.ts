@@ -16,6 +16,11 @@ export interface User {
     propertyApproval: boolean;
     verificationStatus: boolean;
   };
+  paystackSubaccountCode?: string;
+  bankName?: string;
+  bankCode?: string;
+  accountNumber?: string;
+  accountName?: string;
 }
 
 export interface AuthResponse {

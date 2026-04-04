@@ -162,14 +162,33 @@ export default function BookingScreen() {
       return;
     }
 
-    // Paystack redirects to callback_url on success
-    if (url.includes('comforthaven://payment-callback')) {
+    // Primary: custom scheme callback (works on iOS)
+    const isCustomSchemeCallback = url.includes('comforthaven://payment-callback');
+
+    // Fallback: Paystack appends trxref and reference as URL params on its redirect page
+    // This fires on Android where custom scheme deep links don't trigger navigation events
+    let refFromParams: string | null = null;
+    try {
+      const urlObj = new URL(url);
+      refFromParams = urlObj.searchParams.get('trxref') || urlObj.searchParams.get('reference');
+    } catch {
+      // URL parsing failed, ignore
+    }
+
+    const isPaystackSuccessRedirect = !!(refFromParams && (
+      url.includes('paystack') || url.includes('comforthaven')
+    ));
+
+    if (isCustomSchemeCallback || isPaystackSuccessRedirect) {
       setShowPaymentModal(false);
-      if (!paymentRef) return;
+
+      // Use ref from URL params if available (Android fallback), otherwise use stored ref
+      const refToVerify = refFromParams || paymentRef;
+      if (!refToVerify) return;
 
       setIsProcessing(true);
       try {
-        await bookingsAPI.verifyPayment(paymentRef);
+        await bookingsAPI.verifyPayment(refToVerify);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         router.replace('/profile/bookings' as any);
       } catch {

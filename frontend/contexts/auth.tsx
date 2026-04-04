@@ -28,6 +28,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   photoUrl?: string; // This will map to profileImage from backend
+  status?: 'active' | 'inactive';
   notifications?: {
     newProperties: boolean;
     newBookings: boolean;
@@ -35,6 +36,11 @@ export interface User {
     propertyApproval: boolean;
     verificationStatus: boolean;
   };
+  paystackSubaccountCode?: string;
+  bankName?: string;
+  bankCode?: string;
+  accountNumber?: string;
+  accountName?: string;
 }
 
 interface AuthContextType {

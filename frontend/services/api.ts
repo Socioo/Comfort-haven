@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 // IMPORTANT: Replace with your actual backend URL
 // For physical devices or Expo Go, use your machine's local IP address (e.g. 192.168.x.x)
-export const API_BASE_URL = 'http://192.168.43.200:3000';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.43.200:3000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -141,6 +141,14 @@ export const propertiesAPI = {
       'Content-Type': 'multipart/form-data',
     },
   }),
+
+  // Initialize a Paystack payment for a property listing
+  initializeListingPayment: (propertyId: string) => 
+    api.post(`/properties/${propertyId}/initialize-listing-payment`),
+
+  // Verify a Paystack payment for a property listing
+  verifyListingPayment: (reference: string) => 
+    api.get(`/properties/verify-listing-payment/${reference}`),
 };
 
 // Bookings API
@@ -228,6 +236,11 @@ export const usersAPI = {
   uploadProfileImage: (id: string, formData: FormData) => api.post(`/users/${id}/profile-image`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+
+  // Self-management
+  deleteAccount: () => api.delete('/users/profile'),
+  deactivateAccount: () => api.patch('/users/profile/deactivate'),
+  reactivateAccount: () => api.patch('/users/profile/reactivate'),
 };
 
 // Messages API
@@ -244,6 +257,7 @@ export const notificationsAPI = {
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
   markAllAsRead: () => api.post('/notifications/read-all'),
+  clearAll: () => api.delete('/notifications/clear-all'),
 };
 
 // Settings API
@@ -257,6 +271,29 @@ export const settingsAPI = {
 export const faqsAPI = {
   getAll: () => api.get('/faqs'),
   getById: (id: string) => api.get(`/faqs/${id}`),
+};
+
+// AI API
+export const aiAPI = {
+  chat: (messages: any[]) => api.post('/ai/chat', { messages }),
+};
+
+// Finance API
+export const financeAPI = {
+  // Get list of banks
+  getBanks: () => api.get('/finance/banks'),
+
+  // Verify bank account
+  verifyAccount: (data: { accountNumber: string; bankCode: string }) => 
+    api.post('/finance/verify-account', data),
+
+  // Create host subaccount
+  createSubaccount: (data: { bankCode: string; accountNumber: string; bankName: string; accountName: string }) => 
+    api.post('/finance/create-subaccount', data),
+
+  // Request a refund
+  requestRefund: (data: { bookingId: string; amount: number; reason: string }) =>
+    api.post('/finance/refunds', data),
 };
 
 export default api;

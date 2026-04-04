@@ -69,7 +69,7 @@ export class AuthService {
     
     const user = await this.usersRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'name', 'phone', 'password', 'role', 'profileImage', 'isVerified', 'mustChangePassword'],
+      select: ['id', 'email', 'name', 'phone', 'password', 'role', 'profileImage', 'isVerified', 'mustChangePassword', 'status'],
     });
 
     if (!user) {
@@ -156,7 +156,7 @@ export class AuthService {
 
     const user = await this.usersRepository.findOne({ 
       where: { id: payload.sub },
-      select: ['id', 'email', 'name', 'phone', 'role', 'profileImage', 'isVerified', 'hashedRefreshToken'] // select hash
+      select: ['id', 'email', 'name', 'phone', 'role', 'profileImage', 'isVerified', 'status', 'hashedRefreshToken'] // select hash
     });
 
     if (!user || !user.hashedRefreshToken) {
@@ -231,6 +231,7 @@ export class AuthService {
       isVerified: user.isVerified,
       mustChangePassword: user.mustChangePassword,
       notifications: user.notifications,
+      status: user.status,
     };
   }
 

@@ -26,6 +26,9 @@ export class Property {
     @Column({ default: 'pending' })
     status: string; // 'active', 'pending', 'suspended', 'rejected'
 
+    @Column({ default: 'unpaid' })
+    paymentStatus: string; // 'unpaid', 'paid'
+
     @Column('float', { default: 0 })
     rating: number;
 

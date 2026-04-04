@@ -1,13 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Property } from './entities/property.entity';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import axios from 'axios';
+
+const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
 @Injectable()
 export class PropertiesService {
+    private get paystackSecret(): string {
+        return process.env.PAYSTACK_SECRET_KEY || 'sk_test_your_key_here';
+    }
     constructor(
         @InjectRepository(Property)
         private propertiesRepository: Repository<Property>,
@@ -33,8 +39,13 @@ export class PropertiesService {
         return savedProperty;
     }
 
-    findAll(status?: string) {
-        const where = status ? { status } : {};
+    findAll(status?: string, user?: any, showAll?: boolean) {
+        const where: any = {};
+        if (status) where.status = status;
+        
+        // Removed strict paymentStatus: 'paid' filter for guests 
+        // until we are ready to enforce listing fee payments.
+        
         return this.propertiesRepository.find({ where, relations: ['owner', 'reviews'] });
     }
 
@@ -54,9 +65,72 @@ export class PropertiesService {
         return this.propertiesRepository.find({ where: { ownerId: hostId }, relations: ['reviews'] });
     }
 
-    async search(query: any) {
-        // Basic search implementation
-        // For production, use QueryBuilder for more complex queries (ranges, partial matches)
-        return this.propertiesRepository.find({ where: query });
+    async search(query: any, user?: any, showAll?: boolean) {
+        const where: any = { ...query };
+        
+        // Removed strict paymentStatus: 'paid' filter for guests
+        
+        return this.propertiesRepository.find({ 
+            where,
+            relations: ['owner', 'reviews']
+        });
+    }
+
+    async initializeListingPayment(propertyId: string, email: string) {
+        const property = await this.propertiesRepository.findOne({ where: { id: propertyId } });
+        if (!property) throw new NotFoundException('Property not found');
+        if (property.paymentStatus === 'paid') throw new BadRequestException('Listing fee already paid');
+
+        const listingFeeAmount = 5000; // 5000 NGN
+
+        try {
+            const response = await axios.post(
+                `${PAYSTACK_BASE_URL}/transaction/initialize`,
+                {
+                    email: email,
+                    amount: listingFeeAmount * 100, // convert to kobo
+                    metadata: { propertyId },
+                    callback_url: 'comforthaven://listing-payment-callback',
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.paystackSecret}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+            return response.data.data; // { authorization_url, access_code, reference }
+        } catch (error: any) {
+            throw new BadRequestException('Failed to initialize listing payment: ' + (error.response?.data?.message || error.message));
+        }
+    }
+
+    async verifyListingPayment(reference: string) {
+        try {
+            const verifyResponse = await axios.get(
+                `${PAYSTACK_BASE_URL}/transaction/verify/${reference}`,
+                {
+                    headers: { Authorization: `Bearer ${this.paystackSecret}` },
+                }
+            );
+
+            const { status, metadata } = verifyResponse.data.data;
+
+            if (status !== 'success') {
+                throw new BadRequestException('Payment verification failed');
+            }
+
+            const propertyId = metadata.propertyId;
+            const property = await this.propertiesRepository.findOne({ where: { id: propertyId } });
+            if (!property) throw new NotFoundException('Property not found');
+
+            property.paymentStatus = 'paid';
+            property.status = 'active'; // or pending if admin approval required
+
+            return await this.propertiesRepository.save(property);
+        } catch (error: any) {
+            if (error instanceof BadRequestException || error instanceof NotFoundException) throw error;
+            throw new BadRequestException('Failed to verify payment: ' + error.message);
+        }
     }
 }

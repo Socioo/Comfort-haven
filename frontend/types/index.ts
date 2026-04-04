@@ -14,7 +14,7 @@ export interface Property {
   rating: number;
   reviewCount: number;
   hostId: string;
-  hostName: string;
+  hostName?: string;
   hostPhoto?: string;
   availableDates: string[];
   ownerId?: string; // Backend field
@@ -23,6 +23,7 @@ export interface Property {
   createdAt?: string;
   updatedAt?: string;
   reviews?: Review[];
+  paymentStatus?: 'paid' | 'unpaid';
 }
 
 export interface Review {
