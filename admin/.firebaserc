@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "comfort-haven-prod"
+  },
+  "targets": {
+    "comfort-haven-prod": {
+      "hosting": {
+        "admin": [
+          "comfort-haven-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
