@@ -59,6 +59,22 @@ export class User {
   @Column({ default: 'active' })
   status: string; // 'active', 'suspended', 'banned'
 
+  // Bank & Payout Details for Hosts
+  @Column({ nullable: true })
+  bankName: string;
+
+  @Column({ nullable: true })
+  bankCode: string;
+
+  @Column({ nullable: true })
+  accountNumber: string;
+
+  @Column({ nullable: true })
+  accountName: string;
+
+  @Column({ nullable: true })
+  paystackSubaccountCode: string;
+
   @Column({
     type: 'jsonb',
     nullable: true,

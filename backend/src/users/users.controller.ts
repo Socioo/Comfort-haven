@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -95,6 +95,27 @@ export class UsersController {
     @Roles(UserRole.SUPER_ADMIN, UserRole.MANAGER)
     async verify(@Param('id') id: string) {
         return this.usersService.adminVerify(id);
+    }
+
+    @Delete('profile')
+    @UseGuards(JwtAuthGuard)
+    async deleteProfile(@Req() req: any) {
+        // Authenticated user deleting their own account
+        return this.usersService.remove(req.user.id);
+    }
+
+    @Patch('profile/deactivate')
+    @UseGuards(JwtAuthGuard)
+    async deactivateProfile(@Req() req: any) {
+        // Authenticated user deactivating their own account
+        return this.usersService.update(req.user.id, { status: 'inactive' } as any);
+    }
+
+    @Patch('profile/reactivate')
+    @UseGuards(JwtAuthGuard)
+    async reactivateProfile(@Req() req: any) {
+        // Authenticated user reactivating their own account
+        return this.usersService.update(req.user.id, { status: 'active' } as any);
     }
 
     @Delete(':id')

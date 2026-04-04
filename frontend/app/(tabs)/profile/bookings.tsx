@@ -7,6 +7,8 @@ import {
   RefreshControl,
   Platform,
   Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 import { useNavigation, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth";
@@ -23,7 +25,7 @@ import {
   CircleX,
   History,
 } from "lucide-react-native";
-import { bookingsAPI } from "@/services/api";
+import { bookingsAPI, financeAPI } from "@/services/api";
 import { Calendar } from "react-native-calendars";
 
 export default function BookingsHistoryScreen() {
@@ -42,6 +44,11 @@ export default function BookingsHistoryScreen() {
   }>({});
 
   const [markedDates, setMarkedDates] = useState<any>({});
+  
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [selectedBookingForRefund, setSelectedBookingForRefund] = useState<any>(null);
+  const [refundReason, setRefundReason] = useState("");
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
 
   // Hide parent tab header
   useLayoutEffect(() => {
@@ -174,6 +181,32 @@ export default function BookingsHistoryScreen() {
     return `${days} ${days === 1 ? 'night' : 'nights'}`;
   };
 
+  const handleRequestRefund = async () => {
+    if (!selectedBookingForRefund) return;
+    if (!refundReason.trim()) {
+      Alert.alert("Error", "Please enter a reason for the refund");
+      return;
+    }
+    
+    setIsSubmittingRefund(true);
+    try {
+      await financeAPI.requestRefund({
+        bookingId: selectedBookingForRefund.id,
+        amount: selectedBookingForRefund.totalPrice,
+        reason: refundReason
+      });
+      Alert.alert("Success", "Refund request submitted successfully");
+      setShowRefundModal(false);
+      setRefundReason("");
+      setSelectedBookingForRefund(null);
+    } catch (error) {
+      console.error("Error submitting refund:", error);
+      Alert.alert("Error", "Failed to submit refund request");
+    } finally {
+      setIsSubmittingRefund(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -258,7 +291,21 @@ export default function BookingsHistoryScreen() {
                       {calculateDuration(booking.startDate, booking.endDate)}
                     </Text>
                   </View>
-                  <Text style={styles.priceText}>${booking.totalPrice}</Text>
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.priceText}>${booking.totalPrice}</Text>
+                    {booking.status.toLowerCase() !== "cancelled" && booking.status.toLowerCase() !== "refunded" && (
+                      <TouchableOpacity 
+                        style={styles.refundButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          setSelectedBookingForRefund(booking);
+                          setShowRefundModal(true);
+                        }}
+                      >
+                        <Text style={styles.refundButtonText}>Request Refund</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -297,6 +344,52 @@ export default function BookingsHistoryScreen() {
                 onPress={() => setShowFilter(false)}
               >
                 <Text style={styles.applyButtonText}>Apply Filter</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Refund Modal */}
+      <Modal visible={showRefundModal} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { minHeight: 400 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Request Refund</Text>
+              <TouchableOpacity onPress={() => setShowRefundModal(false)}>
+                <X size={24} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={{ flex: 1 }}>
+              <Text style={{ marginBottom: 12, fontSize: 14, color: Colors.textLight }}>
+                Please provide a reason for your refund request. Our support team will review it shortly.
+              </Text>
+              <TextInput
+                style={[styles.reasonInput, { color: Colors.text }]}
+                multiline
+                numberOfLines={4}
+                placeholder="E.g. I was not satisfied with the property, transaction failed..."
+                placeholderTextColor={Colors.textLight}
+                value={refundReason}
+                onChangeText={setRefundReason}
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.clearButton} onPress={() => setShowRefundModal(false)}>
+                <Text style={styles.clearButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.applyButton} 
+                onPress={handleRequestRefund}
+                disabled={isSubmittingRefund}
+              >
+                {isSubmittingRefund ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.applyButtonText}>Submit Request</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -445,10 +538,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+  priceContainer: {
+    alignItems: 'flex-end',
+  },
   priceText: {
     fontSize: 18,
     fontWeight: "800",
     color: Colors.primary,
+  },
+  refundButton: {
+    marginTop: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 4,
+  },
+  refundButtonText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#D32F2F',
+  },
+  reasonInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    minHeight: 120,
+    textAlignVertical: 'top',
   },
   modalOverlay: {
     flex: 1,

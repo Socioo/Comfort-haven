@@ -20,8 +20,9 @@ const Login = () => {
 
     try {
       // POST to the backend auth endpoint
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
       const response = await axios.post(
-        "http://localhost:3000/auth/login",
+        `${baseUrl}/auth/login`,
         {
           email,
           password,

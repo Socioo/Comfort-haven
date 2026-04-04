@@ -5,13 +5,13 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  useWindowDimensions,
   TouchableOpacity,
   TextInput,
   RefreshControl,
 } from "react-native";
 import Colors from "@/constants/Colors";
 import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Heart, MapPin, Search, Star } from "lucide-react-native";
 import { Text, View, Card } from "@/components/Themed";
 import { useRouter, Redirect } from "expo-router";
@@ -22,10 +22,10 @@ import { Property } from "@/types";
 import { propertiesAPI, API_BASE_URL } from "@/services/api";
 import * as Haptics from "expo-haptics";
 import { ResponsiveView } from "@/components/ResponsiveView";
+import { rf, ms, s, vs, isTablet, screenWidth } from "@/utils/responsive";
 
-const screen = Dimensions.get("window");
-const SCREEN_WIDTH = screen?.width || 375;
-const SCREEN_HEIGHT = screen?.height || 667;
+// SCREEN_WIDTH and SCREEN_HEIGHT are now imported or calculated from responsive utils
+
 
 const getImageUrl = (url: string | undefined) => {
   if (!url) return undefined;
@@ -46,8 +46,9 @@ export default function TabOneScreen() {
   const { colorScheme } = useTheme();
   const themeColors = Colors[colorScheme ?? 'light'];
   const { toggleFavorite, isFavorite } = useFavorites();
-  const { width, height } = useWindowDimensions();
-  const isTablet = width >= 600;
+  const insets = useSafeAreaInsets();
+  // isTablet is imported from responsive utils
+
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,6 +61,10 @@ export default function TabOneScreen() {
       setLoading(false);
     }
   }, [user]);
+
+  const onRefresh = React.useCallback(() => {
+    fetchProperties(true);
+  }, []);
 
   if (user?.role === "host" || user?.role === "admin") {
     return <Redirect href="/(tabs)/(host)" />;
@@ -77,10 +82,6 @@ export default function TabOneScreen() {
       setLoading(false);
     }
   };
-
-  const onRefresh = React.useCallback(() => {
-    fetchProperties(true);
-  }, []);
 
   const handlePropertyPress = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -107,96 +108,113 @@ export default function TabOneScreen() {
     );
   });
 
+  const horizontalPadding = ms(20);
+
   return (
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 20 + insets.bottom }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[Colors.primary]} // Android
-            tintColor={Colors.primary} // iOS
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
           />
         }
       >
-        <ResponsiveView maxWidth={1200} style={{ paddingHorizontal: isTablet ? 20 : 0 }}>
-          <View style={styles.header}>
+        <ResponsiveView maxWidth={1200}>
+          <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
             <View style={styles.headerLeft}>
-              <Text style={styles.greeting}>
+              <Text style={[styles.greeting, { fontSize: screenWidth >= 600 ? 42 : 34 }]}>
                 Hello{user ? `, ${user.name.split(" ")[0]}` : ""}! 👋
               </Text>
-              <Text style={styles.subtitle}>Find your perfect stay in Kano</Text>
+              <Text style={[styles.subtitle, { fontSize: screenWidth >= 600 ? 18 : 16 }]}>Find your perfect stay in Kano</Text>
             </View>
           </View>
 
-          <View style={[styles.searchBar, { backgroundColor: themeColors.card }]}>
-          <Search color={Colors.textLight} size={20} />
-          <TextInput
-            style={[styles.searchInput, { color: themeColors.text }]}
-            placeholder="Search location, LGA..."
-            placeholderTextColor={Colors.textLight}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+          <View style={[
+            styles.searchBar, 
+            { 
+              backgroundColor: themeColors.card,
+              marginHorizontal: horizontalPadding,
+              paddingVertical: screenWidth >= 600 ? 14 : 10
+            }
+          ]}>
+            <Search color={Colors.textLight} size={screenWidth >= 600 ? 22 : 18} />
+            <TextInput
+              style={[styles.searchInput, { color: themeColors.text, fontSize: screenWidth >= 600 ? 16 : 14 }]}
+              placeholder="Search location, LGA..."
+              placeholderTextColor={Colors.textLight}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
 
         {searchQuery.trim().length > 0 ? (
-          <View style={styles.searchResultsContainer}>
+          <View style={[styles.searchResultsContainer, { paddingHorizontal: horizontalPadding }]}>
             <Text style={styles.sectionTitle}>
               {searchResults.length} Result{searchResults.length !== 1 ? 's' : ''}
             </Text>
-            {searchResults.map((property) => (
-              <Pressable
-                key={property.id}
-                style={[styles.resultCard, { backgroundColor: themeColors.card }]}
-                onPress={() => handlePropertyPress(property.id)}
-              >
-                <Image
-                  source={{ uri: property.images && property.images.length > 0 ? property.images[0] : "https://placehold.co/600x400" }}
-                  style={styles.resultImage}
-                  contentFit="cover"
-                />
-                <TouchableOpacity
-                  style={styles.favoriteButton}
-                  onPress={() => handleFavoritePress(property)}
+            <View style={screenWidth >= 600 ? styles.resultsGrid : null}>
+              {searchResults.map((property) => (
+                <Pressable
+                  key={property.id}
+                  style={[
+                    styles.resultCard, 
+                    { 
+                      backgroundColor: themeColors.card,
+                      width: screenWidth >= 900 ? '31%' : (screenWidth >= 600 ? '48%' : '100%')
+                    }
+                  ]}
+                  onPress={() => handlePropertyPress(property.id)}
                 >
-                  <Heart
-                    color={isFavorite(property.id) ? Colors.primary : Colors.textLight}
-                    fill={isFavorite(property.id) ? Colors.primary : "transparent"}
-                    size={20}
+                  <Image
+                    source={{ uri: property.images && property.images.length > 0 ? getImageUrl(property.images[0]) : "https://placehold.co/600x400" }}
+                    style={styles.resultImage}
+                    contentFit="cover"
                   />
-                </TouchableOpacity>
-                <View style={styles.resultInfo}>
-                  <Text style={styles.resultTitle} numberOfLines={1}>
-                    {property.title}
-                  </Text>
-                  <View style={styles.locationRow}>
-                    <MapPin color={Colors.textLight} size={14} />
-                    <Text style={styles.locationText} numberOfLines={1}>
-                      {property.location}, {property.lga}
+                  <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={() => handleFavoritePress(property)}
+                  >
+                    <Heart
+                      color={isFavorite(property.id) ? Colors.primary : Colors.textLight}
+                      fill={isFavorite(property.id) ? Colors.primary : "transparent"}
+                      size={20}
+                    />
+                  </TouchableOpacity>
+                  <View style={styles.resultInfo}>
+                    <Text style={styles.resultTitle} numberOfLines={1}>
+                      {property.title}
                     </Text>
-                  </View>
-                  <View style={styles.featuredFooter}>
-                    <View style={styles.ratingRow}>
-                      <Star color={Colors.accent} fill={Colors.accent} size={14} />
-                      <Text style={styles.ratingText}>
-                        {property.rating?.toFixed(1) || "4.5"}
+                    <View style={styles.locationRow}>
+                      <MapPin color={Colors.textLight} size={14} />
+                      <Text style={styles.locationText} numberOfLines={1}>
+                        {property.location}, {property.lga}
                       </Text>
                     </View>
-                    <Text style={styles.price}>
-                      ₦{property.price.toLocaleString()}/night
-                    </Text>
+                    <View style={styles.featuredFooter}>
+                      <View style={styles.ratingRow}>
+                        <Star color={Colors.accent} fill={Colors.accent} size={14} />
+                        <Text style={styles.ratingText}>
+                          {property.rating?.toFixed(1) || "4.5"}
+                        </Text>
+                      </View>
+                      <Text style={styles.price}>
+                        ₦{property.price.toLocaleString()}/night
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </Pressable>
-            ))}
+                </Pressable>
+              ))}
+            </View>
           </View>
         ) : (
           <>
-            <View style={styles.section}>
+            <View style={[styles.section, { paddingHorizontal: horizontalPadding }]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Featured Properties</Text>
             <TouchableOpacity onPress={() => router.push("../explore")}>
@@ -212,16 +230,22 @@ export default function TabOneScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.featuredList}
+              contentContainerStyle={[styles.featuredList, { paddingLeft: horizontalPadding, paddingRight: horizontalPadding }]}
             >
               {featuredProperties.map((property) => (
                 <Pressable
                   key={property.id}
-                  style={[styles.featuredCard, { backgroundColor: themeColors.card }]}
+                  style={[
+                    styles.featuredCard, 
+                    { 
+                      backgroundColor: themeColors.card,
+                      width: screenWidth >= 600 ? 350 : screenWidth * 0.75
+                    }
+                  ]}
                   onPress={() => handlePropertyPress(property.id)}
                 >
                   <Image
-                    source={{ uri: property.images && property.images.length > 0 ? property.images[0] : "https://placehold.co/600x400" }}
+                    source={{ uri: property.images && property.images.length > 0 ? getImageUrl(property.images[0]) : "https://placehold.co/600x400" }}
                     style={styles.featuredImage}
                     contentFit="cover"
                   />
@@ -276,14 +300,20 @@ export default function TabOneScreen() {
           )}
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { paddingHorizontal: horizontalPadding, marginTop: 0 }]}>
           <Text style={styles.sectionTitle}>Popular Locations</Text>
           <View style={styles.locationsGrid}>
             {["Nassarawa", "Gwale", "Kano Municipal", "Fagge"].map(
               (location) => (
                 <TouchableOpacity
                   key={location}
-                  style={[styles.locationCard, { backgroundColor: themeColors.card }]}
+                  style={[
+                    styles.locationCard, 
+                    { 
+                      backgroundColor: themeColors.card,
+                      width: screenWidth >= 600 ? '23%' : '47%'
+                    }
+                  ]}
                   onPress={() => router.push(`../explore?location=${location}`)}
                 >
                   <MapPin color={Colors.primary} size={20} />
@@ -309,107 +339,108 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: vs(20),
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: vs(20),
+    paddingBottom: vs(16),
   },
   headerLeft: {
     flex: 1,
   },
   greeting: {
-    fontSize: 34,
+    fontSize: rf(32),
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: vs(4),
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: rf(16),
+    color: '#64748b'
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 20,
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 12,
+    marginTop: vs(4),
+    paddingHorizontal: ms(14),
+    paddingVertical: vs(10),
+    borderRadius: ms(24),
+    gap: ms(8),
     borderWidth: 1,
     borderColor: 'transparent',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: ms(12),
+    elevation: 4,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: rf(15),
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 20,
-    padding: 20,
+    marginTop: vs(24),
+    paddingVertical: vs(12),
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: vs(16),
   },
   sectionTitle: {
-    fontSize: 25,
+    fontSize: rf(22),
     fontWeight: "bold",
-    marginBottom: 16,
   },
   seeAll: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: Colors.primary,
     fontWeight: "600",
   },
   featuredList: {
-    paddingRight: 20,
-    paddingVertical: 12,
-    gap: 16,
+    paddingVertical: vs(12),
+    gap: ms(16),
   },
   featuredCard: {
-    width: Dimensions.get("window").width >= 600 ? 350 : Dimensions.get("window").width * 0.7,
-    borderRadius: 16,
+    borderRadius: ms(16),
     overflow: "hidden",
     elevation: 4,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: ms(8),
   },
   featuredImage: {
     width: "100%",
-    height: 200,
+    height: vs(200),
   },
   favoriteButton: {
     position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: Colors.overlay,
-    borderRadius: 20,
-    padding: 8,
+    top: vs(12),
+    right: ms(12),
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: ms(20),
+    padding: ms(8),
   },
   featuredInfo: {
-    padding: 12,
+    padding: ms(12),
   },
   featuredTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: vs(6),
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginBottom: 8,
+    gap: ms(4),
+    marginBottom: vs(8),
   },
   locationText: {
-    fontSize: 14,
+    fontSize: rf(14),
+    color: '#64748b',
     flex: 1,
   },
   featuredFooter: {
@@ -420,65 +451,72 @@ const styles = StyleSheet.create({
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: ms(4),
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
   },
   reviewCount: {
-    fontSize: 12,
+    fontSize: rf(12),
+    color: '#64748b',
   },
   price: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: "bold",
     color: Colors.primary,
   },
   locationsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginTop: 16,
+    gap: ms(12),
+    marginTop: vs(16),
   },
   locationCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
+    paddingHorizontal: ms(16),
+    paddingVertical: vs(12),
+    borderRadius: ms(12),
+    gap: ms(8),
     borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   locationName: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: "600",
   },
   searchResultsContainer: {
-    padding: 20,
-    marginTop: 10,
-    gap: 16,
+    marginTop: vs(20),
+    gap: vs(16),
+  },
+  resultsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: ms(16),
   },
   resultCard: {
-    borderRadius: 16,
+    borderRadius: ms(16),
     overflow: "hidden",
-    elevation: 2,
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: ms(6),
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
   },
   resultImage: {
     width: "100%",
-    height: 200,
+    height: vs(180),
   },
   resultInfo: {
-    padding: 12,
+    padding: ms(12),
   },
   resultTitle: {
-    fontSize: 16,
+    fontSize: rf(15),
     fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: vs(6),
   }
 });
+

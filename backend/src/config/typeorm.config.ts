@@ -10,6 +10,6 @@ export default registerAs('typeorm', (): TypeOrmModuleOptions => ({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     entities: [User, __dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: true, // Auto-create tables (dev only)
+    synchronize: process.env.DB_SYNCHRONIZE === 'true' || process.env.NODE_ENV !== 'production',
     autoLoadEntities: true,
 }));

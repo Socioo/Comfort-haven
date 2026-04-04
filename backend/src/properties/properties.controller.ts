@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFiles, UseGuards, Req } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -36,8 +38,13 @@ export class PropertiesController {
     }
 
     @Get()
-    findAll(@Query('status') status?: string) {
-        return this.propertiesService.findAll(status);
+    @UseGuards(OptionalJwtAuthGuard)
+    findAll(
+        @Query('status') status?: string,
+        @Query('showAll') showAll?: string,
+        @Req() req?: any
+    ) {
+        return this.propertiesService.findAll(status, req?.user, showAll === 'true');
     }
 
     @Get(':id')
@@ -61,7 +68,24 @@ export class PropertiesController {
     }
 
     @Post('search')
-    search(@Body() query: any) {
-        return this.propertiesService.search(query);
+    @UseGuards(OptionalJwtAuthGuard)
+    search(
+        @Body() query: any,
+        @Query('showAll') showAll?: string,
+        @Req() req?: any
+    ) {
+        return this.propertiesService.search(query, req?.user, showAll === 'true');
+    }
+
+    @Post(':id/initialize-listing-payment')
+    @UseGuards(JwtAuthGuard)
+    initializeListingPayment(@Param('id') id: string, @Req() req: any) {
+        return this.propertiesService.initializeListingPayment(id, req.user.email);
+    }
+
+    @Get('verify-listing-payment/:reference')
+    @UseGuards(JwtAuthGuard)
+    verifyListingPayment(@Param('reference') reference: string) {
+        return this.propertiesService.verifyListingPayment(reference);
     }
 }

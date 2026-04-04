@@ -23,6 +23,7 @@ import {
   CheckCheck,
 } from "lucide-react-native";
 import { notificationsAPI, authAPI } from "@/services/api";
+import { useNotifications } from "@/contexts/notifications";
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function NotificationsScreen() {
   const { colorScheme } = useTheme();
   const themeColors = Colors[colorScheme ?? 'light'];
   const styles = createStyles(themeColors);
+  const { refreshUnreadCount } = useNotifications();
   
   const [activeTab, setActiveTab] = useState<"alerts" | "settings">("alerts");
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -89,6 +91,7 @@ export default function NotificationsScreen() {
     try {
       const response = await notificationsAPI.getAll();
       setNotifications(response.data);
+      refreshUnreadCount();
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
@@ -101,6 +104,7 @@ export default function NotificationsScreen() {
     try {
       await notificationsAPI.markAsRead(id);
       setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+      refreshUnreadCount();
     } catch (error) {
       console.error("Error marking as read:", error);
     }
@@ -110,8 +114,19 @@ export default function NotificationsScreen() {
     try {
       await notificationsAPI.markAllAsRead();
       setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+      refreshUnreadCount();
     } catch (error) {
       console.error("Error marking all as read:", error);
+    }
+  };
+
+  const clearAll = async () => {
+    try {
+      await notificationsAPI.clearAll();
+      setNotifications([]);
+      refreshUnreadCount();
+    } catch (error) {
+      Alert.alert("Error", "Failed to clear notifications.");
     }
   };
 
@@ -173,12 +188,26 @@ export default function NotificationsScreen() {
         <View style={{ flex: 1 }}>
           <View style={styles.actionsBar}>
             <Text style={styles.resultsCount}>{notifications.length} notifications</Text>
-            {notifications.some(n => !n.isRead) && (
-              <TouchableOpacity style={styles.markAll} onPress={markAllAsRead}>
-                <CheckCheck size={16} color={Colors.primary} />
-                <Text style={styles.markAllText}>Mark all as read</Text>
-              </TouchableOpacity>
-            )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              {notifications.some(n => !n.isRead) && (
+                <TouchableOpacity style={styles.markAll} onPress={markAllAsRead}>
+                  <CheckCheck size={16} color={Colors.primary} />
+                  <Text style={styles.markAllText}>Mark all read</Text>
+                </TouchableOpacity>
+              )}
+              {notifications.length > 0 && (
+                <TouchableOpacity
+                  onPress={() =>
+                    Alert.alert('Clear All', 'Remove all notifications?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Clear', style: 'destructive', onPress: clearAll },
+                    ])
+                  }
+                >
+                  <Trash2 size={18} color="#ef4444" />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -201,8 +230,19 @@ export default function NotificationsScreen() {
                   style={[styles.notificationItem, !notification.isRead && styles.unreadItem]}
                   onPress={() => !notification.isRead && markAsRead(notification.id)}
                 >
-                  <View style={[styles.iconContainer, { backgroundColor: notification.type === 'success' ? '#4CAF5015' : Colors.primary + '15' }]}>
-                    <Bell size={20} color={notification.type === 'success' ? '#4CAF50' : Colors.primary} />
+                  <View style={[styles.iconContainer, { 
+                    backgroundColor:
+                      (notification.type === 'booking_confirmed' || notification.type === 'success') ? '#4CAF5015' :
+                      notification.type === 'warning' ? '#FF980015' :
+                      notification.type === 'error' ? '#F4433615' :
+                      Colors.primary + '15'
+                  }]}>
+                    <Bell size={20} color={
+                      (notification.type === 'booking_confirmed' || notification.type === 'success') ? '#4CAF50' :
+                      notification.type === 'warning' ? '#FF9800' :
+                      notification.type === 'error' ? '#F44336' :
+                      Colors.primary
+                    } />
                   </View>
                   <View style={styles.notificationContent}>
                     <View style={styles.notificationHeader}>

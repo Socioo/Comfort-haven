@@ -26,9 +26,15 @@ import {
   Lock,
   Globe,
   Palette,
+  Settings,
+  UserX,
+  AlertTriangle,
+  ChevronDown,
+  CheckCircle,
+  Landmark,
 } from "lucide-react-native";
 import { Image } from "expo-image";
-import { API_BASE_URL } from "@/services/api";
+import { API_BASE_URL, usersAPI } from "@/services/api";
 import UserAvatar from "@/components/UserAvatar";
 
 const getImageUrl = (url: string | undefined) => {
@@ -46,10 +52,14 @@ const getImageUrl = (url: string | undefined) => {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUser } = useAuth();
   const { colorScheme } = useTheme();
   const themeColors = Colors[colorScheme ?? 'light'];
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showAccountManagement, setShowAccountManagement] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const styles = createStyles(themeColors);
 
@@ -60,9 +70,66 @@ export default function ProfileScreen() {
   const confirmLogout = async () => {
     setShowLogoutModal(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // We don't necessarily need to await the full background clearing here
-    // as the state update inside signOut will trigger the UI change immediately.
     signOut();
+  };
+
+  const confirmDeactivate = async () => {
+    setIsProcessing(true);
+    try {
+      await usersAPI.deactivateAccount();
+      setShowDeactivateModal(false);
+      updateUser({ status: "inactive" });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Account Deactivated", "Your account is now hidden, but you can reactivate it right here.");
+    } catch (error) {
+      console.error("Failed to deactivate", error);
+      Alert.alert("Error", "Failed to deactivate account.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const confirmReactivate = () => {
+    Alert.alert(
+      "Reactivate Account",
+      "Do you want to restore your account to fully active status?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Yes, Reactivate", 
+          onPress: async () => {
+            setIsProcessing(true);
+            try {
+              await usersAPI.reactivateAccount();
+              updateUser({ status: "active" });
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Alert.alert("Welcome Back!", "Your account is now fully active.");
+            } catch (error) {
+              console.error("Failed to reactivate", error);
+              Alert.alert("Error", "Failed to reactivate account.");
+            } finally {
+              setIsProcessing(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const confirmDelete = async () => {
+    setIsProcessing(true);
+    try {
+      await usersAPI.deleteAccount();
+      setShowDeleteModal(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Account Deleted", "Your account and data have been permanently deleted.");
+      signOut();
+    } catch (error) {
+      console.error("Failed to delete", error);
+      Alert.alert("Error", "Failed to delete account.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!user) {
@@ -137,6 +204,17 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <MenuItem icon={Palette} label="Appearance" onPress={() => router.push("/(tabs)/profile/appearance" as any)} showChevron={true} />
           <View style={styles.divider} />
+          {user.role === "host" && (
+            <>
+              <MenuItem 
+                icon={Landmark} 
+                label="Payout Settings" 
+                onPress={() => router.push("/host/payout-settings")} 
+                showChevron={true} 
+              />
+              <View style={styles.divider} />
+            </>
+          )}
           <MenuItem icon={Lock} label="Change Password" onPress={() => router.push("/(tabs)/profile/change-password" as any)} showChevron={true} />
         </Card>
 
@@ -168,6 +246,59 @@ export default function ProfileScreen() {
         <Card style={styles.group}>
           <MenuItem icon={LogOut} label="Log Out" onPress={handleSignOut} />
         </Card>
+
+        {/* Group 5: Account Management */}
+        <Card style={styles.group}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={() => setShowAccountManagement(!showAccountManagement)}
+          >
+            <View style={styles.menuItemLeft}>
+              <Settings color={Colors.primary} size={22} strokeWidth={1.5} />
+              <Text style={styles.menuItemText}>Account Management</Text>
+            </View>
+            {showAccountManagement ? <ChevronDown color={themeColors.textLight} size={20} /> : <ChevronRight color={themeColors.textLight} size={20} />}
+          </TouchableOpacity>
+          
+          {showAccountManagement && (
+            <View style={styles.expandedContent}>
+              <View style={styles.divider} />
+              
+              {user?.status === "inactive" ? (
+                <TouchableOpacity 
+                  style={[styles.menuItem, { paddingLeft: 40 }]} 
+                  onPress={confirmReactivate}
+                >
+                  <View style={styles.menuItemLeft}>
+                    <CheckCircle color="#10b981" size={20} strokeWidth={1.5} />
+                    <Text style={[styles.menuItemText, { color: "#10b981" }]}>Reactivate Account</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.menuItem, { paddingLeft: 40 }]} 
+                  onPress={() => setShowDeactivateModal(true)}
+                >
+                  <View style={styles.menuItemLeft}>
+                    <UserX color="#f59e0b" size={20} strokeWidth={1.5} />
+                    <Text style={[styles.menuItemText, { color: "#f59e0b" }]}>Deactivate Account</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              <View style={styles.divider} />
+              <TouchableOpacity 
+                style={[styles.menuItem, { paddingLeft: 40 }]} 
+                onPress={() => setShowDeleteModal(true)}
+              >
+                <View style={styles.menuItemLeft}>
+                  <AlertTriangle color="#ef4444" size={20} strokeWidth={1.5} />
+                  <Text style={[styles.menuItemText, { color: "#ef4444" }]}>Delete Account</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+        </Card>
       </ScrollView>
 
       {/* Logout Confirmation Modal */}
@@ -197,6 +328,60 @@ export default function ProfileScreen() {
               onPress={() => setShowLogoutModal(false)}
             >
               <Text style={styles.cancelButtonText}>No</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Deactivate Confirmation Modal */}
+      <Modal
+        visible={showDeactivateModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeactivateModal(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDeactivateModal(false)}>
+          <TouchableOpacity activeOpacity={1} style={[styles.modalContent, { backgroundColor: themeColors.card }]}>
+            <View style={[styles.modalIconContainer, { backgroundColor: "#fef3c7" }]}>
+              <UserX color="#d97706" size={32} />
+            </View>
+            <Text style={styles.modalTitle}>Deactivate Account</Text>
+            <Text style={styles.modalSubTitle}>
+              Your profile and properties will be hidden immediately. You will remain logged in and can tap "Reactivate" anytime to undo this. Do you wish to continue?
+            </Text>
+            
+            <TouchableOpacity style={[styles.confirmButton, { backgroundColor: "#f59e0b" }]} onPress={confirmDeactivate} disabled={isProcessing}>
+              <Text style={styles.confirmButtonText}>{isProcessing ? "Processing..." : "Yes, Deactivate"}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.cancelButton, { borderColor: "#f59e0b" }]} onPress={() => setShowDeactivateModal(false)} disabled={isProcessing}>
+              <Text style={[styles.cancelButtonText, { color: "#f59e0b" }]}>Cancel</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDeleteModal(false)}>
+          <TouchableOpacity activeOpacity={1} style={[styles.modalContent, { backgroundColor: themeColors.card }]}>
+            <View style={[styles.modalIconContainer, { backgroundColor: "#fee2e2" }]}>
+              <AlertTriangle color="#dc2626" size={32} />
+            </View>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalSubTitle}>
+              This action is permanent and cannot be undone. All your data will be erased. Are you absolutely sure?
+            </Text>
+            
+            <TouchableOpacity style={[styles.confirmButton, { backgroundColor: "#ef4444" }]} onPress={confirmDelete} disabled={isProcessing}>
+              <Text style={styles.confirmButtonText}>{isProcessing ? "Processing..." : "Yes, Delete Permanently"}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.cancelButton, { borderColor: "#ef4444" }]} onPress={() => setShowDeleteModal(false)} disabled={isProcessing}>
+              <Text style={[styles.cancelButtonText, { color: "#ef4444" }]}>Cancel</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -264,6 +449,9 @@ const createStyles = (themeColors: any) => StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     overflow: "hidden",
+  },
+  expandedContent: {
+    backgroundColor: "transparent",
   },
   divider: {
     height: 1,
@@ -360,6 +548,21 @@ const createStyles = (themeColors: any) => StyleSheet.create({
     textAlign: "center",
     marginBottom: 30,
     lineHeight: 28,
+  },
+  modalSubTitle: {
+    fontSize: 15,
+    color: themeColors.textLight,
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  modalIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
   },
   confirmButton: {
     width: "100%",

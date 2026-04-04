@@ -25,7 +25,7 @@ interface TeamMemberModalProps {
 const getImageUrl = (url?: string) => {
   if (!url) return "";
   if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-  const baseUrl = 'http://localhost:3000';
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 

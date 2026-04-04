@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -86,6 +87,7 @@ export default function PropertyDetailsScreen() {
   const { user } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isTablet = width >= 600;
   const contentWidth = isTablet ? 800 : width;
 
@@ -142,6 +144,13 @@ export default function PropertyDetailsScreen() {
   
   const navigation = useNavigation();
   const styles = createStyles(themeColors, width, contentWidth);
+  
+  // Safe: uses optional chaining on all nullable values
+  const isHost = !!(user && property && (
+    property.ownerId === user.id || 
+    property.hostId === user.id || 
+    (property as any)?.owner?.id === user.id
+  ));
 
 
 
@@ -205,6 +214,10 @@ export default function PropertyDetailsScreen() {
       router.push("/auth/login" as any);
       return;
     }
+    if (isHost) {
+      router.push(`/property/edit/${property.id}` as any);
+      return;
+    }
     router.push(`/booking/${property.id}?price=${property.price}` as any);
   };
 
@@ -237,21 +250,24 @@ export default function PropertyDetailsScreen() {
         ).toFixed(1)
       : "New";
 
+  const carouselHeight = isTablet ? 450 : 300;
+
   return (
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <ResponsiveView maxWidth={800}>
-        <View style={styles.imageCarouselContainer}>
+        <ResponsiveView maxWidth={900}>
+        <View style={[styles.imageCarouselContainer, { height: carouselHeight }]}>
           <ScrollView
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            style={styles.imageCarousel}
+            style={[styles.imageCarousel, { height: carouselHeight }]}
             onMomentumScrollEnd={(e) => {
-              const index = Math.round(e.nativeEvent.contentOffset.x / contentWidth);
+              const carouselWidth = width >= 900 ? 900 : width;
+              const index = Math.round(e.nativeEvent.contentOffset.x / carouselWidth);
               setSelectedMediaIndex(index);
             }}
           >
@@ -265,11 +281,11 @@ export default function PropertyDetailsScreen() {
                 }}
               >
                 {isVideo(media) ? (
-                  <VideoItem url={getMediaUrl(media)!} width={contentWidth} />
+                  <VideoItem url={getMediaUrl(media)!} width={width >= 900 ? 900 : width} />
                 ) : (
                   <Image
                     source={{ uri: getMediaUrl(media) }}
-                    style={styles.propertyImage}
+                    style={[styles.propertyImage, { height: carouselHeight, width: width >= 900 ? 900 : width }]}
                     contentFit="cover"
                   />
                 )}
@@ -299,19 +315,13 @@ export default function PropertyDetailsScreen() {
         <View style={styles.content}>
           <View style={styles.headerSection}>
             <View style={styles.headerContent}>
-              <ThemedView>
-                <ThemedView style={{ backgroundColor: 'transparent' }}>
-                  <Text style={styles.title}>{property.title}</Text>
-                </ThemedView>
-                <View style={styles.locationRow}>
-                  <MapPin color={themeColors.textLight} size={16} />
-                  <ThemedView style={{ backgroundColor: 'transparent' }}>
-                    <Text style={styles.locationText}>
-                      {property.location}, {property.lga}
-                    </Text>
-                  </ThemedView>
-                </View>
-              </ThemedView>
+              <Text style={styles.title}>{property.title}</Text>
+              <View style={styles.locationRow}>
+                <MapPin color={themeColors.textLight} size={16} />
+                <Text style={styles.locationText}>
+                  {property.location}, {property.lga}
+                </Text>
+              </View>
               {property.address && (
                 <TouchableOpacity style={styles.addressRow} onPress={handleDirectionsPress}>
                   <Text style={styles.addressText}>{property.address}</Text>
@@ -319,18 +329,20 @@ export default function PropertyDetailsScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            <TouchableOpacity
-              style={[styles.favoriteButton, { backgroundColor: themeColors.card }]}
-              onPress={handleFavoritePress}
-            >
-              <Heart
-                color={
-                  isFavorite(property.id) ? Colors.primary : themeColors.textLight
-                }
-                fill={isFavorite(property.id) ? Colors.primary : "transparent"}
-                size={24}
-              />
-            </TouchableOpacity>
+            {!isHost && (
+              <TouchableOpacity
+                style={[styles.favoriteButton, { backgroundColor: themeColors.card }]}
+                onPress={handleFavoritePress}
+              >
+                <Heart
+                  color={
+                    isFavorite(property.id) ? Colors.primary : themeColors.textLight
+                  }
+                  fill={isFavorite(property.id) ? Colors.primary : "transparent"}
+                  size={24}
+                />
+              </TouchableOpacity>
+            )}
           </View>
 
           <Card style={styles.statsRow}>
@@ -375,6 +387,8 @@ export default function PropertyDetailsScreen() {
             </View>
           </View>
 
+          {/* Only show Host section to guests, not to the host themselves */}
+          {user?.id !== (property.ownerId || property.hostId) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Host</Text>
             <View style={[styles.hostCard, { backgroundColor: themeColors.card }]}>
@@ -390,11 +404,11 @@ export default function PropertyDetailsScreen() {
                 <UserAvatar 
                   name={(property as any).owner?.name || property.hostName || "Host"} 
                   image={(property as any).owner?.profileImage || property.hostPhoto} 
-                  size={50} 
+                  size={width >= 600 ? 60 : 50} 
                   style={styles.hostAvatar}
                 />
                 <View style={styles.hostInfo}>
-                  <Text style={styles.hostName}>
+                  <Text style={[styles.hostName, { fontSize: width >= 600 ? 18 : 16 }]}>
                     {(property as any).owner?.name || property.hostName || "Host"}
                   </Text>
                   <Text style={styles.hostLabel}>
@@ -416,39 +430,43 @@ export default function PropertyDetailsScreen() {
                 }}
                 style={styles.actionIcon}
               >
-                <MessageCircle color={Colors.primary} size={22} />
+                <MessageCircle color={Colors.primary} size={width >= 600 ? 28 : 22} />
               </TouchableOpacity>
             </View>
           </View>
+          )}
+
 
           <View style={styles.section}>
-            <TouchableOpacity 
-              style={styles.addReviewButton}
-              onPress={() => {
-                if (!user) {
-                  router.push("/auth/login" as any);
-                  return;
-                }
-                setIsReviewModalVisible(true);
-              }}
-            >
-              <Star color={Colors.primary} size={20} />
-              <Text style={styles.addReviewText}>Write a Review</Text>
-            </TouchableOpacity>
-
             <View style={styles.reviewsHeader}>
               <Text style={styles.sectionTitle}>Reviews</Text>
               <View style={styles.ratingBadge}>
                 <Star color={Colors.accent} fill={Colors.accent} size={16} />
                 <Text style={styles.ratingValue}>{averageRating}</Text>
-                <Text style={styles.reviewCount}>({reviews.length})</Text>
+                <Text style={styles.reviewCountLabel}>({reviews.length})</Text>
               </View>
             </View>
+            
+            {!isHost && (
+              <TouchableOpacity 
+                style={styles.addReviewButton}
+                onPress={() => {
+                  if (!user) {
+                    router.push("/auth/login" as any);
+                    return;
+                  }
+                  setIsReviewModalVisible(true);
+                }}
+              >
+                <Star color={Colors.primary} size={20} />
+                <Text style={styles.addReviewText}>Write a Review</Text>
+              </TouchableOpacity>
+            )}
 
             {reviews.length > 0 ? (
-              <View style={styles.reviewsList}>
+              <View style={isTablet ? styles.reviewsGrid : styles.reviewsList}>
                 {reviews.map((review) => (
-                  <Card key={review.id} style={styles.reviewCard}>
+                  <Card key={review.id} style={[styles.reviewCard, isTablet && { width: '48%' }]}>
                     <View style={styles.reviewHeader}>
                       <UserAvatar 
                         name={review.userName || "User"} 
@@ -456,7 +474,7 @@ export default function PropertyDetailsScreen() {
                         size={40} 
                         style={styles.reviewAvatar}
                       />
-                      <ThemedView style={[styles.reviewHeaderContent, { backgroundColor: 'transparent' }]}>
+                      <View style={[styles.reviewHeaderContent, { backgroundColor: 'transparent' }]}>
                         <Text style={styles.reviewerName}>
                           {review.userName || "User"}
                         </Text>
@@ -470,7 +488,7 @@ export default function PropertyDetailsScreen() {
                             />
                           ))}
                         </View>
-                      </ThemedView>
+                      </View>
                     </View>
                     <Text style={styles.reviewComment}>{review.comment}</Text>
                   </Card>
@@ -484,17 +502,18 @@ export default function PropertyDetailsScreen() {
         </ResponsiveView>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <ResponsiveView maxWidth={800} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={styles.priceSection}>
-          <Text style={styles.priceLabel}>Price</Text>
-          <Text style={styles.priceValue}>
-            ₦{Number(property.price).toLocaleString()}/night
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.bookButton} onPress={handleBookPress}>
-          <Text style={[styles.bookButtonText, { color: '#FFFFFF' }]}>Book Now</Text>
-        </TouchableOpacity>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
+        <ResponsiveView maxWidth={900} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={styles.priceSection}>
+            <Text style={styles.priceLabel}>Price</Text>
+            <Text style={styles.priceValue}>
+              ₦{Number(property.price).toLocaleString()}
+              <Text style={styles.perNight}>/night</Text>
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.bookButton} onPress={handleBookPress}>
+            <Text style={styles.bookButtonText}>{isHost ? "Edit Property" : "Book Now"}</Text>
+          </TouchableOpacity>
         </ResponsiveView>
       </View>
 
@@ -546,11 +565,11 @@ export default function PropertyDetailsScreen() {
               ))}
             </ScrollView>
             
-            <ThemedView style={styles.fullscreenPagination}>
+            <View style={styles.fullscreenPagination}>
               <Text style={styles.fullscreenPaginationText}>
                 {selectedMediaIndex + 1} / {images.length}
               </Text>
-            </ThemedView>
+            </View>
           </Animated.View>
         </GestureDetector>
       </Modal>
@@ -567,19 +586,38 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
     justifyContent: "center",
     alignItems: "center",
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   scrollView: {
     flex: 1,
   },
   imageCarouselContainer: {
     position: 'relative',
-    height: 300,
   },
   imageCarousel: {
-    height: 300,
   },
   propertyImage: {
     width: contentWidth,
-    height: 300,
   },
   videoOverlay: {
     position: 'absolute',
@@ -595,20 +633,23 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
     bottom: 20,
     alignSelf: 'center',
     gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
   activeDot: {
     backgroundColor: '#FFFFFF',
-    width: 20,
+    width: 14,
   },
   fullscreenContainer: {
     flex: 1,
-    backgroundColor: 'transparent',
   },
   fullscreenCloseButton: {
     position: 'absolute',
@@ -646,23 +687,24 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
     fontWeight: '600',
   },
   content: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   headerSection: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     paddingHorizontal: 20,
-    marginTop: 20,
+    marginTop: 24,
     marginBottom: 16,
   },
   headerContent: {
     flex: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: screenWidth >= 600 ? 32 : 24,
     fontWeight: "bold",
     marginBottom: 8,
+    color: themeColors.text,
   },
   locationRow: {
     flexDirection: "row",
@@ -670,68 +712,76 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
     marginBottom: 4,
   },
   locationText: {
-    fontSize: 14,
-    marginLeft: 4,
+    fontSize: 16,
+    marginLeft: 6,
+    color: '#64748b'
   },
   addressRow: {
-    marginTop: 4,
+    marginTop: 6,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },
   addressText: {
     fontSize: 14,
-    color: themeColors.textLight,
+    color: '#64748b',
   },
   directionsLink: {
     fontSize: 14,
     color: Colors.primary,
     fontWeight: '600',
-    textDecorationLine: 'underline',
   },
   favoriteButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: 10,
+    borderRadius: 24,
     marginLeft: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   statsRow: {
     flexDirection: "row",
     marginHorizontal: 20,
     paddingVertical: 20,
-    borderRadius: 12,
-    marginBottom: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   statItem: {
     flex: 1,
     alignItems: "center",
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: Colors.primary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 14,
-    color: themeColors.textLight,
+    color: '#64748b',
   },
   statDivider: {
     width: 1,
-    backgroundColor: themeColors.border,
+    height: '60%',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   section: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 16,
+    color: themeColors.text,
   },
   description: {
     fontSize: 16,
-    lineHeight: 24,
-    color: themeColors.text,
+    lineHeight: 26,
+    color: '#475569',
   },
   amenitiesGrid: {
     flexDirection: "row",
@@ -741,10 +791,12 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
   amenityItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
     gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   amenityDot: {
     fontSize: 20,
@@ -752,47 +804,66 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
   },
   amenityText: {
     fontSize: 14,
+    fontWeight: '500',
     color: themeColors.text,
   },
   hostCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: themeColors.border,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   hostAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    borderRadius: 30,
   },
   hostInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 14,
   },
   hostName: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
     marginBottom: 4,
+    color: themeColors.text,
   },
   hostLabel: {
     fontSize: 14,
-    color: themeColors.textLight,
+    color: '#64748b',
   },
   actionIcon: {
-    padding: 8,
+    padding: 10,
+    backgroundColor: `${Colors.primary}10`,
+    borderRadius: 20,
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  reviewCountLabel: {
+    fontSize: 14,
+    color: '#64748b',
   },
   addReviewButton: {
-    backgroundColor: themeColors.card,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.primary,
-    marginBottom: 20,
+    marginBottom: 24,
     gap: 8,
   },
   addReviewText: {
@@ -800,31 +871,19 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
     fontSize: 16,
     fontWeight: '600',
   },
-  reviewsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  ratingBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  ratingValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  reviewCount: {
-    fontSize: 14,
-    color: themeColors.textLight,
-  },
   reviewsList: {
+    gap: 16,
+  },
+  reviewsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 16,
   },
   reviewCard: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   reviewHeader: {
     flexDirection: "row",
@@ -832,89 +891,80 @@ const createStyles = (themeColors: any, screenWidth: number, contentWidth: numbe
     marginBottom: 12,
   },
   reviewAvatar: {
-    width: 40,
-    height: 40,
     borderRadius: 20,
   },
   reviewHeaderContent: {
     marginLeft: 12,
+    flex: 1,
   },
   reviewerName: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: "bold",
+    color: themeColors.text,
+    marginBottom: 2,
   },
   reviewRatingRow: {
     flexDirection: "row",
     gap: 2,
   },
   reviewComment: {
-    fontSize: 15,
+    fontSize: 14,
     lineHeight: 22,
-    color: themeColors.text,
+    color: '#475569',
   },
   noReviews: {
-    fontSize: 16,
     color: themeColors.textLight,
     textAlign: "center",
     paddingVertical: 20,
   },
   footer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: themeColors.card,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: "transparent",
-    gap: 16,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 10,
+    alignItems: 'center',
   },
   priceSection: {
     flex: 1,
-    backgroundColor: 'transparent',
   },
   priceLabel: {
-    fontSize: 14,
-    color: themeColors.textLight,
-    marginBottom: 4,
+    fontSize: 12,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   priceValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: Colors.primary,
   },
+  perNight: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: 'normal',
+  },
   bookButton: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
     borderRadius: 12,
+    minWidth: 140,
+    alignItems: 'center',
   },
   bookButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorText: {
-    fontSize: 18,
-    color: themeColors.textLight,
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: "#FFFFFF",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
   },
 });
+
