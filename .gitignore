@@ -7,7 +7,7 @@ dist/
 .vscode/
 *.log
 .DS_Store
-admin.env.txt
-backend.env.txt
-frontend.env.txt
-deployment_manual.md
+*.md
+*.txt
+*.cache
+.easignore
