@@ -69,4 +69,7 @@ async function bootstrap() {
   console.log(`✨ tRPC running on http://localhost:${port}/trpc`);
 }
 
-bootstrap();
+bootstrap().catch(err => {
+  console.error('💥 Failed to start server:', err);
+  process.exit(1);
+});
