@@ -1,11 +1,11 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplicationContext } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { UserRole } from './common/constants';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 
-export async function seedSuperAdmin(app: INestApplication) {
+export async function seedSuperAdmin(app: INestApplicationContext) {
   const userRepository = app.get<Repository<User>>(getRepositoryToken(User));
 
   const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
