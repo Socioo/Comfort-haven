@@ -23,7 +23,7 @@ export default function SignupScreen() {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const themeColors = Colors[colorScheme ?? 'light'];
-  const { signUp, signInWithGoogle, isSigningUp } = useAuth();
+  const { signUp, signInWithGoogle, signInWithApple, isSigningUp } = useAuth();
   const { width, height } = useWindowDimensions();
   const isTablet = width >= 600;
   
@@ -70,6 +70,16 @@ export default function SignupScreen() {
     } catch (err) {
       console.error('Google sign in error:', err);
       Alert.alert('Error', 'Failed to sign in with Google');
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      await signInWithApple(selectedRole);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err) {
+      console.error('Apple sign in error:', err);
+      Alert.alert('Error', 'Failed to sign in with Apple');
     }
   };
 
@@ -254,6 +264,18 @@ export default function SignupScreen() {
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </TouchableOpacity>
 
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={[styles.appleButton, { backgroundColor: colorScheme === 'dark' ? '#FFFFFF' : '#000000', marginTop: 12 }]}
+              onPress={handleAppleSignIn}
+              disabled={isSigningUp}
+            >
+              <Text style={[styles.appleButtonText, { color: colorScheme === 'dark' ? '#000000' : '#FFFFFF' }]}>
+                Continue with Apple
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login' as any)}>
@@ -372,6 +394,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  appleButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  appleButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },

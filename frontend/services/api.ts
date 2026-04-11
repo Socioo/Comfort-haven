@@ -2,9 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// IMPORTANT: Replace with your actual backend URL
-// For physical devices or Expo Go, use your machine's local IP address (e.g. 192.168.x.x)
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.43.200:3000';
+// IMPORTANT: Replace with your actual backend URL in .env
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -90,6 +89,9 @@ export const authAPI = {
   // OAuth Login
   googleLogin: (data: { email: string; name: string; googleId: string; profileImage?: string; role?: string }) =>
     api.post('/auth/google', data),
+  
+  appleLogin: (data: { email: string; name: string; appleId: string; role?: string }) =>
+    api.post('/auth/apple', data),
   
   oauthLogin: (provider: string, token: string) =>
     api.post(`/auth/${provider}/login`, { token }),

@@ -32,6 +32,9 @@ export class User {
   @Column({ nullable: true })
   googleId: string;
 
+  @Column({ nullable: true })
+  appleId: string;
+
   @Column({ nullable: true, select: false })
   hashedRefreshToken: string;
 
