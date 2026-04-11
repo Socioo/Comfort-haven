@@ -78,7 +78,7 @@ export class MailService {
   async sendInvitationEmail(email: string, name: string, password: string, customMessage?: string) {
     await this.ensureTransporter();
 
-    const logoPath = path.join(process.cwd(), '..', 'frontend', 'assets', 'images', 'icon.png');
+    const logoPath = path.join(process.cwd(), 'assets', 'logo.png');
     
     const mailOptions = {
       from: `"Comfort Haven" <${this.configService.get('MAIL_USER') || 'noreply@comfort-haven.com'}>`,
@@ -113,7 +113,7 @@ export class MailService {
             </p>
 
             <div style="text-align: center; margin-top: 40px;">
-              <a href="${this.configService.get('CORS_ORIGIN') || 'http://localhost:5173'}" 
+              <a href="${this.configService.get('FRONTEND_URL') || 'http://localhost:5173'}" 
                  style="background-color: #4a90e2; color: white; padding: 15px 35px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
                  Go to Admin Dashboard
               </a>
@@ -147,7 +147,7 @@ export class MailService {
   async sendResetPasswordEmail(email: string, name: string, otp: string) {
     await this.ensureTransporter();
 
-    const logoPath = path.join(process.cwd(), '..', 'frontend', 'assets', 'images', 'icon.png');
+    const logoPath = path.join(process.cwd(), 'assets', 'logo.png');
     
     const mailOptions = {
       from: `"Comfort Haven" <${this.configService.get('MAIL_USER') || 'noreply@comfort-haven.com'}>`,

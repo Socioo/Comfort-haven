@@ -50,6 +50,25 @@ export class AuthController {
     return this.authService.googleLogin(body);
   }
 
+  @Post('apple')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Apple Authentication' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string' },
+        name: { type: 'string' },
+        appleId: { type: 'string' },
+      },
+      required: ['email', 'name', 'appleId'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Apple login successful.', type: AuthResponseDto })
+  async appleLogin(@Body() body: { email: string; name: string; appleId: string; role?: any }) {
+    return this.authService.appleLogin(body);
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })

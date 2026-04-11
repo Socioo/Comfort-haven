@@ -137,6 +137,40 @@ export class AuthService {
     };
   }
 
+  async appleLogin(appleUser: {
+    email: string;
+    name: string;
+    appleId: string;
+    role?: UserRole;
+  }) {
+    let user = await this.usersRepository.findOne({
+      where: [{ email: appleUser.email }, { appleId: appleUser.appleId }],
+    });
+
+    if (!user) {
+      user = this.usersRepository.create({
+        email: appleUser.email,
+        name: appleUser.name,
+        appleId: appleUser.appleId,
+        isVerified: true,
+        role: appleUser.role || UserRole.USER,
+      });
+      await this.usersRepository.save(user);
+    } else if (!user.appleId) {
+      user.appleId = appleUser.appleId;
+      await this.usersRepository.save(user);
+    }
+
+    const tokens = await this.getTokens(user);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: this.toUserDto(user),
+    };
+  }
+
   async logout(userId: string) {
     return this.usersRepository.update(userId, { hashedRefreshToken: null as any });
   }

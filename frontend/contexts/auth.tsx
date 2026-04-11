@@ -58,6 +58,7 @@ interface AuthContextType {
     role: UserRole,
   ) => Promise<void>;
   signInWithGoogle: (role?: UserRole) => Promise<void>;
+  signInWithApple: (role?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -234,6 +235,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [promptAsync]);
 
+  const signInWithApple = useCallback(async (role?: UserRole) => {
+    const { Platform } = require("react-native");
+    if (Platform.OS !== 'ios') {
+      alert("Apple Sign-In is only available on iOS devices.");
+      return;
+    }
+
+    setIsSigningIn(true);
+    try {
+      const { OAuthService } = require("../services/oauth");
+      const result = await OAuthService.signInWithApple();
+      
+      if (result.success) {
+        const userData = result.data.user;
+        const { accessToken, refreshToken } = result.data;
+
+        // Normalize and save
+        const at = accessToken || result.data.access_token;
+        const rt = refreshToken || result.data.refresh_token;
+
+        await AsyncStorage.setItem("access_token", at);
+        await AsyncStorage.setItem("refresh_token", rt);
+        await AsyncStorage.setItem("user", JSON.stringify(userData));
+
+        setToken(at);
+        setUser(userData);
+
+        // Check if profile is incomplete (missing phone number)
+        if (!userData.phone) {
+          const { router } = require("expo-router");
+          router.replace("/auth/complete-profile");
+        }
+      }
+    } catch (error: any) {
+      if (error.message !== 'Apple Sign-In was cancelled') {
+        console.error("Apple sign in error:", error);
+        throw error;
+      }
+    } finally {
+      setIsSigningIn(false);
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     // 1. Clear state IMMEDIATELY for instant UI response
     setToken(null);
@@ -300,6 +344,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     signIn,
     signUp,
     signInWithGoogle,
+    signInWithApple,
     signOut,
     refreshUser,
     updateUser,

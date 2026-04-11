@@ -24,7 +24,7 @@ async function bootstrap() {
 
   // Configure CORS
   const corsOrigin = process.env.CORS_ORIGIN 
-    ? process.env.CORS_ORIGIN.split(',') 
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) 
     : true; // fallback to true if not defined to prevent breaking dev 
 
   app.enableCors({
