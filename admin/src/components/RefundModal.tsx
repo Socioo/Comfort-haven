@@ -103,7 +103,7 @@ const RefundModal = ({ refundId, onClose, onUpdate }: RefundModalProps) => {
       <div className={pageStyles.modalOverlay} onClick={onClose} style={{ zIndex: 1050 }}>
         <div className={pageStyles.modal} onClick={(e) => e.stopPropagation()} style={{ borderRadius: '16px' }}>
           <div className={pageStyles.modalHeader}>
-            <h2 style={{ color: 'red' }}>{error || "Refund not found"}</h2>
+            <h2 style={{ color: 'var(--error-color)', fontWeight: '600' }}>{error || "Refund not found"}</h2>
             <button className={pageStyles.closeBtn} onClick={onClose}>
               <X size={20} />
             </button>
@@ -133,7 +133,7 @@ const RefundModal = ({ refundId, onClose, onUpdate }: RefundModalProps) => {
           overflowY: 'auto', 
           padding: '0', 
           borderRadius: '16px', 
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' 
+          boxShadow: 'var(--shadow-lg)' 
         }} 
         onClick={(e) => e.stopPropagation()}
       >

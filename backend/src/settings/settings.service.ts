@@ -46,10 +46,53 @@ export class SettingsService implements OnApplicationBootstrap {
     for (const defaults of DEFAULT_SETTINGS) {
       const existing = await this.settingsRepository.findOne({ where: { key: defaults.key } });
       if (!existing) {
-        const setting = this.settingsRepository.create(defaults);
+        const setting = this.settingsRepository.create({
+          ...defaults,
+          type: (defaults as any).type || 'string'
+        });
         await this.settingsRepository.save(setting);
       }
     }
+  }
+
+  async get(key: string, defaultValue: any = null) {
+    const setting = await this.settingsRepository.findOne({ where: { key } });
+    if (!setting) return defaultValue;
+
+    switch (setting.type) {
+      case 'number': return Number(setting.value);
+      case 'boolean': return setting.value === 'true' || setting.value === '1';
+      case 'json': {
+        try {
+          return JSON.parse(setting.value);
+        } catch {
+          return setting.value;
+        }
+      }
+      default: return setting.value;
+    }
+  }
+
+  async set(key: string, value: any, type: string = 'string', group: string = 'app') {
+    let stringValue = String(value);
+    if (type === 'json' || typeof value === 'object') {
+      stringValue = JSON.stringify(value);
+      type = 'json';
+    } else if (typeof value === 'boolean') {
+      type = 'boolean';
+    } else if (typeof value === 'number') {
+      type = 'number';
+    }
+
+    let setting = await this.settingsRepository.findOne({ where: { key } });
+    if (setting) {
+      setting.value = stringValue;
+      setting.type = type;
+      if (group) setting.group = group;
+    } else {
+      setting = this.settingsRepository.create({ key, value: stringValue, type, group });
+    }
+    return this.settingsRepository.save(setting);
   }
 
   async findAll() {

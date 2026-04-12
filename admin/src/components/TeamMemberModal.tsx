@@ -145,19 +145,25 @@ const TeamMemberModal = ({
               </button>
               <button 
                   onClick={() => { onClose(); onResetPassword(member); }}
-                  style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }}
+                  style={{ background: 'var(--warning-color)', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'filter 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
               >
                   <Key size={16} /> Reset Password
               </button>
               <button 
                   onClick={() => onToggleSuspend(member)}
-                  style={{ background: member.status === 'suspended' ? '#10b981' : '#ef4444', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }}
+                  style={{ background: member.status === 'suspended' ? 'var(--success-color)' : 'var(--error-color)', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'filter 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
               >
                   <Ban size={16} /> {member.status === 'suspended' ? 'Restore Account' : 'Suspend Account'}
               </button>
               <button 
                   onClick={() => { onClose(); onDelete(member); }}
-                  style={{ background: '#7f1d1d', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }}
+                  style={{ background: 'var(--error-color)', border: '1px solid rgba(0,0,0,0.1)', color: 'white', padding: '12px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'filter 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
               >
                   <Trash2 size={16} /> Remove Member
               </button>

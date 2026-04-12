@@ -48,8 +48,8 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
           borderRadius: '20px', 
           padding: '0',
           overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          background: 'var(--bg-card)'
+          boxShadow: 'var(--shadow-lg)',
+          background: 'var(--card-bg)'
         }} 
         onClick={(e) => e.stopPropagation()}
       >
@@ -59,17 +59,17 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
               <Key size={24} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-color)' }}>Reset Password</h2>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-main)' }}>Reset Password</h2>
               <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-light)' }}>For {member.name}</p>
             </div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} style={{ background: 'var(--bg-light)' }}>
+          <button className={styles.closeBtn} onClick={onClose} style={{ background: 'var(--bg-color)' }}>
             <X size={20} />
           </button>
         </div>
 
         <div style={{ padding: '32px' }}>
-          <div style={{ background: 'var(--bg-light)', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)', display: 'flex', gap: '12px' }}>
+          <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)', display: 'flex', gap: '12px' }}>
             <Shield size={20} color="var(--text-light)" style={{ flexShrink: 0, marginTop: '2px' }} />
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-light)', lineHeight: '1.5' }}>
               Resetting this password will require the user to change it immediately upon their next login for security reasons.
@@ -78,7 +78,7 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
 
           <form onSubmit={handleSubmit}>
             <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--text-color)' }}>New Password</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: 'var(--text-main)' }}>New Password</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -91,8 +91,8 @@ const ResetPasswordModal = ({ member, onClose, onSuccess }: ResetPasswordModalPr
                     padding: '12px 16px',
                     borderRadius: '10px',
                     border: '1px solid var(--border-color)',
-                    background: 'var(--bg-input)',
-                    color: 'var(--text-color)',
+                    background: 'var(--input-bg)',
+                    color: 'var(--text-main)',
                     fontSize: '1rem',
                     transition: 'border-color 0.2s',
                     outline: 'none'

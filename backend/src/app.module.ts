@@ -16,7 +16,7 @@ import { MessagesModule } from './messages/messages.module';
 import { MailModule } from './mail/mail.module';
 import { SupportModule } from './support/support.module';
 import { FinanceModule } from './finance/finance.module';
-import { ConfigurationModule } from './config/config.module';
+
 import { NotificationsModule } from './notifications/notifications.module';
 import { SettingsModule } from './settings/settings.module';
 import { FaqsModule } from './faqs/faqs.module';
@@ -60,7 +60,7 @@ import typeormConfig from './config/typeorm.config';
     MailModule,
     SupportModule,
     FinanceModule,
-    ConfigurationModule,
+
     NotificationsModule,
     SettingsModule,
     FaqsModule,

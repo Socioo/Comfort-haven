@@ -63,15 +63,17 @@ const ChangePasswordModal = () => {
           borderRadius: '24px', 
           padding: '0',
           overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          boxShadow: 'var(--shadow-lg)',
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border-color)'
         }}
       >
         <div 
           className={styles.modalHeader} 
           style={{ 
             padding: '32px 32px 24px', 
-            borderBottom: '1px solid #f1f5f9',
-            background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)'
+            borderBottom: '1px solid var(--border-color)',
+            background: 'var(--card-bg)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -87,10 +89,10 @@ const ChangePasswordModal = () => {
               <Key size={24} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.025em' }}>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.025em' }}>
                 Secure Your Account
               </h2>
-              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#64748b', fontWeight: '500' }}>
+              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-light)', fontWeight: '500' }}>
                 Password change required
               </p>
             </div>
@@ -99,20 +101,20 @@ const ChangePasswordModal = () => {
 
         <div style={{ padding: '32px' }}>
           <div style={{ 
-            background: '#eff6ff', 
+            background: 'var(--info-bg, rgba(47, 149, 220, 0.1))', 
             padding: '16px 20px', 
             borderRadius: '16px', 
             marginBottom: '32px', 
-            border: '1px solid #dbeafe',
+            border: '1px solid var(--primary-color)',
           }}>
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e40af', lineHeight: '1.6', fontWeight: '500' }}>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.6', fontWeight: '500' }}>
               For your security, you must update your temporary password before you can access the dashboard.
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
                 Current Password
               </label>
               <div style={{ position: 'relative' }}>
@@ -131,7 +133,8 @@ const ChangePasswordModal = () => {
                     fontSize: '1rem',
                     transition: 'all 0.2s',
                     outline: 'none',
-                    background: '#fcfdfe'
+                    background: 'var(--input-bg)',
+                    color: 'var(--text-main)'
                   }}
                 />
                 <button
@@ -155,7 +158,7 @@ const ChangePasswordModal = () => {
             </div>
 
             <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
                 New Password
               </label>
               <div style={{ position: 'relative' }}>
@@ -174,7 +177,8 @@ const ChangePasswordModal = () => {
                     fontSize: '1rem',
                     transition: 'all 0.2s',
                     outline: 'none',
-                    background: '#fcfdfe'
+                    background: 'var(--input-bg)',
+                    color: 'var(--text-main)'
                   }}
                 />
                 <button
@@ -198,7 +202,7 @@ const ChangePasswordModal = () => {
             </div>
 
             <div className={styles.formGroup} style={{ marginBottom: '32px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
                 Confirm New Password
               </label>
               <input
@@ -216,21 +220,22 @@ const ChangePasswordModal = () => {
                   fontSize: '1rem',
                   transition: 'all 0.2s',
                   outline: 'none',
-                  background: '#fcfdfe'
+                  background: 'var(--input-bg)',
+                  color: 'var(--text-main)'
                 }}
               />
             </div>
 
             {error && (
               <div style={{ 
-                color: '#ef4444', 
+                color: 'var(--error-color)', 
                 fontSize: '0.875rem', 
                 marginBottom: '24px', 
-                background: '#fee2e2', 
+                background: 'var(--error-bg)', 
                 padding: '12px 16px', 
                 borderRadius: '12px', 
                 textAlign: 'center',
-                border: '1px solid #fecaca',
+                border: '1px solid var(--error-color)',
                 fontWeight: '500'
               }}>
                 {error}

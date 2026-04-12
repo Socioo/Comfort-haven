@@ -36,7 +36,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     fontSize: `${size * 0.4}px`,
     fontWeight: 'bold',
     color: 'white',
-    backgroundColor: '#4a90e2',
+    backgroundColor: 'var(--primary-color)',
     overflow: 'hidden',
     cursor: onClick ? 'pointer' : 'default',
     flexShrink: 0,
