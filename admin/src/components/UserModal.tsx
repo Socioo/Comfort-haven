@@ -259,7 +259,7 @@ const UserModal = ({ userId, onClose, onUpdate }: UserModalProps) => {
                               onClose();
                               navigate(`/properties/${property.id}`);
                           }}>
-                              <div style={{ width: '100%', height: '140px', background: '#f8fafc' }}>
+                              <div style={{ width: '100%', height: '140px', background: 'var(--bg-color)' }}>
                                   {property.images && property.images.length > 0 ? (
                                       <img 
                                         src={getImageUrl(property.images[0])} 
@@ -272,7 +272,7 @@ const UserModal = ({ userId, onClose, onUpdate }: UserModalProps) => {
                                         }}
                                       />
                                   ) : (
-                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>No Image</div>
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-light)' }}>No Image</div>
                                   )}
                               </div>
                               <div style={{ padding: '16px' }}>
@@ -284,7 +284,7 @@ const UserModal = ({ userId, onClose, onUpdate }: UserModalProps) => {
                       ))}
                   </div>
                 ) : (
-                   <p style={{ color: '#64748b', margin: 0, fontSize: '0.9rem' }}>This host has no properties yet.</p>
+                   <p style={{ color: 'var(--text-light)', margin: 0, fontSize: '0.9rem' }}>This host has no properties yet.</p>
                 )}
               </div>
             )}
@@ -296,27 +296,27 @@ const UserModal = ({ userId, onClose, onUpdate }: UserModalProps) => {
               {user.role === 'host' && !user.isVerified && (
                   <button 
                       onClick={handleVerify}
-                      style={{ background: '#10b981', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', flex: 1, minWidth: '160px', transition: 'background 0.2s' }}
-                      onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
-                      onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+                      style={{ background: 'var(--success-color)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', flex: 1, minWidth: '160px', transition: 'filter 0.2s' }}
+                      onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+                      onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
                   >
                       Verify Host
                   </button>
               )}
               <button 
                   onClick={handleToggleSuspend}
-                  style={{ background: user.status === 'suspended' ? '#3b82f6' : '#f59e0b', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', flex: 1, minWidth: '160px', transition: 'background 0.2s' }}
+                  style={{ background: user.status === 'suspended' ? 'var(--info-color)' : 'var(--warning-color)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', flex: 1, minWidth: '160px', transition: 'filter 0.2s' }}
                   disabled={user.status === 'banned'}
-                  onMouseOver={(e) => e.currentTarget.style.background = user.status === 'suspended' ? '#2563eb' : '#d97706'}
-                  onMouseOut={(e) => e.currentTarget.style.background = user.status === 'suspended' ? '#3b82f6' : '#f59e0b'}
+                  onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
               >
                   {user.status === 'suspended' ? 'Restore account' : 'Suspend account'}
               </button>
               <button 
                   onClick={handleToggleBan}
-                  style={{ background: user.status === 'banned' ? '#3b82f6' : '#ef4444', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', flex: 1, minWidth: '160px', transition: 'background 0.2s' }}
-                  onMouseOver={(e) => e.currentTarget.style.background = user.status === 'banned' ? '#2563eb' : '#dc2626'}
-                  onMouseOut={(e) => e.currentTarget.style.background = user.status === 'banned' ? '#3b82f6' : '#ef4444'}
+                  style={{ background: user.status === 'banned' ? 'var(--info-color)' : 'var(--error-color)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', flex: 1, minWidth: '160px', transition: 'filter 0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
               >
                   {user.status === 'banned' ? 'Unban account' : 'Ban account'}
               </button>

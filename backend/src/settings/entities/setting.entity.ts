@@ -14,6 +14,9 @@ export class Setting {
   @Column({ nullable: true })
   group: string;
 
+  @Column({ default: 'string' })
+  type: string; // 'string', 'number', 'boolean', 'json'
+
   @CreateDateColumn()
   createdAt: Date;
 

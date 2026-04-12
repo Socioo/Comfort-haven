@@ -274,7 +274,7 @@ const SupportModal = ({ issue, onClose, onUpdate }: SupportModalProps) => {
           overflowY: 'hidden', 
           padding: '0', 
           borderRadius: '20px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          boxShadow: 'var(--shadow-lg)',
           display: 'flex',
           flexDirection: 'column',
         }} 

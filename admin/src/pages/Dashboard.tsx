@@ -69,11 +69,11 @@ const Dashboard = () => {
     if (error) return <div style={{ color: "var(--error-color)", padding: 40, textAlign: 'center', fontWeight: '500' }}>{error}</div>;
 
     const summaryCards = [
-        { label: "Total Guests", value: stats.summary.totalGuests, icon: Users, color: "var(--primary-color)", bg: "rgba(47, 149, 220, 0.15)" },
-        { label: "Total Hosts", value: stats.summary.totalHosts, icon: UserCheck, color: "var(--success-color)", bg: "rgba(76, 175, 80, 0.15)" },
-        { label: "Active Properties", value: stats.summary.activeProperties, icon: Home, color: "var(--warning-color)", bg: "rgba(255, 160, 0, 0.15)" },
-        { label: "Active Guests", value: stats.summary.activeGuests, icon: TrendingUp, color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.15)" },
-        { label: "Active Hosts", value: stats.summary.activeHosts, icon: UserCheck, color: "#BF5AF2", bg: "rgba(191, 90, 242, 0.15)" },
+        { label: "Total Guests", value: stats.summary.totalGuests, icon: Users, color: "var(--primary-color)", bg: "var(--muted-bg)" },
+        { label: "Total Hosts", value: stats.summary.totalHosts, icon: UserCheck, color: "var(--success-color)", bg: "var(--success-bg)" },
+        { label: "Active Properties", value: stats.summary.activeProperties, icon: Home, color: "var(--warning-color)", bg: "var(--warning-bg)" },
+        { label: "Active Guests", value: stats.summary.activeGuests, icon: TrendingUp, color: "var(--info-color)", bg: "var(--muted-bg)" },
+        { label: "Active Hosts", value: stats.summary.activeHosts, icon: UserCheck, color: "var(--primary-color)", bg: "var(--muted-bg)" },
     ];
 
     const handleAcceptUser = async (id: string, e: React.MouseEvent) => {
@@ -154,11 +154,11 @@ const Dashboard = () => {
                                 <AreaChart data={stats.activityData}>
                                     <defs>
                                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor={theme === 'dark' ? 'var(--primary-color)' : '#ffffff'} stopOpacity={theme === 'dark' ? 0.3 : 0.4}/>
-                                            <stop offset="95%" stopColor={theme === 'dark' ? 'var(--primary-color)' : '#ffffff'} stopOpacity={0}/>
+                                            <stop offset="5%" stopColor={theme === 'dark' ? 'var(--primary-color)' : 'var(--white)'} stopOpacity={theme === 'dark' ? 0.3 : 0.4}/>
+                                            <stop offset="95%" stopColor={theme === 'dark' ? 'var(--primary-color)' : 'var(--white)'} stopOpacity={0}/>
                                         </linearGradient>
                                     </defs>
-                                    <Area type="monotone" dataKey="properties" stroke="#ffffff" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
+                                    <Area type="monotone" dataKey="properties" stroke="var(--white)" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>

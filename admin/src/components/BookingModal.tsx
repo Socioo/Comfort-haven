@@ -87,7 +87,7 @@ const BookingModal = ({ bookingId, onClose }: BookingModalProps) => {
       <div className={pageStyles.modalOverlay} onClick={onClose} style={{ zIndex: 1050 }}>
         <div className={pageStyles.modal} onClick={(e) => e.stopPropagation()} style={{ borderRadius: '16px' }}>
           <div className={pageStyles.modalHeader}>
-            <h2 style={{ color: 'red' }}>{error || "Booking not found"}</h2>
+            <h2 style={{ color: 'var(--error-color)', fontWeight: '600' }}>{error || "Booking not found"}</h2>
             <button className={pageStyles.closeBtn} onClick={onClose}>
               <X size={20} />
             </button>
@@ -115,7 +115,7 @@ const BookingModal = ({ bookingId, onClose }: BookingModalProps) => {
           overflowY: 'auto', 
           padding: '0', 
           borderRadius: '16px', 
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' 
+          boxShadow: 'var(--shadow-lg)' 
         }} 
         onClick={(e) => e.stopPropagation()}
       >
@@ -215,8 +215,8 @@ const BookingModal = ({ bookingId, onClose }: BookingModalProps) => {
             {/* Host & Property Info */}
             <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={20} color="#d97706" />
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--warning-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <User size={20} color="var(--warning-color)" />
                 </div>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-main)' }}>Host & Property</h3>
               </div>
