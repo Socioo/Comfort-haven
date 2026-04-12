@@ -16,6 +16,7 @@ interface Guest {
   profileImage?: string;
   lastActiveAt?: string;
   createdAt: string;
+  bookings?: any[];
 }
 
 const formatDate = (dateString?: string) => {
@@ -70,8 +71,7 @@ const Guests = () => {
     const total = guests.length;
     const active = guests.filter(g => g.status === 'active').length;
     const inactive = guests.filter(g => g.status !== 'active').length;
-    // Removed mock logic that forced a minimum of 1 booking
-    const totalBookings = 0; // Real booking counts are handled in the Bookings tab
+    const totalBookings = guests.reduce((acc, guest) => acc + (guest.bookings?.length || 0), 0);
     return { total, active, inactive, totalBookings };
   }, [guests]);
 
