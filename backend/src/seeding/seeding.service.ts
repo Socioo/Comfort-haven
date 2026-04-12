@@ -33,9 +33,9 @@ export class SeedingService implements OnApplicationBootstrap {
 
     async onApplicationBootstrap() {
         // Automatically ensure default admins exist on startup
-        // We pass false for forceUpdate to prevent background processes 
-        // from accidentally overwriting passwords if they are using stale env vars.
-        await this.createDefaultAdmins(false, false);
+        // We set forceUpdatePassword to true to ensure that passwords are correctly 
+        // synchronized with the current environment variables (critical for Railway fixes).
+        await this.createDefaultAdmins(false, true);
     }
 
     async seed() {
