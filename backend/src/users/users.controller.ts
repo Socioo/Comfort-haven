@@ -50,13 +50,19 @@ export class UsersController {
     async updateProfile(
         @Req() req: any,
         @Param('id') id: string, 
-        @Body() updateData: { name?: string; email?: string; phone?: string }
+        @Body() updateData: { name?: string; email?: string; phone?: string; role?: UserRole }
     ) {
         // Only allow if it's their own profile or they are admin
         if (req.user.role !== UserRole.SUPER_ADMIN && req.user.id !== id) {
             throw new UnauthorizedException('You can only update your own profile');
         }
-        return this.usersService.update(id, updateData);
+
+        // If not a Super Admin, don't allow role changes through this endpoint
+        if (req.user.role !== UserRole.SUPER_ADMIN && updateData.role) {
+            delete updateData.role;
+        }
+
+        return this.usersService.update(id, updateData as any);
     }
 
     @Patch(':id/notifications')
