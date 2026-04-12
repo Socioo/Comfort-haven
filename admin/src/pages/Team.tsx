@@ -133,9 +133,11 @@ const Team = () => {
         : { ...formData, isInvitation: true };
 
       if (editingMember) {
-        await api.patch(`/users/${editingMember.id}/profile`, submissionData);
+        // Strip out 'message' as it's not a field on the User entity
+        const { message, ...updatePayload } = formData;
+        await api.patch(`/users/${editingMember.id}/profile`, updatePayload);
       } else {
-        await api.post("/users", submissionData);
+        await api.post("/users", { ...formData, isInvitation: true });
       }
       resetForm();
       fetchMembers();
