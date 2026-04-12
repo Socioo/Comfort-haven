@@ -32,10 +32,12 @@ export class SeedingService implements OnApplicationBootstrap {
     ) { }
 
     async onApplicationBootstrap() {
+        this.logger.log('--- Post-Deployment Bootstrap Check ---');
         // Automatically ensure default admins exist on startup
         // We set forceUpdatePassword to true to ensure that passwords are correctly 
         // synchronized with the current environment variables (critical for Railway fixes).
         await this.createDefaultAdmins(false, true);
+        this.logger.log('--- Bootstrap Check Complete ---');
     }
 
     async seed() {
