@@ -70,8 +70,8 @@ const Guests = () => {
     const total = guests.length;
     const active = guests.filter(g => g.status === 'active').length;
     const inactive = guests.filter(g => g.status !== 'active').length;
-    // Mock metric per screenshot
-    const totalBookings = Math.max(Math.floor(total * 1.5), 1); 
+    // Removed mock logic that forced a minimum of 1 booking
+    const totalBookings = 0; // Real booking counts are handled in the Bookings tab
     return { total, active, inactive, totalBookings };
   }, [guests]);
 
