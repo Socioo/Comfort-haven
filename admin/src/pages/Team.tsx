@@ -128,10 +128,6 @@ const Team = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const submissionData = editingMember
-        ? formData
-        : { ...formData, isInvitation: true };
-
       if (editingMember) {
         // Strip out 'message' as it's not a field on the User entity
         const { message, ...updatePayload } = formData;
