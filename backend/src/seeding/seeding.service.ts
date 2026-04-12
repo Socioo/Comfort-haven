@@ -33,10 +33,9 @@ export class SeedingService implements OnApplicationBootstrap {
 
     async onApplicationBootstrap() {
         // Automatically ensure default admins exist on startup
-        // In clean mode, we might want this to stay restricted, 
-        // but for safety, we keep the default bootstrap behavior as is
-        // unless explicitly requested to be clean.
-        await this.createDefaultAdmins();
+        // We pass false for forceUpdate to prevent background processes 
+        // from accidentally overwriting passwords if they are using stale env vars.
+        await this.createDefaultAdmins(false, false);
     }
 
     async seed() {
@@ -44,19 +43,19 @@ export class SeedingService implements OnApplicationBootstrap {
 
         await this.clearDatabase(true); // Pass true to only keep the Super Admin
         
-        // Only seed the Super Admin as requested
-        await this.createDefaultAdmins(true); 
+        // We pass forceUpdate = true to ensure the password in .env is applied
+        await this.createDefaultAdmins(true, true); 
 
         this.logger.log('Database reset to clean state (Super Admin only).');
     }
 
-    async createDefaultAdmins(onlySuperAdmin: boolean = false) {
-        this.logger.log(`Synchronizing administrative accounts (Only Super Admin: ${onlySuperAdmin})...`);
+    async createDefaultAdmins(onlySuperAdmin: boolean = false, forceUpdatePassword: boolean = false) {
+        this.logger.log(`Synchronizing administrative accounts (Only Super Admin: ${onlySuperAdmin}, Force Update: ${forceUpdatePassword})...`);
         
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@comfort-haven.com';
         const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'Admin@123';
         
-        const password = await bcrypt.hash('Admin@123', 10);
+        const defaultPassword = await bcrypt.hash('Admin@123', 10);
         const superPassword = await bcrypt.hash(superAdminPassword, 10);
         
         let adminAccounts = [
@@ -97,19 +96,27 @@ export class SeedingService implements OnApplicationBootstrap {
                 this.logger.log(`Creating ${account.role} account: ${account.email}`);
                 const user = this.usersRepository.create({
                     ...account,
-                    password: account.specialPassword || password,
+                    password: account.specialPassword || defaultPassword,
                     isVerified: true,
                     status: 'active',
                 });
                 await this.usersRepository.save(user);
             } else {
-                this.logger.log(`Synchronizing credentials for ${account.email}`);
-                await this.usersRepository.update(existing.id, { 
-                    role: account.role,
-                    password: account.specialPassword || password,
-                    isVerified: true,
-                    status: 'active'
-                });
+                // If the user exists, we only update credentials if explicitly forced
+                // (e.g. during a manual seed command)
+                if (forceUpdatePassword) {
+                    this.logger.log(`Updating credentials for ${account.email}`);
+                    await this.usersRepository.update(existing.id, { 
+                        role: account.role,
+                        password: account.specialPassword || defaultPassword,
+                        isVerified: true,
+                        status: 'active'
+                    });
+                } else {
+                    this.logger.log(`Skipping password update for ${account.email} (exists and no force flag)`);
+                    // Still sync the role just in case
+                    await this.usersRepository.update(existing.id, { role: account.role });
+                }
             }
         }
 
