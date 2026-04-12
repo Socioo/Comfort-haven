@@ -33,29 +33,25 @@ export class SeedingService implements OnApplicationBootstrap {
 
     async onApplicationBootstrap() {
         // Automatically ensure default admins exist on startup
+        // In clean mode, we might want this to stay restricted, 
+        // but for safety, we keep the default bootstrap behavior as is
+        // unless explicitly requested to be clean.
         await this.createDefaultAdmins();
     }
 
     async seed() {
-        this.logger.log('Starting full database reset and seeding...');
+        this.logger.log('Starting clear-slate reset (Super Admin only)...');
 
-        await this.clearDatabase();
+        await this.clearDatabase(true); // Pass true to only keep the Super Admin
         
-        const password = await bcrypt.hash('password123', 10);
-        
-        const users = await this.seedUsers(password);
-        const properties = await this.seedProperties(users);
-        const bookings = await this.seedBookings(users, properties);
-        await this.seedPayouts(bookings);
-        await this.seedRefunds(bookings);
-        await this.seedFavorites(users, properties);
-        await this.seedFaqs();
+        // Only seed the Super Admin as requested
+        await this.createDefaultAdmins(true); 
 
-        this.logger.log('Seeding completed successfully!');
+        this.logger.log('Database reset to clean state (Super Admin only).');
     }
 
-    async createDefaultAdmins() {
-        this.logger.log('Synchronizing default administrative accounts...');
+    async createDefaultAdmins(onlySuperAdmin: boolean = false) {
+        this.logger.log(`Synchronizing administrative accounts (Only Super Admin: ${onlySuperAdmin})...`);
         
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@comfort-haven.com';
         const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'Admin@123';
@@ -63,7 +59,7 @@ export class SeedingService implements OnApplicationBootstrap {
         const password = await bcrypt.hash('Admin@123', 10);
         const superPassword = await bcrypt.hash(superAdminPassword, 10);
         
-        const adminAccounts = [
+        let adminAccounts = [
             {
                 email: superAdminEmail,
                 name: 'Super Admin',
@@ -90,6 +86,10 @@ export class SeedingService implements OnApplicationBootstrap {
                 profileImage: 'https://i.pravatar.cc/150?u=support',
             },
         ];
+
+        if (onlySuperAdmin) {
+            adminAccounts = [adminAccounts[0]];
+        }
 
         for (const account of adminAccounts) {
             const existing = await this.usersRepository.findOne({ where: { email: account.email } });
@@ -133,8 +133,8 @@ export class SeedingService implements OnApplicationBootstrap {
         }
     }
 
-    private async clearDatabase() {
-        this.logger.log('Clearing existing data with Super Admin preservation...');
+    private async clearDatabase(onlySuperAdmin: boolean = false) {
+        this.logger.log(`Clearing existing data (Preserving Super Admin: ${onlySuperAdmin})...`);
         const dependentTables = ['faqs', 'favorites', 'refunds', 'payouts', 'bookings', 'reviews', 'messages', 'properties'];
         
         // 1. Truncate all dependent tables first
@@ -142,31 +142,40 @@ export class SeedingService implements OnApplicationBootstrap {
             await this.asyncClearTable(table);
         }
 
-        // 2. Clear users EXCEPT for those with administrative roles
-        // We also specifically protect the email defined in the environment variable
+        // 2. Clear users
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@comfort-haven.com';
         
         try {
-            const adminRoles = [UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.FINANCE, UserRole.SUPPORT, UserRole.ADMIN];
-            const deleteQuery = `
-                DELETE FROM "users" 
-                WHERE "role" NOT IN (${adminRoles.map(r => `'${r}'`).join(',')})
-                AND "email" != '${superAdminEmail}'
-            `;
-            await this.usersRepository.query(deleteQuery);
-            this.logger.log('Non-administrative users cleared.');
+            if (onlySuperAdmin) {
+                // Remove ALL users except the specific Super Admin email
+                const deleteQuery = `DELETE FROM "users" WHERE "email" != '${superAdminEmail}'`;
+                await this.usersRepository.query(deleteQuery);
+                this.logger.log('All users except the primary Super Admin have been cleared.');
+            } else {
+                // Keep all administrative roles
+                const adminRoles = [UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.FINANCE, UserRole.SUPPORT, UserRole.ADMIN];
+                const deleteQuery = `
+                    DELETE FROM "users" 
+                    WHERE "role" NOT IN (${adminRoles.map(r => `'${r}'`).join(',')})
+                    AND "email" != '${superAdminEmail}'
+                `;
+                await this.usersRepository.query(deleteQuery);
+                this.logger.log('Non-administrative users cleared.');
+            }
         } catch (error) {
             this.logger.error(`Failed to selectively clear users: ${error.message}`);
-            // Fallback to full truncate if surgery fails (safety first)
             await this.asyncClearTable('users');
         }
         
         this.logger.log('Database reset complete.');
     }
 
-    private async seedUsers(password: string): Promise<User[]> {
+    private async seedUsers(mockPassword: string): Promise<User[]> {
         this.logger.log('Seeding fresh users (2 Admins, 20 Guests, 20 Hosts)...');
         const usersData: Partial<User>[] = [];
+
+        const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'Password123';
+        const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
 
         // 1. Ensure Super Admin and Manager exist (using update or create logic)
         const admins = [
@@ -174,12 +183,14 @@ export class SeedingService implements OnApplicationBootstrap {
                 email: process.env.SUPER_ADMIN_EMAIL || 'superadmin@comfort-haven.com',
                 name: 'Super Admin',
                 role: UserRole.SUPER_ADMIN,
+                password: hashedPassword,
                 profileImage: 'https://images.unsplash.com/photo-1519085185750-74071747e99c?auto=format&fit=crop&w=256&q=80',
             },
             {
                 email: 'manager@comfort-haven.com',
                 name: 'Comfort Manager',
                 role: UserRole.MANAGER,
+                password: mockPassword,
                 profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80',
             }
         ];
@@ -189,7 +200,6 @@ export class SeedingService implements OnApplicationBootstrap {
             if (!existing) {
                 const newUser = this.usersRepository.create({
                     ...admin,
-                    password,
                     isVerified: true,
                     status: 'active',
                 });
@@ -198,7 +208,7 @@ export class SeedingService implements OnApplicationBootstrap {
                 // Just update the role and password to ensure it's correct
                 await this.usersRepository.update(existing.id, { 
                     role: admin.role,
-                    password 
+                    password: admin.password
                 });
             }
         }
@@ -208,7 +218,7 @@ export class SeedingService implements OnApplicationBootstrap {
         for (let i = 1; i <= 20; i++) {
             usersData.push({
                 email: `guest${i}@example.com`,
-                password,
+                password: mockPassword,
                 name: `Guest ${i}`,
                 role: UserRole.USER,
                 isVerified: true,
@@ -221,7 +231,7 @@ export class SeedingService implements OnApplicationBootstrap {
         for (let i = 1; i <= 20; i++) {
             usersData.push({
                 email: `host${i}@example.com`,
-                password,
+                password: mockPassword,
                 name: `Host ${i}`,
                 role: UserRole.HOST,
                 isVerified: true,
