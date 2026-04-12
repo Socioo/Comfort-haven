@@ -44,9 +44,19 @@ export class FinanceController {
     return this.financeService.findAllPayouts();
   }
 
+  @Get('payouts/:id')
+  findOnePayout(@Param('id') id: string) {
+    return this.financeService.findOnePayout(id);
+  }
+
   @Get('refunds')
   findAllRefunds() {
     return this.financeService.findAllRefunds();
+  }
+
+  @Get('refunds/:id')
+  findOneRefund(@Param('id') id: string) {
+    return this.financeService.findOneRefund(id);
   }
 
   @Post('refunds')

@@ -4,9 +4,15 @@ import { PropertiesService } from '../properties/properties.service';
 import { BookingsService } from '../bookings/bookings.service';
 import { ApiTags } from '@nestjs/swagger';
 import { UserRole } from '../common/constants';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('stats')
 @Controller('stats')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.FINANCE)
 export class StatsController {
     constructor(
         private readonly usersService: UsersService,

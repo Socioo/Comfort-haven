@@ -28,96 +28,14 @@ const Payouts = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
 
-  const samplePayouts: Payout[] = [
-    {
-      id: "PAY-88229201",
-      amount: 45000,
-      status: "Paid",
-      createdAt: new Date().toISOString(),
-      method: "Bank Transfer",
-      booking: { property: { title: "Luxury Villa", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229202",
-      amount: 12500,
-      status: "Pending",
-      createdAt: new Date().toISOString(),
-      method: "Wallet",
-      booking: { property: { title: "Downtown Apartment", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229203",
-      amount: 32000,
-      status: "Processing",
-      createdAt: new Date().toISOString(),
-      method: "Bank Transfer",
-      booking: { property: { title: "Beach Front House", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229204",
-      amount: 15000,
-      status: "Paid",
-      createdAt: new Date().toISOString(),
-      method: "Bank Transfer",
-      booking: { property: { title: "Cozy Studio", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229205",
-      amount: 22500,
-      status: "Failed",
-      createdAt: new Date().toISOString(),
-      method: "Wallet",
-      booking: { property: { title: "Mountain Cabin", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229206",
-      amount: 41000,
-      status: "Paid",
-      createdAt: new Date().toISOString(),
-      method: "Bank Transfer",
-      booking: { property: { title: "Penthouse Suite", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229207",
-      amount: 18500,
-      status: "Pending",
-      createdAt: new Date().toISOString(),
-      method: "Bank Transfer",
-      booking: { property: { title: "Lakeside Cottage", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229208",
-      amount: 55000,
-      status: "Paid",
-      createdAt: new Date().toISOString(),
-      method: "Wallet",
-      booking: { property: { title: "Urban Loft", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229209",
-      amount: 27000,
-      status: "Processing",
-      createdAt: new Date().toISOString(),
-      method: "Bank Transfer",
-      booking: { property: { title: "Modern Villa", owner: { name: "Host User" } } }
-    },
-    {
-      id: "PAY-88229210",
-      amount: 12000,
-      status: "Paid",
-      createdAt: new Date().toISOString(),
-      method: "Bank Transfer",
-      booking: { property: { title: "Safari Lodge", owner: { name: "Host User" } } }
-    }
-  ];
-
   const fetchPayouts = async () => {
     try {
+      setLoading(true);
       const response = await api.get("/finance/payouts");
-      setPayouts(response.data.length > 0 ? response.data : samplePayouts);
+      setPayouts(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Failed to fetch payouts", error);
-      setPayouts(samplePayouts);
+      setPayouts([]);
     } finally {
       setLoading(false);
     }

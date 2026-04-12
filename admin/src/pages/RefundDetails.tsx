@@ -42,31 +42,7 @@ const RefundDetails = () => {
         setRefund(response.data);
       } catch (err) {
         console.error("Failed to fetch refund details", err);
-        // Fallback for demo matching screenshot exactly
-        setRefund({
-          id: id || "REF-88922",
-          amount: 15500,
-          reason: "Unsuccessful experience",
-          status: "Pending",
-          createdAt: new Date().toISOString(),
-          booking: {
-            id: "BK-99221",
-            createdAt: new Date().toISOString(),
-            guest: {
-              name: "Adam Lukot",
-              email: "adamlukat@gmail.com",
-              phoneNumber: "+234 8107775573"
-            },
-            property: {
-              title: "Serene Garden Villa",
-              owner: {
-                name: "Host User",
-                email: "host@example.com",
-                phoneNumber: "+234 9033344422"
-              }
-            }
-          }
-        });
+        setRefund(null);
       } finally {
         setLoading(false);
       }

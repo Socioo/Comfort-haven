@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Req, UnauthorizedException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -8,13 +8,16 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/constants';
+import { FileValidationPipe } from '../common/pipes/file-validation.pipe';
 
 @ApiTags('users')
 @Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
     @Get()
+    @Roles(UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.FINANCE, UserRole.SUPPORT)
     findAll(@Query('role') role?: string) {
         if (role) {
             const normalizedRole = role.toLowerCase().endsWith('s') ? role.slice(0, -1) : role;
@@ -26,24 +29,33 @@ export class UsersController {
     }
 
     @Post()
+    @Roles(UserRole.SUPER_ADMIN, UserRole.MANAGER)
     create(@Body() createUserDto: any) {
-        // In a real scenario, this would have a guard and handle password hashing
         return this.usersService.create(createUserDto);
     }
 
     @Get(':id')
+    @Roles(UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.FINANCE, UserRole.SUPPORT)
     findOne(@Param('id') id: string) {
         return this.usersService.findById(id);
     }
 
     @Patch(':id/status')
+    @Roles(UserRole.SUPER_ADMIN, UserRole.MANAGER)
     async updateStatus(@Param('id') id: string, @Body('status') status: string) {
-        // Assuming status is stored in User entity
         return this.usersService.update(id, { status } as any);
     }
 
     @Patch(':id/profile')
-    async updateProfile(@Param('id') id: string, @Body() updateData: { name?: string; email?: string; phone?: string }) {
+    async updateProfile(
+        @Req() req: any,
+        @Param('id') id: string, 
+        @Body() updateData: { name?: string; email?: string; phone?: string }
+    ) {
+        // Only allow if it's their own profile or they are admin
+        if (req.user.role !== UserRole.SUPER_ADMIN && req.user.id !== id) {
+            throw new UnauthorizedException('You can only update your own profile');
+        }
         return this.usersService.update(id, updateData);
     }
 
@@ -64,7 +76,14 @@ export class UsersController {
     }
 
     @Patch(':id/password')
-    async updatePassword(@Param('id') id: string, @Body() updateData: any) {
+    async updatePassword(
+        @Req() req: any,
+        @Param('id') id: string, 
+        @Body() updateData: any
+    ) {
+        if (req.user.id !== id) {
+            throw new UnauthorizedException('You can only update your own password');
+        }
         return this.usersService.updatePassword(id, updateData);
     }
 
@@ -78,7 +97,17 @@ export class UsersController {
             }
         })
     }))
-    async uploadProfileImage(@Param('id') id: string, @UploadedFile() file: any) {
+    async uploadProfileImage(
+        @Req() req: any,
+        @Param('id') id: string, 
+        @UploadedFile(new FileValidationPipe({
+            maxSize: 2 * 1024 * 1024, // 2MB for profile pics
+            allowedMimes: ['image/jpeg', 'image/png', 'image/webp']
+        })) file: any
+    ) {
+        if (req.user.id !== id && req.user.role !== UserRole.SUPER_ADMIN) {
+            throw new UnauthorizedException('You can only update your own profile image');
+        }
         const profileImagePath = `/uploads/users/${file.filename}`;
         return this.usersService.update(id, { profileImage: profileImagePath });
     }

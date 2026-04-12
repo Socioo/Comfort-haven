@@ -42,31 +42,7 @@ const PayoutDetails = () => {
         setPayout(response.data);
       } catch (err) {
         console.error("Failed to fetch payout details", err);
-        // Fallback for demo
-        setPayout({
-          id: id || "PAY-882292",
-          amount: 15500,
-          status: "Pending",
-          createdAt: new Date().toISOString(),
-          method: "Bank Transfer",
-          booking: {
-            id: "BK-99221",
-            createdAt: new Date().toISOString(),
-            property: {
-              title: "Serene Garden Villa",
-              owner: {
-                name: "Host User",
-                email: "host@example.com",
-                phoneNumber: "+234 9033344422"
-              }
-            },
-            guest: {
-              name: "Adam Lukot",
-              email: "adamlukat@gmail.com",
-              phoneNumber: "+234 8107775573"
-            }
-          }
-        });
+        setPayout(null);
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFiles, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFiles, UseGuards, Req, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { UserRole } from '../common/constants';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { FileValidationPipe } from '../common/pipes/file-validation.pipe';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -15,6 +17,7 @@ export class PropertiesController {
     constructor(private readonly propertiesService: PropertiesService) { }
 
     @Post('upload')
+    @UseGuards(JwtAuthGuard)
     @UseInterceptors(AnyFilesInterceptor({
         storage: diskStorage({
             destination: './uploads',
@@ -24,7 +27,12 @@ export class PropertiesController {
             },
         }),
     }))
-    uploadMedia(@UploadedFiles() files: Array<Express.Multer.File>) {
+    uploadMedia(
+        @UploadedFiles(new FileValidationPipe({
+            maxSize: 10 * 1024 * 1024, // 10MB
+            allowedMimes: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime']
+        })) files: Array<Express.Multer.File>
+    ) {
         return files.map(file => ({
             url: `/uploads/${file.filename}`,
             type: file.mimetype.startsWith('video') ? 'video' : 'image',
@@ -33,7 +41,10 @@ export class PropertiesController {
     }
 
     @Post()
-    create(@Body() createPropertyDto: CreatePropertyDto) {
+    @UseGuards(JwtAuthGuard)
+    create(@Req() req: any, @Body() createPropertyDto: CreatePropertyDto) {
+        // Automatically set the owner to the current user
+        createPropertyDto.ownerId = req.user.id;
         return this.propertiesService.create(createPropertyDto);
     }
 
@@ -53,12 +64,34 @@ export class PropertiesController {
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updatePropertyDto: UpdatePropertyDto) {
+    @UseGuards(JwtAuthGuard)
+    async update(
+        @Req() req: any,
+        @Param('id') id: string, 
+        @Body() updatePropertyDto: UpdatePropertyDto
+    ) {
+        const property = await this.propertiesService.findOne(id);
+        if (!property) throw new NotFoundException('Property not found');
+        
+        // Only owner or admin can update
+        if (property.ownerId !== req.user.id && req.user.role !== UserRole.SUPER_ADMIN) {
+            throw new UnauthorizedException('You do not own this property');
+        }
+        
         return this.propertiesService.update(id, updatePropertyDto);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string) {
+    @UseGuards(JwtAuthGuard)
+    async remove(@Req() req: any, @Param('id') id: string) {
+        const property = await this.propertiesService.findOne(id);
+        if (!property) throw new NotFoundException('Property not found');
+
+        // Only owner or admin can delete
+        if (property.ownerId !== req.user.id && req.user.role !== UserRole.SUPER_ADMIN) {
+            throw new UnauthorizedException('You do not own this property');
+        }
+
         return this.propertiesService.remove(id);
     }
 

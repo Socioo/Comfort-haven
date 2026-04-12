@@ -29,136 +29,14 @@ const Refunds = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRefundId, setSelectedRefundId] = useState<string | null>(null);
 
-  const sampleRefunds: Refund[] = [
-    {
-      id: "REF-99228102",
-      amount: 15400,
-      reason: "Booking cancellation",
-      status: "Successful",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1001",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Luxury Villa" }
-      }
-    },
-    {
-      id: "REF-99228103",
-      amount: 4500,
-      reason: "Host unavailable",
-      status: "Pending",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1002",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Beach Front House" }
-      }
-    },
-    {
-      id: "REF-99228104",
-      amount: 22000,
-      reason: "Property damage",
-      status: "Successful",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1003",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Downtown Apartment" }
-      }
-    },
-    {
-      id: "REF-99228105",
-      amount: 8000,
-      reason: "Check-in issues",
-      status: "Processing",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1004",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Cozy Studio" }
-      }
-    },
-    {
-      id: "REF-99228106",
-      amount: 12000,
-      reason: "Maintenance issue",
-      status: "Failed",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1005",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Mountain Cabin" }
-      }
-    },
-    {
-      id: "REF-99228107",
-      amount: 35000,
-      reason: "Booking collision",
-      status: "Successful",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1006",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Penthouse Suite" }
-      }
-    },
-    {
-      id: "REF-99228108",
-      amount: 5000,
-      reason: "Cleaning error",
-      status: "Pending",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1007",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Lakeside Cottage" }
-      }
-    },
-    {
-      id: "REF-99228109",
-      amount: 25000,
-      reason: "Host cancellation",
-      status: "Successful",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1008",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Urban Loft" }
-      }
-    },
-    {
-      id: "REF-99228110",
-      amount: 11000,
-      reason: "Service failure",
-      status: "Processing",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1009",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Modern Villa" }
-      }
-    },
-    {
-      id: "REF-99228111",
-      amount: 42000,
-      reason: "Amenities missing",
-      status: "Successful",
-      createdAt: new Date().toISOString(),
-      booking: {
-        id: "BK-1010",
-        guest: { name: "Adam Lukot" },
-        property: { title: "Safari Lodge" }
-      }
-    }
-  ];
-
   const fetchRefunds = async () => {
     try {
+      setLoading(true);
       const response = await api.get("/finance/refunds");
-      setRefunds(response.data.length > 0 ? response.data : sampleRefunds);
+      setRefunds(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching refunds:", error);
-      setRefunds(sampleRefunds);
+      setRefunds([]);
     } finally {
       setLoading(false);
     }
