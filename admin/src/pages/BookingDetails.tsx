@@ -43,31 +43,7 @@ const BookingDetails = () => {
         setBooking(response.data);
       } catch (err) {
         console.error("Failed to fetch booking details", err);
-        // Fallback for demo
-        setBooking({
-          id: id || "BK-88229",
-          startDate: new Date().toISOString(),
-          endDate: new Date().toISOString(),
-          totalPrice: 45000,
-          status: "confirmed",
-          createdAt: new Date().toISOString(),
-          guest: {
-            id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653",
-            name: "Adam Lukot",
-            email: "adamlukat@gmail.com",
-            phoneNumber: "+234 8107775573"
-          },
-          property: {
-            id: "prop-1",
-            title: "Luxury Villa",
-            location: "Lekki, Lagos",
-            owner: {
-              name: "Host User",
-              email: "host@example.com",
-              phoneNumber: "+234 9033344422"
-            }
-          }
-        });
+        setBooking(null);
       } finally {
         setLoading(false);
       }

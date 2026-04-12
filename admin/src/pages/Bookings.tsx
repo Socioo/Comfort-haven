@@ -32,120 +32,18 @@ const Bookings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const sampleBookings: Booking[] = [
-    {
-      id: "BK-88229101",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 45000,
-      status: "confirmed",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-1", title: "Luxury Villa" }
-    },
-    {
-      id: "BK-88229102",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 12500,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-2", title: "Beach Front House" }
-    },
-    {
-      id: "BK-88229103",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 22000,
-      status: "completed",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-3", title: "Downtown Apartment" }
-    },
-    {
-      id: "BK-88229104",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 18000,
-      status: "cancelled",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-4", title: "Cozy Studio" }
-    },
-    {
-      id: "BK-88229105",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 35000,
-      status: "confirmed",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-5", title: "Mountain Cabin" }
-    },
-    {
-      id: "BK-88229106",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 55000,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-6", title: "Penthouse Suite" }
-    },
-    {
-      id: "BK-88229107",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 27500,
-      status: "confirmed",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-7", title: "Lakeside Cottage" }
-    },
-    {
-      id: "BK-88229108",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 9500,
-      status: "completed",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-8", title: "Urban Loft" }
-    },
-    {
-      id: "BK-88229109",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 15000,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-9", title: "Modern Villa" }
-    },
-    {
-      id: "BK-88229110",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      totalPrice: 42000,
-      status: "confirmed",
-      createdAt: new Date().toISOString(),
-      guest: { id: "cfa52bc8-38d1-4b1c-b585-5f4d62af1653", name: "Adam Lukot" },
-      property: { id: "prop-10", title: "Safari Lodge" }
-    }
-  ];
-
   useEffect(() => {
     fetchBookings();
   }, []);
 
   const fetchBookings = async () => {
     try {
+      setLoading(true);
       const response = await api.get("/bookings");
-      setBookings(response.data.length > 0 ? response.data : sampleBookings);
+      setBookings(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Failed to fetch bookings", error);
-      setBookings(sampleBookings);
+      setBookings([]);
     } finally {
       setLoading(false);
     }

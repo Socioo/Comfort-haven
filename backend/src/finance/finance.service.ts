@@ -24,15 +24,29 @@ export class FinanceService {
 
   async findAllPayouts() {
     return this.payoutRepository.find({
-      relations: ['booking', 'booking.property'],
+      relations: ['booking', 'booking.property', 'booking.property.owner'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOnePayout(id: string) {
+    return this.payoutRepository.findOne({
+      where: { id },
+      relations: ['booking', 'booking.property', 'booking.property.owner', 'booking.guest'],
     });
   }
 
   async findAllRefunds() {
     return this.refundRepository.find({
-      relations: ['booking', 'booking.guest'],
+      relations: ['booking', 'booking.guest', 'booking.property'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOneRefund(id: string) {
+    return this.refundRepository.findOne({
+      where: { id },
+      relations: ['booking', 'booking.guest', 'booking.property', 'booking.property.owner'],
     });
   }
 

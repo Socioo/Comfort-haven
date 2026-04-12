@@ -37,7 +37,7 @@ export class BookingsService {
     }
 
     findOne(id: string) {
-        return this.bookingsRepository.findOne({ where: { id }, relations: ['property', 'guest'] });
+        return this.bookingsRepository.findOne({ where: { id }, relations: ['property', 'property.owner', 'guest'] });
     }
 
     update(id: string, updateBookingDto: UpdateBookingDto) {

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Property } from '../properties/entities/property.entity';
 import { Booking } from '../bookings/entities/booking.entity';
+import { Payout, Refund } from '../finance/entities/finance.entity';
 import { Favorite } from '../favorites/entities/favorite.entity';
 import { Faq } from '../faqs/entities/faq.entity';
 import { UserRole } from '../common/constants';
@@ -20,6 +21,10 @@ export class SeedingService implements OnApplicationBootstrap {
         private propertiesRepository: Repository<Property>,
         @InjectRepository(Booking)
         private bookingsRepository: Repository<Booking>,
+        @InjectRepository(Payout)
+        private payoutRepository: Repository<Payout>,
+        @InjectRepository(Refund)
+        private refundRepository: Repository<Refund>,
         @InjectRepository(Favorite)
         private favoritesRepository: Repository<Favorite>,
         @InjectRepository(Faq)
@@ -40,7 +45,9 @@ export class SeedingService implements OnApplicationBootstrap {
         
         const users = await this.seedUsers(password);
         const properties = await this.seedProperties(users);
-        await this.seedBookings(users, properties);
+        const bookings = await this.seedBookings(users, properties);
+        await this.seedPayouts(bookings);
+        await this.seedRefunds(bookings);
         await this.seedFavorites(users, properties);
         await this.seedFaqs();
 
@@ -49,14 +56,20 @@ export class SeedingService implements OnApplicationBootstrap {
 
     async createDefaultAdmins() {
         this.logger.log('Synchronizing default administrative accounts...');
+        
+        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@comfort-haven.com';
+        const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'Admin@123';
+        
         const password = await bcrypt.hash('Admin@123', 10);
+        const superPassword = await bcrypt.hash(superAdminPassword, 10);
         
         const adminAccounts = [
             {
-                email: 'superadmin@comfort-haven.com',
+                email: superAdminEmail,
                 name: 'Super Admin',
                 role: UserRole.SUPER_ADMIN,
                 profileImage: 'https://i.pravatar.cc/150?u=super-admin',
+                specialPassword: superPassword
             },
             {
                 email: 'manager@comfort-haven.com',
@@ -84,7 +97,7 @@ export class SeedingService implements OnApplicationBootstrap {
                 this.logger.log(`Creating ${account.role} account: ${account.email}`);
                 const user = this.usersRepository.create({
                     ...account,
-                    password,
+                    password: account.specialPassword || password,
                     isVerified: true,
                     status: 'active',
                 });
@@ -93,7 +106,7 @@ export class SeedingService implements OnApplicationBootstrap {
                 this.logger.log(`Synchronizing credentials for ${account.email}`);
                 await this.usersRepository.update(existing.id, { 
                     role: account.role,
-                    password: password, // Always sync the password
+                    password: account.specialPassword || password,
                     isVerified: true,
                     status: 'active'
                 });
@@ -106,50 +119,90 @@ export class SeedingService implements OnApplicationBootstrap {
         this.logger.log('Legacy role migration complete.');
     }
 
-    private async clearDatabase() {
-        this.logger.log('Clearing existing data using raw SQL...');
-        const tables = ['faqs', 'favorites', 'bookings', 'reviews', 'messages', 'properties', 'users'];
-        for (const table of tables) {
+    private async asyncClearTable(table: string) {
+        try {
+            await this.usersRepository.query(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`);
+            this.logger.log(`Truncated ${table}`);
+        } catch (error) {
+            this.logger.warn(`Could not truncate ${table}, trying DELETE: ${error.message}`);
             try {
-                await this.usersRepository.query(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`);
-                this.logger.log(`Truncated ${table}`);
-            } catch (error) {
-                this.logger.warn(`Could not truncate ${table}, trying DELETE: ${error.message}`);
-                try {
-                    await this.usersRepository.query(`DELETE FROM "${table}"`);
-                } catch (delError) {
-                    this.logger.error(`Failed to clear ${table}: ${delError.message}`);
-                }
+                await this.usersRepository.query(`DELETE FROM "${table}"`);
+            } catch (delError) {
+                this.logger.error(`Failed to clear ${table}: ${delError.message}`);
             }
         }
-        this.logger.log('Data cleared.');
+    }
+
+    private async clearDatabase() {
+        this.logger.log('Clearing existing data with Super Admin preservation...');
+        const dependentTables = ['faqs', 'favorites', 'refunds', 'payouts', 'bookings', 'reviews', 'messages', 'properties'];
+        
+        // 1. Truncate all dependent tables first
+        for (const table of dependentTables) {
+            await this.asyncClearTable(table);
+        }
+
+        // 2. Clear users EXCEPT for those with administrative roles
+        // We also specifically protect the email defined in the environment variable
+        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@comfort-haven.com';
+        
+        try {
+            const adminRoles = [UserRole.SUPER_ADMIN, UserRole.MANAGER, UserRole.FINANCE, UserRole.SUPPORT, UserRole.ADMIN];
+            const deleteQuery = `
+                DELETE FROM "users" 
+                WHERE "role" NOT IN (${adminRoles.map(r => `'${r}'`).join(',')})
+                AND "email" != '${superAdminEmail}'
+            `;
+            await this.usersRepository.query(deleteQuery);
+            this.logger.log('Non-administrative users cleared.');
+        } catch (error) {
+            this.logger.error(`Failed to selectively clear users: ${error.message}`);
+            // Fallback to full truncate if surgery fails (safety first)
+            await this.asyncClearTable('users');
+        }
+        
+        this.logger.log('Database reset complete.');
     }
 
     private async seedUsers(password: string): Promise<User[]> {
-        this.logger.log('Seeding users (2 Admins, 20 Guests, 20 Hosts)...');
+        this.logger.log('Seeding fresh users (2 Admins, 20 Guests, 20 Hosts)...');
         const usersData: Partial<User>[] = [];
 
-        // 1. Super Admin
-        usersData.push({
-            email: 'superadmin@comfort-haven.com',
-            password,
-            name: 'Super Admin',
-            role: UserRole.SUPER_ADMIN,
-            isVerified: true,
-            status: 'active',
-            profileImage: 'https://images.unsplash.com/photo-1519085185750-74071747e99c?auto=format&fit=crop&w=256&q=80',
-        });
+        // 1. Ensure Super Admin and Manager exist (using update or create logic)
+        const admins = [
+            {
+                email: process.env.SUPER_ADMIN_EMAIL || 'superadmin@comfort-haven.com',
+                name: 'Super Admin',
+                role: UserRole.SUPER_ADMIN,
+                profileImage: 'https://images.unsplash.com/photo-1519085185750-74071747e99c?auto=format&fit=crop&w=256&q=80',
+            },
+            {
+                email: 'manager@comfort-haven.com',
+                name: 'Comfort Manager',
+                role: UserRole.MANAGER,
+                profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80',
+            }
+        ];
 
-        // 2. Manager
-        usersData.push({
-            email: 'manager@comfort-haven.com',
-            password,
-            name: 'Comfort Manager',
-            role: UserRole.MANAGER,
-            isVerified: true,
-            status: 'active',
-            profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80',
-        });
+        for (const admin of admins) {
+            const existing = await this.usersRepository.findOne({ where: { email: admin.email } });
+            if (!existing) {
+                const newUser = this.usersRepository.create({
+                    ...admin,
+                    password,
+                    isVerified: true,
+                    status: 'active',
+                });
+                await this.usersRepository.save(newUser);
+            } else {
+                // Just update the role and password to ensure it's correct
+                await this.usersRepository.update(existing.id, { 
+                    role: admin.role,
+                    password 
+                });
+            }
+        }
+
 
         // 3. 20 Guests
         for (let i = 1; i <= 20; i++) {
@@ -177,9 +230,14 @@ export class SeedingService implements OnApplicationBootstrap {
             });
         }
 
+        const seededManager = await this.usersRepository.findOne({ where: { role: UserRole.MANAGER } });
+        const seededSuperAdmin = await this.usersRepository.findOne({ where: { role: UserRole.SUPER_ADMIN } });
+
         const usersEntities = this.usersRepository.create(usersData as any);
-        this.logger.log(`Prepared ${usersData.length} users for seeding`);
-        return await this.usersRepository.save(usersEntities);
+        this.logger.log(`Prepared ${usersData.length} mock users for seeding`);
+        const savedUsers = await this.usersRepository.save(usersEntities);
+        
+        return ([seededSuperAdmin, seededManager, ...savedUsers].filter((u): u is User => !!u));
     }
 
     private async seedProperties(users: User[]): Promise<Property[]> {
@@ -271,7 +329,45 @@ export class SeedingService implements OnApplicationBootstrap {
         }
 
         const bookingsEntities = this.bookingsRepository.create(bookingsData as any);
-        await this.bookingsRepository.save(bookingsEntities);
+        return await this.bookingsRepository.save(bookingsEntities);
+    }
+
+    private async seedPayouts(bookings: Booking[]) {
+        this.logger.log('Seeding initial payouts...');
+        const payoutsData: Partial<Payout>[] = [];
+
+        for (let i = 0; i < 10; i++) {
+            const booking = bookings[Math.floor(Math.random() * bookings.length)];
+            payoutsData.push({
+                booking,
+                bookingId: booking.id,
+                amount: booking.totalPrice * 0.9,
+                status: 'Paid',
+                method: 'Bank Transfer',
+            });
+        }
+
+        const payoutsEntities = this.payoutRepository.create(payoutsData as any);
+        await this.payoutRepository.save(payoutsEntities);
+    }
+
+    private async seedRefunds(bookings: Booking[]) {
+        this.logger.log('Seeding initial refunds...');
+        const refundsData: Partial<Refund>[] = [];
+
+        for (let i = 0; i < 5; i++) {
+            const booking = bookings[Math.floor(Math.random() * bookings.length)];
+            refundsData.push({
+                booking,
+                bookingId: booking.id,
+                amount: booking.totalPrice,
+                reason: 'Booking cancellation',
+                status: 'Approved',
+            });
+        }
+
+        const refundsEntities = this.refundRepository.create(refundsData as any);
+        await this.refundRepository.save(refundsEntities);
     }
 
     private async seedFavorites(users: User[], properties: Property[]) {

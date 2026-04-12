@@ -21,13 +21,17 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Security middleware
-  app.use(helmet());
+  // Security middleware with custom configurations
+  app.use(helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+    crossOriginEmbedderPolicy: false,
+  }));
 
   // Configure CORS
+  const isProduction = process.env.NODE_ENV === 'production';
   const corsOrigin = process.env.CORS_ORIGIN 
     ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) 
-    : true; // fallback to true if not defined to prevent breaking dev 
-
+    : (isProduction ? [] : true); // In production, throw error or restrict to empty if not defined
   app.enableCors({
     origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
