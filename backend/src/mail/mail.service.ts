@@ -1,46 +1,93 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
+import * as dns from 'dns';
+import { promisify } from 'util';
+
+const resolve4 = promisify(dns.resolve4);
 
 @Injectable()
 export class MailService {
-  private resend: Resend | null = null;
+  private transporter: nodemailer.Transporter | null = null;
   private readonly logger = new Logger(MailService.name);
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    if (apiKey) {
-      this.resend = new Resend(apiKey);
-      this.logger.log('MailService initialized with Resend.');
-    } else {
-      this.logger.warn('RESEND_API_KEY not set. Emails will be logged to console only (dev mode).');
+    this.initTransporter();
+  }
+
+  private async initTransporter() {
+    const user = this.configService.get<string>('MAIL_USER');
+    const pass = this.configService.get<string>('MAIL_PASS');
+    const smtpHost = this.configService.get<string>('MAIL_HOST') || 'smtp.gmail.com';
+    const port = Number(this.configService.get('MAIL_PORT')) || 587;
+
+    if (!user || !pass) {
+      this.logger.warn('MAIL_USER or MAIL_PASS not set. Emails will be skipped.');
+      return;
+    }
+
+    try {
+      // Pre-resolve SMTP host to IPv4, bypassing any IPv6 preference on the server
+      let resolvedHost = smtpHost;
+      try {
+        const addresses = await resolve4(smtpHost);
+        if (addresses && addresses.length > 0) {
+          resolvedHost = addresses[0];
+          this.logger.log(`Resolved ${smtpHost} → ${resolvedHost} (IPv4 forced)`);
+        }
+      } catch (dnsErr) {
+        this.logger.warn(`DNS IPv4 lookup failed for ${smtpHost}, using hostname: ${dnsErr.message}`);
+      }
+
+      this.transporter = nodemailer.createTransport({
+        host: resolvedHost,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
+        tls: {
+          // Required when connecting to an IP directly instead of hostname
+          servername: smtpHost,
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 30000,
+        greetingTimeout: 30000,
+        socketTimeout: 30000,
+      });
+
+      this.transporter.verify((error) => {
+        if (error) {
+          this.logger.error(`SMTP connection check failed: ${error.message}`);
+        } else {
+          this.logger.log(`SMTP ready: ${user} via ${smtpHost} (${resolvedHost}:${port})`);
+        }
+      });
+    } catch (err) {
+      this.logger.error(`Failed to initialize mail transporter: ${err.message}`);
     }
   }
 
   private getFrom(): string {
-    return this.configService.get<string>('MAIL_FROM') || 'Comfort Haven <onboarding@resend.dev>';
+    return this.configService.get<string>('MAIL_FROM') || '"Comfort Haven" <no-reply@comfort-haven.com>';
   }
 
-  /** Send via Resend, with console fallback if no API key */
   private async send(options: { to: string; subject: string; html: string }) {
-    if (!this.resend) {
-      this.logger.warn(`[DEV EMAIL FALLBACK] Would send email to ${options.to}: "${options.subject}"`);
+    if (!this.transporter) {
+      this.logger.warn(`[EMAIL SKIPPED] No transporter. Would have sent to ${options.to}: "${options.subject}"`);
       return;
     }
 
-    const { data, error } = await this.resend.emails.send({
-      from: this.getFrom(),
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-    });
-
-    if (error) {
-      this.logger.error(`Failed to send email to ${options.to}: ${JSON.stringify(error)}`);
-      throw new Error(error.message);
+    try {
+      const info = await this.transporter.sendMail({
+        from: this.getFrom(),
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+      this.logger.log(`Email sent to ${options.to} (ID: ${info.messageId})`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${options.to}: ${error.message}`);
+      throw error;
     }
-
-    this.logger.log(`Email sent successfully to ${options.to} (ID: ${data?.id})`);
   }
 
   async sendInvitationEmail(email: string, name: string, password: string, customMessage?: string) {
