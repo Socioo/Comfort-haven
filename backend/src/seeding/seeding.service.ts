@@ -32,12 +32,21 @@ export class SeedingService implements OnApplicationBootstrap {
     ) { }
 
     async onApplicationBootstrap() {
-        this.logger.log('--- Post-Deployment Bootstrap Check ---');
-        // Automatically ensure default admins exist on startup
-        // We set forceUpdatePassword to true to ensure that passwords are correctly 
-        // synchronized with the current environment variables (critical for Railway fixes).
-        await this.createDefaultAdmins(false, true);
-        this.logger.log('--- Bootstrap Check Complete ---');
+        this.logger.log('--- Post-Deployment Bootstrap Check Started ---');
+        
+        // Small delay to ensure TypeORM synchronization/initialization is fully completed
+        // This helps prevent the "client is already executing a query" warning.
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        try {
+            // Automatically ensure default admins exist on startup
+            // We set forceUpdatePassword to false by default for startup to avoid unnecessary DB writes,
+            // but the service will still ensure they exist.
+            await this.createDefaultAdmins(false, false);
+            this.logger.log('--- Bootstrap Check Complete ---');
+        } catch (error) {
+            this.logger.error(`Bootstrap seeding failed: ${error.message}`);
+        }
     }
 
     async seed() {
