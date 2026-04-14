@@ -105,26 +105,46 @@ export class AuthService {
     profileImage?: string;
     role?: UserRole;
   }) {
+    console.log(`Google login attempt: ${googleUser.email} (ID: ${googleUser.googleId})`);
+
+    // First, find by googleId (most stable)
     let user = await this.usersRepository.findOne({
-      where: [{ email: googleUser.email }, { googleId: googleUser.googleId }],
+      where: { googleId: googleUser.googleId },
     });
 
     if (!user) {
-      user = this.usersRepository.create({
-        email: googleUser.email,
-        name: googleUser.name,
-        googleId: googleUser.googleId,
-        profileImage: googleUser.profileImage,
-        isVerified: true,
-        role: googleUser.role || UserRole.USER,
+      console.log('User not found by googleId, searching by email...');
+      // If not found by ID, try finding by email to link accounts
+      user = await this.usersRepository.findOne({
+        where: { email: googleUser.email.toLowerCase().trim() },
       });
-      await this.usersRepository.save(user);
-    } else if (!user.googleId) {
-      user.googleId = googleUser.googleId;
-      if (googleUser.profileImage) {
-        user.profileImage = googleUser.profileImage;
+
+      if (user) {
+        console.log(`Found existing user by email ${user.email}, linking Google account.`);
+        user.googleId = googleUser.googleId;
+        if (googleUser.profileImage && !user.profileImage) {
+          user.profileImage = googleUser.profileImage;
+        }
+        await this.usersRepository.save(user);
+      } else {
+        console.log('No existing user found, creating new Google user.');
+        user = this.usersRepository.create({
+          email: googleUser.email.toLowerCase().trim(),
+          name: googleUser.name,
+          googleId: googleUser.googleId,
+          profileImage: googleUser.profileImage,
+          isVerified: true,
+          role: googleUser.role || UserRole.USER,
+        });
+        await this.usersRepository.save(user);
       }
-      await this.usersRepository.save(user);
+    } else {
+      console.log(`Found user ${user.id} by googleId.`);
+      // Update profile image if it's missing
+      if (googleUser.profileImage && !user.profileImage) {
+        user.profileImage = googleUser.profileImage;
+        await this.usersRepository.save(user);
+      }
     }
 
     const tokens = await this.getTokens(user);
@@ -138,27 +158,59 @@ export class AuthService {
   }
 
   async appleLogin(appleUser: {
-    email: string;
-    name: string;
+    email?: string;
+    name?: string;
     appleId: string;
     role?: UserRole;
   }) {
+    const email = appleUser.email?.toLowerCase().trim();
+    console.log(`Apple login attempt: ${email || 'No Email Provided'} (ID: ${appleUser.appleId})`);
+
+    // 1. Always prioritize lookup by appleId (the stable unique identifier)
     let user = await this.usersRepository.findOne({
-      where: [{ email: appleUser.email }, { appleId: appleUser.appleId }],
+      where: { appleId: appleUser.appleId },
     });
 
     if (!user) {
+      console.log('User not found by appleId.');
+
+      // 2. If not found by appleId, try linking via email if provided
+      if (email && email !== '') {
+        console.log(`Searching for existing user by email: ${email}`);
+        user = await this.usersRepository.findOne({
+          where: { email: email },
+        });
+
+        if (user) {
+          console.log(`Found existing user by email ${user.email}, linking Apple ID.`);
+          user.appleId = appleUser.appleId;
+          // Update name if missing
+          if (appleUser.name && !user.name) {
+            user.name = appleUser.name;
+          }
+          await this.usersRepository.save(user);
+        }
+      }
+    }
+
+    // 3. Create a new user if still not found
+    if (!user) {
+      if (!email || email === '') {
+        console.error('Fatal: Apple login failed. No existing user found and no email provided for new registration.');
+        throw new ConflictException('Apple account not found. Please try registering with your email or ensure you share your email with the app.');
+      }
+
+      console.log('Creating new user for Apple account.');
       user = this.usersRepository.create({
-        email: appleUser.email,
-        name: appleUser.name,
+        email: email,
+        name: appleUser.name || 'Apple User',
         appleId: appleUser.appleId,
         isVerified: true,
         role: appleUser.role || UserRole.USER,
       });
       await this.usersRepository.save(user);
-    } else if (!user.appleId) {
-      user.appleId = appleUser.appleId;
-      await this.usersRepository.save(user);
+    } else {
+      console.log(`Successfully identified user ${user.id} via Apple.`);
     }
 
     const tokens = await this.getTokens(user);
