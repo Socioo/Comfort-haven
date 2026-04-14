@@ -20,12 +20,15 @@ export class MailService {
   private async ensureTransporter() {
     if (this.transporter) return;
 
-    const host = this.configService.get('MAIL_HOST');
+    const host = this.configService.get('MAIL_HOST') || 'smtp.gmail.com';
     const user = this.configService.get('MAIL_USER');
     const pass = this.configService.get('MAIL_PASS');
+    const port = Number(this.configService.get('MAIL_PORT')) || 587;
+    const secureConfig = this.configService.get('MAIL_SECURE');
+    const secure = secureConfig === true || secureConfig === 'true' || port === 465;
 
     if (!user || !pass) {
-      this.logger.warn('No SMTP credentials found in ELV. Creating a test account with Ethereal...');
+      this.logger.warn('No SMTP credentials found in ENV. Creating a test account with Ethereal...');
       const testAccount = await nodemailer.createTestAccount();
       this.transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
@@ -38,38 +41,39 @@ export class MailService {
       });
       this.logger.log('Test account created. Emails will be available for preview via Ethereal.');
     } else {
-      const port = Number(this.configService.get('MAIL_PORT')) || 587;
-      const secureConfig = this.configService.get('MAIL_SECURE');
-      const secure = secureConfig === true || secureConfig === 'true';
-
+      this.logger.log(`Initializing SMTP: ${host}:${port} (Secure: ${secure}, Force IPv4)`);
+      
       this.transporter = nodemailer.createTransport({
-        host: host || 'smtp.gmail.com',
+        host,
         port,
         secure, // true for 465, false for 587
         auth: { user, pass },
+        // Strictly enforce IPv4 at the socket level
         family: 4,
-        lookup: (hostname, options, callback) => {
-          dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-            this.logger.log(`DNS Lookup result: ${hostname} => ${address} (IPv${family})`);
-            callback(err, address, family);
-          });
+        dns: {
+          // Additional DNS configuration if supported by the nodemailer version
+          family: 4
         },
-        connectionTimeout: 20000,
-        greetingTimeout: 20000,
-        socketTimeout: 20000,
+        connectionTimeout: 30000, // 30 seconds
+        greetingTimeout: 30000,
+        socketTimeout: 30000,
       } as any);
 
       // Verify connection immediately
       this.transporter.verify((error) => {
         if (error) {
           this.logger.error(`SMTP Connection Check FAILED: ${error.message}`);
+          if (error.message.includes('ENETUNREACH')) {
+            this.logger.error('Network unreachable. This often happens if IPv6 is prioritized on a network that doesn\'t support it. Attempting to force IPv4.');
+          }
+          
           // If we fail, try to fall back to test account if in development
-          if (process.env.NODE_ENV === 'development') {
+          if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
              this.logger.warn('Real SMTP failed. Falling back to Ethereal for dev preview...');
-             this.transporter = undefined as any; // Forces recreate with Ethereal on next ensure
+             this.transporter = undefined as any; 
           }
         } else {
-          this.logger.log('SUCCESS: SMTP Server is connected and ready (Forced IPv4)');
+          this.logger.log(`SUCCESS: SMTP Server (${host}) is connected and ready.`);
         }
       });
     }

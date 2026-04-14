@@ -47,6 +47,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Google login successful.', type: AuthResponseDto })
   async googleLogin(@Body() body: { email: string; name: string; googleId: string; profileImage?: string; role?: any }) {
+    console.log('AuthController.googleLogin - Incoming Body:', JSON.stringify(body, null, 2));
     return this.authService.googleLogin(body);
   }
 
@@ -66,6 +67,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Apple login successful.', type: AuthResponseDto })
   async appleLogin(@Body() body: { email: string; name: string; appleId: string; role?: any }) {
+    console.log('AuthController.appleLogin - Incoming Body:', JSON.stringify(body, null, 2));
     return this.authService.appleLogin(body);
   }
 
