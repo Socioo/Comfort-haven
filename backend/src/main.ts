@@ -11,7 +11,6 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 import * as express from 'express';
-import { seedSuperAdmin } from './seed-super-admin';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -68,9 +67,6 @@ async function bootstrap() {
   );
 
   const port = process.env.PORT || 3000;
-  
-  // Seed the default super-admin if it doesn't exist
-  await seedSuperAdmin(app);
   
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Server running on http://localhost:${port}`);
