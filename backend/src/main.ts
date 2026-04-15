@@ -11,8 +11,19 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 import * as express from 'express';
+import * as fs from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
+  // Ensure upload directories exist
+  const uploadDirs = ['./uploads', './uploads/users'];
+  uploadDirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      console.log(`📁 Creating directory: ${dir}`);
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+
   const app = await NestFactory.create(AppModule);
 
   // Increase payload size for image uploads

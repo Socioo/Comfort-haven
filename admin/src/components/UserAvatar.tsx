@@ -49,7 +49,12 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
     
-    // Add a small timestamp to the URL as a cache-buster if it's a server URL
+    // Safety check: if we are on a production domain but the API is still localhost
+    const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+    if (isProduction && baseUrl.includes('localhost')) {
+      console.warn("Production Warning: Backend API URL is still set to localhost!");
+    }
+    
     return `${baseUrl}${cleanUrl}`;
   };
 
