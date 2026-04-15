@@ -13,18 +13,28 @@ dotenv.config();
 import * as express from 'express';
 import * as fs from 'fs';
 import { join } from 'path';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { HttpAdapterHost } from '@nestjs/core';
 
 async function bootstrap() {
   // Ensure upload directories exist
   const uploadDirs = ['./uploads', './uploads/users'];
   uploadDirs.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-      console.log(`📁 Creating directory: ${dir}`);
-      fs.mkdirSync(dir, { recursive: true });
+    try {
+      if (!fs.existsSync(dir)) {
+        console.log(`📁 Creating directory: ${dir}`);
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch (err) {
+      console.warn(`⚠️ Warning: Could not create directory ${dir}. This might cause upload failures.`, err);
     }
   });
 
   const app = await NestFactory.create(AppModule);
+  
+  // Register global exception filter
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
 
   // Increase payload size for image uploads
   app.use(express.json({ limit: '50mb' }));
