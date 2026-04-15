@@ -26,12 +26,6 @@ export class UsersService {
     console.log('UsersService.create received:', createUserDto);
     createUserDto.email = createUserDto.email.toLowerCase().trim();
 
-    // Prevent duplicate emails
-    const existingUser = await this.findOneByEmail(createUserDto.email);
-    if (existingUser) {
-      throw new ConflictException(`A user with the email ${createUserDto.email} already exists.`);
-    }
-
     const isInvitation = [
       UserRole.SUPER_ADMIN,
       UserRole.MANAGER,
@@ -39,6 +33,17 @@ export class UsersService {
       UserRole.SUPPORT
     ].includes(createUserDto.role);
     console.log('isInvitation detected:', isInvitation);
+
+    // Prevent duplicate emails, but allow upgrading GUEST or HOST to admin roles
+    let existingUser = await this.findOneByEmail(createUserDto.email);
+    if (existingUser) {
+      if (isInvitation && (existingUser.role === UserRole.GUEST || existingUser.role === UserRole.HOST)) {
+        console.log(`Upgrading existing ${existingUser.role} (${existingUser.email}) to ${createUserDto.role}`);
+      } else {
+        throw new ConflictException(`A user with the email ${createUserDto.email} already exists.`);
+      }
+    }
+
     let password = createUserDto.password;
 
     if (isInvitation && !password) {
@@ -50,13 +55,24 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(password || 'Password123!', 10);
     console.log(`Debug: Hashing password for ${createUserDto.email}. Length: ${password?.length || 12}. Hash starts with: ${hashedPassword.substring(0, 10)}`);
     
-    const user = this.usersRepository.create({
-      ...createUserDto,
-      password: hashedPassword,
-      mustChangePassword: isInvitation,
-    });
+    let userToSave;
+    if (existingUser) {
+      // Update the existing user with the new admin role and temp password
+      Object.assign(existingUser, {
+        ...createUserDto,
+        password: hashedPassword,
+        mustChangePassword: isInvitation,
+      });
+      userToSave = existingUser;
+    } else {
+      userToSave = this.usersRepository.create({
+        ...createUserDto,
+        password: hashedPassword,
+        mustChangePassword: isInvitation,
+      });
+    }
 
-    const savedUser = await this.usersRepository.save(user as any);
+    const savedUser = await this.usersRepository.save(userToSave as any);
     console.log('User saved successfully:', savedUser.id);
 
     // Notify admins about new user registration
