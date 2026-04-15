@@ -1,47 +1,63 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
-  private resend: Resend | null = null;
   private readonly logger = new Logger(MailService.name);
+  private apiKey: string | null = null;
+  private endpoint = 'https://api.brevo.com/v3/smtp/email';
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    if (apiKey) {
-      this.resend = new Resend(apiKey);
-      this.logger.log('MailService initialized with Resend.');
+    this.apiKey = this.configService.get<string>('BREVO_API_KEY') || null;
+    if (this.apiKey) {
+      this.logger.log('MailService initialized with Brevo HTTP API.');
     } else {
-      this.logger.warn('RESEND_API_KEY not set. Emails will be logged to console only (dev mode).');
+      this.logger.warn('BREVO_API_KEY not set. Emails will be logged to console only (dev mode).');
     }
   }
 
-  private getFrom(): string {
-    return this.configService.get<string>('MAIL_FROM') || 'Comfort Haven <onboarding@resend.dev>';
+  private getFromEmail(): string {
+    return this.configService.get<string>('MAIL_FROM_EMAIL') || 'no-reply@comfort-haven.com';
   }
 
-  /** Send via Resend, with console fallback if no API key */
+  private getFromName(): string {
+    return this.configService.get<string>('MAIL_FROM_NAME') || 'Comfort Haven';
+  }
+
+  /** Send via Brevo HTTP API (HTTPS avoids all Railway SMTP port blocks) */
   private async send(options: { to: string; subject: string; html: string }) {
-    if (!this.resend) {
+    if (!this.apiKey) {
       this.logger.warn(`[DEV EMAIL FALLBACK] Would send email to ${options.to}: "${options.subject}"`);
       return;
     }
 
     try {
-      const { data, error } = await this.resend.emails.send({
-        from: this.getFrom(),
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
+      const response = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': this.apiKey,
+        },
+        body: JSON.stringify({
+          sender: { 
+            name: this.getFromName(), 
+            email: this.getFromEmail() 
+          },
+          to: [{ email: options.to }],
+          subject: options.subject,
+          htmlContent: options.html,
+        }),
       });
 
-      if (error) {
-        this.logger.error(`Failed to send email to ${options.to}: ${JSON.stringify(error)}`);
-        throw new Error(error.message);
+      const responseData = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        this.logger.error(`Failed to send email to ${options.to}: ${JSON.stringify(responseData)}`);
+        throw new Error(`Brevo API Error: ${response.statusText}`);
       }
 
-      this.logger.log(`Email sent successfully to ${options.to} (ID: ${data?.id})`);
+      this.logger.log(`Email sent successfully via Brevo to ${options.to} (MessageID: ${responseData?.messageId})`);
     } catch (err) {
       this.logger.error(`Failed to send email to ${options.to}: ${err.message}`);
       throw err;
