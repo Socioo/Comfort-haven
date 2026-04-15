@@ -39,14 +39,16 @@ export class PropertiesService {
         return savedProperty;
     }
 
-    findAll(status?: string, user?: any, showAll?: boolean) {
+    async findAll(status?: string, user?: any, showAll?: boolean) {
         const where: any = {};
         if (status) where.status = status;
         
-        // Removed strict paymentStatus: 'paid' filter for guests 
-        // until we are ready to enforce listing fee payments.
-        
-        return this.propertiesRepository.find({ where, relations: ['owner', 'reviews'] });
+        try {
+            return await this.propertiesRepository.find({ where, relations: ['owner', 'reviews'] });
+        } catch (error) {
+            console.error('❌ Database error in PropertiesService.findAll:', error.message);
+            throw error; // Re-throw to be caught by the Global Exception Filter
+        }
     }
 
     findOne(id: string) {

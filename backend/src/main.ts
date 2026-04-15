@@ -25,10 +25,11 @@ async function bootstrap() {
         console.log(`📁 Creating directory: ${dir}`);
         fs.mkdirSync(dir, { recursive: true });
       }
-    } catch (err) {
-      console.warn(`⚠️ Warning: Could not create directory ${dir}. This might cause upload failures.`, err);
     }
   });
+
+  console.log(`🚀 Environment: ${process.env.NODE_ENV}`);
+  console.log(`🗄️ Database Sync: ${process.env.DB_SYNCHRONIZE === 'true' ? 'ENABLED' : 'DISABLED'}`);
 
   const app = await NestFactory.create(AppModule);
   
