@@ -45,21 +45,30 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const getImageUrl = (url: string) => {
     if (!url) return "";
     if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-    // For relative paths from backend (e.g. uploads/...)
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    
+    // Add a small timestamp to the URL as a cache-buster if it's a server URL
+    return `${baseUrl}${cleanUrl}`;
   };
 
-  if (image) {
+  const [imgError, setImgError] = React.useState(false);
+
+  // Reset error state when image URL changes
+  React.useEffect(() => {
+    setImgError(false);
+  }, [image]);
+
+  if (image && !imgError) {
     return (
       <div className={className} style={avatarStyle} onClick={onClick}>
         <img 
+          key={image}
           src={getImageUrl(image)} 
           alt={name} 
           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} 
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
+          onError={() => setImgError(true)}
         />
       </div>
     );

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Mail, Clock, Menu } from "lucide-react";
+import { Bell, Mail, Clock, Menu, Sun, Moon } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 import UserAvatar from "./UserAvatar";
 import styles from "./Header.module.css";
 import { adminAPI } from "../services/api";
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 const Header = ({ onMenuClick }: HeaderProps) => {
     const { user, isAuthenticated } = useAuth();
+    const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
     const [unreadMessages, setUnreadMessages] = useState(0);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -123,6 +125,14 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                 </button>
             </div>
             <div className={styles.actions}>
+                <button
+                    className={styles.actionBtn}
+                    title="Toggle Theme"
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                >
+                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+
                 <div style={{ position: 'relative' }} ref={messageRef}>
                     <button 
                         className={classNames(styles.actionBtn, { [styles.active]: showMessages })} 

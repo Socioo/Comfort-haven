@@ -111,23 +111,34 @@ const AdminSettings = () => {
     setSaving(true);
     try {
       if (activeTab === "profile") {
-        let profileImageUrl = profile.profileImage;
-
-        if (selectedFile) {
-          console.log("Processing image for upload...");
-          const reader = new FileReader();
-          profileImageUrl = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(selectedFile);
-          });
-        }
-
+        console.log("Starting profile update sequence...");
+        // 1. Update name and email
         await adminAPI.updateProfile(userId, {
           name: profile.name,
           email: profile.email,
-          profileImage: profileImageUrl,
         });
-        await refreshUser();
+
+        // 2. Upload the selected image if present
+        if (selectedFile) {
+          console.log(`Uploading selected image: ${selectedFile.name}`);
+          await adminAPI.uploadProfileImage(userId, selectedFile);
+        }
+
+        // 3. Refresh the global auth state and get the updated user back
+        const updatedUser = await refreshUser();
+        
+        // 4. Update the local component state with the fresh data from the server
+        if (updatedUser) {
+          setProfile({
+            name: updatedUser.name || "",
+            email: updatedUser.email || "",
+            role: updatedUser.role || "",
+            profileImage: updatedUser.profileImage || "",
+          });
+          setImagePreview(updatedUser.profileImage || null);
+          console.log("Local state updated with fresh user data:", updatedUser.profileImage);
+        }
+
         alert("Success: Profile information and image updated!");
         setSelectedFile(null);
       } else if (activeTab === "notifications") {

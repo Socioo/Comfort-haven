@@ -23,7 +23,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, refreshToken: string) => void;
   logout: () => void;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
   updateUser: (userData: Partial<User>) => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -59,27 +59,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           };
           setUser(userData);
 
-          // If the token is missing name, fetch the full profile silently
-          if (!decoded.name || !decoded.profileImage) {
-            const fetchProfile = async () => {
-              try {
-                // Note: Do NOT use the standard intercepted `api` instance here
-                // to avoid triggering the 401 logout flow for a background fetch.
-                const response = await api.get(`/users/${decoded.sub}`);
-                if (response.data) {
-                  setUser(prev => prev ? {
-                    ...prev,
-                    name: response.data.name || prev.name,
-                    profileImage: response.data.profileImage || prev.profileImage,
-                  } : null);
-                }
-              } catch (err) {
-                // Silently ignore - the user is still logged in, just may not have their name/photo
-                console.warn("Could not fetch full profile on initial load", err);
+          // Always fetch the latest profile data from the server on mount to avoid stale JWT data
+          const fetchProfile = async () => {
+            try {
+              const response = await api.get(`/users/${decoded.sub}`);
+              if (response.data) {
+                setUser(prev => prev ? {
+                  ...prev,
+                  name: response.data.name || prev.name,
+                  profileImage: response.data.profileImage || prev.profileImage,
+                  email: response.data.email || prev.email,
+                  role: response.data.role || prev.role,
+                  mustChangePassword: response.data.mustChangePassword ?? prev.mustChangePassword,
+                } : response.data);
               }
-            };
-            fetchProfile();
-          }
+            } catch (err) {
+              console.warn("Could not fetch fresh profile on initial load", err);
+            }
+          };
+          fetchProfile();
         } else {
           // Token is expired, clear it
           localStorage.removeItem("access_token");
@@ -152,21 +150,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setUser(null);
   };
 
-  const refreshUser = async () => {
-    if (!user?.id) return;
+  const refreshUser = async (): Promise<User | null> => {
+    if (!user?.id) return null;
     try {
       const response = await api.get(`/users/${user.id}`);
       const userData = response.data;
-      setUser({
+      const updatedUser: User = {
         id: userData.id,
         email: userData.email,
-         name: userData.name || "Admin",
+        name: userData.name || "Admin",
         role: userData.role,
         profileImage: userData.profileImage,
         mustChangePassword: userData.mustChangePassword,
-      });
+      };
+      setUser(updatedUser);
+      return updatedUser;
     } catch (error) {
       console.error("Failed to refresh user data", error);
+      return null;
     }
   };
 
