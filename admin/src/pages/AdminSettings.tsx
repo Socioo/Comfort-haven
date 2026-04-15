@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { User, Bell, Shield, Palette, Save, Camera, AlertCircle, RefreshCw, CheckCircle2, Copy } from "lucide-react";
 import styles from "./Settings.module.css";
 import UserAvatar from "../components/UserAvatar";
@@ -101,7 +102,7 @@ const AdminSettings = () => {
   };
 
   const handleNotificationToggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({
+    setNotifications((prev: typeof notifications) => ({
       ...prev,
       [key]: !prev[key],
     }));
