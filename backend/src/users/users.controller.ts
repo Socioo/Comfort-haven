@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Req, UnauthorizedException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import * as fs from 'fs';
 import { UsersService } from './users.service';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -103,7 +104,13 @@ export class UsersController {
     @Post(':id/profile-image')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
-            destination: './uploads/users',
+            destination: (req, file, cb) => {
+                const uploadPath = './uploads/users';
+                if (!fs.existsSync(uploadPath)) {
+                    fs.mkdirSync(uploadPath, { recursive: true });
+                }
+                cb(null, uploadPath);
+            },
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
                 return cb(null, `${randomName}${extname(file.originalname)}`);

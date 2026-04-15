@@ -108,20 +108,29 @@ const AdminSettings = () => {
 
   const handleSave = async () => {
     if (!userId) return;
+    console.log("VITE_API_BASE_URL being used:", import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000');
     setSaving(true);
     try {
       if (activeTab === "profile") {
         console.log("Starting profile update sequence...");
         // 1. Update name and email
-        await adminAPI.updateProfile(userId, {
-          name: profile.name,
-          email: profile.email,
-        });
+        try {
+          await adminAPI.updateProfile(userId, {
+            name: profile.name,
+            email: profile.email,
+          });
+        } catch (err: any) {
+          throw new Error(`Text Profile Update Failed: ${err.response?.data?.message || err.message}`);
+        }
 
         // 2. Upload the selected image if present
         if (selectedFile) {
           console.log(`Uploading selected image: ${selectedFile.name}`);
-          await adminAPI.uploadProfileImage(userId, selectedFile);
+          try {
+            await adminAPI.uploadProfileImage(userId, selectedFile);
+          } catch (err: any) {
+            throw new Error(`Image Upload Failed: ${err.response?.data?.message || err.message}. Status: ${err.response?.status}`);
+          }
         }
 
         // 3. Refresh the global auth state and get the updated user back
