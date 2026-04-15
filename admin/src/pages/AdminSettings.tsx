@@ -130,6 +130,9 @@ API Base URL: ${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000 (Def
 User ID: ${userId}
 Connection Status: ${connectionStatus}
 Connection Error: ${connectionError || 'None'}
+User Agent: ${navigator.userAgent}
+Language: ${navigator.language}
+Platform: ${navigator.platform}
 Timestamp: ${new Date().toISOString()}
 -----------------------------
     `.trim();

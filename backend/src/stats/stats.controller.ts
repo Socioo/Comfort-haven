@@ -59,7 +59,8 @@ export class StatsController {
             end.setHours(23, 59, 59, 999);
             
             filteredBookings = filteredBookings.filter(b => {
-                const bDate = new Date(b.createdAt);
+                const bDate = b.createdAt ? new Date(b.createdAt) : null;
+                if (!bDate || isNaN(bDate.getTime())) return false;
                 return bDate >= start && bDate <= end;
             });
         }
@@ -73,12 +74,20 @@ export class StatsController {
         // Recent Activities
         const recentHosts = users
             .filter(u => u.role === UserRole.HOST && !u.isVerified)
-            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            })
             .slice(0, 3);
 
         const recentProperties = properties
             .filter(p => p.status === 'pending')
-            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            })
             .slice(0, 3);
 
         return {
@@ -106,19 +115,23 @@ export class StatsController {
             date.setDate(date.getDate() - i);
             const dateStr = date.toISOString().split('T')[0];
             
-            const guests = users.filter(u => 
-                u.role === UserRole.USER && 
-                u.createdAt.toISOString().split('T')[0] === dateStr
-            ).length;
+            const guests = users.filter(u => {
+                if (u.role !== UserRole.USER || !u.createdAt) return false;
+                const uDate = new Date(u.createdAt);
+                return !isNaN(uDate.getTime()) && uDate.toISOString().split('T')[0] === dateStr;
+            }).length;
             
-            const hosts = users.filter(u => 
-                u.role === UserRole.HOST && 
-                u.createdAt.toISOString().split('T')[0] === dateStr
-            ).length;
+            const hosts = users.filter(u => {
+                if (u.role !== UserRole.HOST || !u.createdAt) return false;
+                const uDate = new Date(u.createdAt);
+                return !isNaN(uDate.getTime()) && uDate.toISOString().split('T')[0] === dateStr;
+            }).length;
             
-            const props = properties.filter(p => 
-                p.createdAt.toISOString().split('T')[0] === dateStr
-            ).length;
+            const props = properties.filter(p => {
+                if (!p.createdAt) return false;
+                const pDate = new Date(p.createdAt);
+                return !isNaN(pDate.getTime()) && pDate.toISOString().split('T')[0] === dateStr;
+            }).length;
             
             data.push({
                 date: dateStr,
