@@ -25,6 +25,8 @@ async function bootstrap() {
         console.log(`📁 Creating directory: ${dir}`);
         fs.mkdirSync(dir, { recursive: true });
       }
+    } catch (err) {
+      console.warn(`⚠️ Warning: Could not create directory ${dir}. This might cause upload failures.`, err);
     }
   });
 
