@@ -41,7 +41,12 @@ async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
   const corsOrigin = process.env.CORS_ORIGIN 
     ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) 
-    : (isProduction ? [] : true); // In production, throw error or restrict to empty if not defined
+    : (isProduction 
+        ? ['https://comfort-haven-admin.web.app', 'https://comfort-haven-prod.web.app'] 
+        : true);
+  
+  console.log(`🌐 Allowed CORS Origins: ${corsOrigin === true ? 'ALL (Development)' : corsOrigin.join(', ')}`);
+  
   app.enableCors({
     origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

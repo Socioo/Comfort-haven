@@ -52,9 +52,11 @@ const Dashboard = () => {
             const response = await api.get(url);
             setStats(response.data);
             setError(null);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to fetch stats", error);
-            setError("Failed to load dashboard data.");
+            const status = error.response?.status;
+            const message = error.response?.data?.message || error.message;
+            setError(`Failed to load dashboard data: ${status ? `[Status ${status}] ` : ''}${message}`);
         } finally {
             setLoading(false);
         }
