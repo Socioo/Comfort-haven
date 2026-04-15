@@ -60,6 +60,7 @@ const ChangePasswordModal = () => {
         className={styles.modal} 
         style={{ 
           maxWidth: '450px', 
+          width: '90%',
           borderRadius: '24px', 
           padding: '0',
           overflow: 'hidden',

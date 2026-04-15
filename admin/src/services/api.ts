@@ -15,6 +15,13 @@ api.interceptors.request.use((config) => {
 export const adminAPI = {
   getProfile: (id: string) => api.get(`/users/${id}`),
   updateProfile: (id: string, data: any) => api.patch(`/users/${id}/profile`, data),
+  uploadProfileImage: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/users/${id}/profile-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   updateNotifications: (id: string, data: any) =>
     api.patch(`/users/${id}/notifications`, data),
   updateAppearance: (id: string, data: any) =>

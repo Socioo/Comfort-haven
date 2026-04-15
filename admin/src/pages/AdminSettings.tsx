@@ -111,22 +111,18 @@ const AdminSettings = () => {
     setSaving(true);
     try {
       if (activeTab === "profile") {
-        let profileImageUrl = profile.profileImage;
-
-        if (selectedFile) {
-          console.log("Processing image for upload...");
-          const reader = new FileReader();
-          profileImageUrl = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(selectedFile);
-          });
-        }
-
+        // Update name and email
         await adminAPI.updateProfile(userId, {
           name: profile.name,
           email: profile.email,
-          profileImage: profileImageUrl,
         });
+
+        // Upload the selected image if present
+        if (selectedFile) {
+          console.log("Processing image for upload...");
+          await adminAPI.uploadProfileImage(userId, selectedFile);
+        }
+
         await refreshUser();
         alert("Success: Profile information and image updated!");
         setSelectedFile(null);
