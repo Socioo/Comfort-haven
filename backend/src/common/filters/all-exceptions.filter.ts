@@ -44,6 +44,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: httpAdapter.getRequestUrl(ctx.getRequest()),
       message: typeof message === 'object' ? (message as any).message || message : message,
+      // Temporarily including debug info in the response to fix the 500 issue
+      debug: {
+        errorName: (exception as Error)?.name || 'UnknownError',
+        stack: (exception as Error)?.stack?.split('\n').slice(0, 5) || [], // Send first 5 lines of stack
+      }
     };
 
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);

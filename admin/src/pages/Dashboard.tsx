@@ -55,8 +55,10 @@ const Dashboard = () => {
         } catch (error: any) {
             console.error("Failed to fetch stats", error);
             const status = error.response?.status;
-            const message = error.response?.data?.message || error.message;
-            setError(`Failed to load dashboard data: ${status ? `[Status ${status}] ` : ''}${message}`);
+            const data = error.response?.data;
+            const message = data?.message || error.message;
+            const debugInfo = data?.debug ? `\nDebug Info: ${JSON.stringify(data.debug, null, 2)}` : '';
+            setError(`Failed to load dashboard data: ${status ? `[Status ${status}] ` : ''}${message}${debugInfo}`);
         } finally {
             setLoading(false);
         }
