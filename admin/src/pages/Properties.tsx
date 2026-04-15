@@ -167,16 +167,24 @@ const Properties = () => {
         amenities: formData.amenities.split(",").map((s) => s.trim()),
       };
 
+      console.log("Submitting property payload:", payload);
       await api.post("/properties", payload);
       resetForm();
       fetchProperties();
-    } catch (error) {
+      setNotification({
+        isOpen: true,
+        type: "success",
+        title: "Success",
+        message: "Property has been added successfully!"
+      });
+    } catch (error: any) {
       console.error("Failed to add property", error);
+      const errorMessage = error.response?.data?.message || "Failed to add property. Please check all fields and try again.";
       setNotification({
         isOpen: true,
         type: "error",
         title: "Save Failed",
-        message: "Failed to add property. Please check all fields and try again."
+        message: Array.isArray(errorMessage) ? errorMessage.join(", ") : errorMessage
       });
     } finally {
       setSubmitting(false);

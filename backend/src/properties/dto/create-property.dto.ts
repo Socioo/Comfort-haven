@@ -40,6 +40,11 @@ export class CreatePropertyDto {
     @ApiProperty({ required: false })
     @IsOptional()
     @IsArray()
+    videos?: string[];
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsArray()
     amenities?: string[];
 
     @ApiProperty({ required: false })

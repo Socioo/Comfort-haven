@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { User, Bell, Shield, Palette, Save, Camera, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
+import { User, Bell, Shield, Palette, Save, Camera, AlertCircle, RefreshCw, CheckCircle2, Copy } from "lucide-react";
 import styles from "./Settings.module.css";
 import UserAvatar from "../components/UserAvatar";
 import { jwtDecode } from "jwt-decode";
@@ -119,6 +118,22 @@ const AdminSettings = () => {
       setConnectionStatus('error');
       setConnectionError(err.response?.data?.message || err.message);
     }
+  };
+
+  const copyDiagnosticLog = () => {
+    const log = `
+Comfort Haven Diagnostic Log:
+-----------------------------
+Environment: ${window.location.hostname}
+API Base URL: ${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000 (Default)'}
+User ID: ${userId}
+Connection Status: ${connectionStatus}
+Connection Error: ${connectionError || 'None'}
+Timestamp: ${new Date().toISOString()}
+-----------------------------
+    `.trim();
+    navigator.clipboard.writeText(log);
+    alert("Diagnostic log copied to clipboard! You can now paste it into our chat.");
   };
 
   const handleSave = async () => {
@@ -400,13 +415,35 @@ const AdminSettings = () => {
                        connectionStatus === 'success' ? 'Connected Successfully!' : 
                        connectionStatus === 'error' ? 'Connection Failed' : 'Test Backend Connection'}
                     </button>
-                    {connectionStatus === 'error' && (
-                      <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px' }}>
-                        Error: {connectionError}
-                      </div>
-                    )}
+                      {connectionStatus === 'error' && (
+                        <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px' }}>
+                          Error: {connectionError}
+                        </div>
+                      )}
+                      
+                      <button 
+                        onClick={copyDiagnosticLog}
+                        style={{ 
+                          marginTop: '4px', 
+                          padding: '6px 12px', 
+                          borderRadius: '6px', 
+                          border: '1px solid #ccc', 
+                          backgroundColor: 'transparent',
+                          color: 'var(--text-color)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '11px',
+                          opacity: 0.7
+                        }}
+                      >
+                        <Copy size={12} />
+                        Copy Diagnostic Report
+                      </button>
+                    </div>
                   </div>
-                </div>
               </div>
             </section>
           )}

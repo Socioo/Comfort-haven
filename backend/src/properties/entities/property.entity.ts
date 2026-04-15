@@ -39,6 +39,9 @@ export class Property {
     images: string[];
 
     @Column('simple-array', { nullable: true })
+    videos: string[];
+
+    @Column('simple-array', { nullable: true })
     amenities: string[];
 
     @Column({ nullable: true })
