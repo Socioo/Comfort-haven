@@ -4,6 +4,17 @@ const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
 });
 
+// Production safety check: warn if the live app is talking to localhost
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isBaseLocalhost = api.defaults.baseURL?.includes('localhost') || api.defaults.baseURL?.includes('127.0.0.1');
+
+if (!isLocalhost && isBaseLocalhost) {
+  console.warn(
+    "%c[Configuration Warning] This live app is attempting to connect to a local API (localhost/127.0.0.1). Requests will likely fail.",
+    "color: yellow; background: black; font-weight: bold; padding: 4px;"
+  );
+}
+
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('access_token');
     if (token) {
