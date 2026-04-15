@@ -34,10 +34,10 @@ export class UsersService {
     ].includes(createUserDto.role);
     console.log('isInvitation detected:', isInvitation);
 
-    // Prevent duplicate emails, but allow upgrading GUEST or HOST to admin roles
+    // Prevent duplicate emails, but allow upgrading USER or HOST to admin roles
     let existingUser = await this.findOneByEmail(createUserDto.email);
     if (existingUser) {
-      if (isInvitation && (existingUser.role === UserRole.GUEST || existingUser.role === UserRole.HOST)) {
+      if (isInvitation && (existingUser.role === UserRole.USER || existingUser.role === UserRole.HOST)) {
         console.log(`Upgrading existing ${existingUser.role} (${existingUser.email}) to ${createUserDto.role}`);
       } else {
         throw new ConflictException(`A user with the email ${createUserDto.email} already exists.`);
