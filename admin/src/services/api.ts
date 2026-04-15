@@ -18,9 +18,7 @@ export const adminAPI = {
   uploadProfileImage: (id: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post(`/users/${id}/profile-image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post(`/users/${id}/profile-image`, formData);
   },
   updateNotifications: (id: string, data: any) =>
     api.patch(`/users/${id}/notifications`, data),
