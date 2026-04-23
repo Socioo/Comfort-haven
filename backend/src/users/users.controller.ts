@@ -1,5 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Req, UnauthorizedException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import * as fs from 'fs';
@@ -103,18 +105,12 @@ export class UsersController {
 
     @Post(':id/profile-image')
     @UseInterceptors(FileInterceptor('file', {
-        storage: diskStorage({
-            destination: (req, file, cb) => {
-                const uploadPath = './uploads/users';
-                if (!fs.existsSync(uploadPath)) {
-                    fs.mkdirSync(uploadPath, { recursive: true });
-                }
-                cb(null, uploadPath);
-            },
-            filename: (req, file, cb) => {
-                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
-                return cb(null, `${randomName}${extname(file.originalname)}`);
-            }
+        storage: new CloudinaryStorage({
+            cloudinary: cloudinary,
+            params: {
+                folder: 'comfort-haven/users',
+                allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+            } as any,
         })
     }))
     async uploadProfileImage(
@@ -128,7 +124,7 @@ export class UsersController {
         if (req.user.id !== id && req.user.role !== UserRole.SUPER_ADMIN) {
             throw new UnauthorizedException('You can only update your own profile image');
         }
-        const profileImagePath = `/uploads/users/${file.filename}`;
+        const profileImagePath = file.path; // Cloudinary returns the full URL in file.path
         return this.usersService.update(id, { profileImage: profileImagePath });
     }
 

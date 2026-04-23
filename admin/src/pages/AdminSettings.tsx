@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Bell, Shield, Palette, Save, Camera, AlertCircle, RefreshCw, CheckCircle2, Copy } from "lucide-react";
+import { User, Bell, Shield, Palette, Save, Camera } from "lucide-react";
 import styles from "./Settings.module.css";
 import UserAvatar from "../components/UserAvatar";
 import { jwtDecode } from "jwt-decode";
@@ -19,8 +19,6 @@ const AdminSettings = () => {
   const [profile, setProfile] = useState({ name: "", email: "", role: "", profileImage: "" });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
-  const [connectionError, setConnectionError] = useState("");
 
   // Notifications State
   const [notifications, setNotifications] = useState({
@@ -108,37 +106,7 @@ const AdminSettings = () => {
     }));
   };
 
-  const testConnection = async () => {
-    setConnectionStatus('testing');
-    try {
-      await adminAPI.getProfile(userId!);
-      setConnectionStatus('success');
-      setTimeout(() => setConnectionStatus('idle'), 3000);
-    } catch (err: any) {
-      console.error("Connection test failed:", err);
-      setConnectionStatus('error');
-      setConnectionError(err.response?.data?.message || err.message);
-    }
-  };
 
-  const copyDiagnosticLog = () => {
-    const log = `
-Comfort Haven Diagnostic Log:
------------------------------
-Environment: ${window.location.hostname}
-API Base URL: ${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000 (Default)'}
-User ID: ${userId}
-Connection Status: ${connectionStatus}
-Connection Error: ${connectionError || 'None'}
-User Agent: ${navigator.userAgent}
-Language: ${navigator.language}
-Platform: ${navigator.platform}
-Timestamp: ${new Date().toISOString()}
------------------------------
-    `.trim();
-    navigator.clipboard.writeText(log);
-    alert("Diagnostic log copied to clipboard! You can now paste it into our chat.");
-  };
 
   const handleSave = async () => {
     if (!userId) return;
@@ -380,74 +348,7 @@ Timestamp: ${new Date().toISOString()}
                   <input type="text" value={profile.role} disabled />
                 </div>
                 
-                {/* Diagnostic Section */}
-                <div style={{ marginTop: '30px', padding: '15px', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '12px', border: '1px dashed #ccc' }}>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '14px', opacity: 0.8 }}>
-                    <Shield size={16} /> System Diagnostics
-                  </h4>
-                  <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>API Base URL:</span>
-                      <code style={{ fontWeight: 'bold' }}>{import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000 (Default)'}</code>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>User ID:</span>
-                      <code>{userId}</code>
-                    </div>
-                    <button 
-                      onClick={testConnection}
-                      disabled={connectionStatus === 'testing'}
-                      style={{ 
-                        marginTop: '8px', 
-                        padding: '6px 12px', 
-                        borderRadius: '6px', 
-                        border: 'none', 
-                        backgroundColor: connectionStatus === 'success' ? '#10b981' : (connectionStatus === 'error' ? '#ef4444' : '#3b82f6'),
-                        color: 'white',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        fontSize: '12px'
-                      }}
-                    >
-                      {connectionStatus === 'testing' ? <RefreshCw size={14} className="animate-spin" /> : 
-                       connectionStatus === 'success' ? <CheckCircle2 size={14} /> : 
-                       connectionStatus === 'error' ? <AlertCircle size={14} /> : null}
-                      {connectionStatus === 'testing' ? 'Testing Connection...' : 
-                       connectionStatus === 'success' ? 'Connected Successfully!' : 
-                       connectionStatus === 'error' ? 'Connection Failed' : 'Test Backend Connection'}
-                    </button>
-                      {connectionStatus === 'error' && (
-                        <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px' }}>
-                          Error: {connectionError}
-                        </div>
-                      )}
-                      
-                      <button 
-                        onClick={copyDiagnosticLog}
-                        style={{ 
-                          marginTop: '4px', 
-                          padding: '6px 12px', 
-                          borderRadius: '6px', 
-                          border: '1px solid #ccc', 
-                          backgroundColor: 'transparent',
-                          color: 'var(--text-color)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          fontSize: '11px',
-                          opacity: 0.7
-                        }}
-                      >
-                        <Copy size={12} />
-                        Copy Diagnostic Report
-                      </button>
-                    </div>
-                  </div>
+
               </div>
             </section>
           )}
