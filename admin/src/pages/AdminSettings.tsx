@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Bell, Shield, Palette, Save, Camera, AlertCircle, RefreshCw, CheckCircle2, Copy } from "lucide-react";
+import { User, Bell, Shield, Palette, Save, Camera } from "lucide-react";
 import styles from "./Settings.module.css";
 import UserAvatar from "../components/UserAvatar";
 import { jwtDecode } from "jwt-decode";
