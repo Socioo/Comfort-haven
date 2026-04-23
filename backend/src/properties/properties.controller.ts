@@ -3,9 +3,9 @@ import { UserRole } from '../common/constants';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { FileValidationPipe } from '../common/pipes/file-validation.pipe';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { PropertiesService } from './properties.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
@@ -19,13 +19,14 @@ export class PropertiesController {
     @Post('upload')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(AnyFilesInterceptor({
-        storage: diskStorage({
-            destination: './uploads',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                cb(null, `${file.fieldname}-${uniqueSuffix}${extname(file.originalname)}`);
-            },
-        }),
+        storage: new CloudinaryStorage({
+            cloudinary: cloudinary,
+            params: {
+                folder: 'comfort-haven/properties',
+                allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'mp4', 'mov'],
+                resource_type: 'auto',
+            } as any,
+        })
     }))
     uploadMedia(
         @UploadedFiles(new FileValidationPipe({
@@ -34,7 +35,7 @@ export class PropertiesController {
         })) files: Array<Express.Multer.File>
     ) {
         return files.map(file => ({
-            url: `/uploads/${file.filename}`,
+            url: file.path, // Cloudinary returns the full URL in file.path
             type: file.mimetype.startsWith('video') ? 'video' : 'image',
             originalname: file.originalname
         }));

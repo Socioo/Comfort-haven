@@ -25,9 +25,11 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import typeormConfig from './config/typeorm.config';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
+    CloudinaryModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [typeormConfig],
